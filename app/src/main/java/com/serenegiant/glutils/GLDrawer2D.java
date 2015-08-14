@@ -39,13 +39,13 @@ public class GLDrawer2D {
   public static final String NO_FILTER_VERTEX_SHADER = "" +
       "uniform mat4 uMVPMatrix;\n" +
       "uniform mat4 uTexMatrix;\n" +
-      "attribute highp vec4 aPosition;\n" +
-      "attribute highp vec4 aTextureCoord;\n" +
+      "attribute highp vec4 position;\n" +
+      "attribute highp vec4 inputTextureCoordinate;\n" +
       "varying highp vec2 textureCoordinate;\n" +
       "\n" +
       "void main() {\n" +
-      "	   gl_Position = uMVPMatrix * aPosition;\n" +
-      "	   textureCoordinate = (uTexMatrix * aTextureCoord).xy;\n" +
+      "	   gl_Position = uMVPMatrix * position;\n" +
+      "	   textureCoordinate = (uTexMatrix * inputTextureCoordinate).xy;\n" +
       "}\n";
 
   public static final String NO_FILTER_FRAGMENT_SHADER = "" +
@@ -67,13 +67,13 @@ public class GLDrawer2D {
   private static final int VERTEX_SZ = VERTEX_NUM * 2;
   private final float[] mMvpMatrix = new float[16];
   private final LinkedList<Runnable> mRunOnDraw = new LinkedList<>();
-  int maPositionLoc;
-  int maTextureCoordLoc;
+  int mGLAttribPosition;
+  int mGLAttribTextureCoordinate;
   int muMVPMatrixLoc;
   int muTexMatrixLoc;
   private FloatBuffer pVertex;
   private FloatBuffer pTexCoord;
-  private int hProgram;
+  private int mGLProgId;
   private String mVertexShader;
   private String mFragmentShader;
 
@@ -173,35 +173,34 @@ public class GLDrawer2D {
   }
 
   public int init() {
-    hProgram = loadShader(mVertexShader, mFragmentShader);
-    onInit(hProgram);
+    mGLProgId = loadShader(mVertexShader, mFragmentShader);
+    onInit(mGLProgId);
+    return mGLProgId;
+  }
 
-    GLES20.glUseProgram(hProgram);
-    maPositionLoc = GLES20.glGetAttribLocation(hProgram, "aPosition");
-    maTextureCoordLoc = GLES20.glGetAttribLocation(hProgram, "aTextureCoord");
-    muMVPMatrixLoc = GLES20.glGetUniformLocation(hProgram, "uMVPMatrix");
-    muTexMatrixLoc = GLES20.glGetUniformLocation(hProgram, "uTexMatrix");
+  protected void onInit(int programId) {
+    GLES20.glUseProgram(programId);
+    mGLAttribPosition = GLES20.glGetAttribLocation(programId, "position");
+    mGLAttribTextureCoordinate = GLES20.glGetAttribLocation(programId, "inputTextureCoordinate");
+    muMVPMatrixLoc = GLES20.glGetUniformLocation(programId, "uMVPMatrix");
+    muTexMatrixLoc = GLES20.glGetUniformLocation(programId, "uTexMatrix");
 
     Matrix.setIdentityM(mMvpMatrix, 0);
     GLES20.glUniformMatrix4fv(muMVPMatrixLoc, 1, false, mMvpMatrix, 0);
     GLES20.glUniformMatrix4fv(muTexMatrixLoc, 1, false, mMvpMatrix, 0);
-    GLES20.glVertexAttribPointer(maPositionLoc, 2, GLES20.GL_FLOAT, false, VERTEX_SZ, pVertex);
-    GLES20.glVertexAttribPointer(maTextureCoordLoc, 2, GLES20.GL_FLOAT, false, VERTEX_SZ,
+    GLES20.glVertexAttribPointer(mGLAttribPosition, 2, GLES20.GL_FLOAT, false, VERTEX_SZ, pVertex);
+    GLES20.glVertexAttribPointer(mGLAttribTextureCoordinate, 2, GLES20.GL_FLOAT, false, VERTEX_SZ,
         pTexCoord);
-    GLES20.glEnableVertexAttribArray(maPositionLoc);
-    GLES20.glEnableVertexAttribArray(maTextureCoordLoc);
-    return hProgram;
-  }
-
-  protected void onInit(int programId) {
+    GLES20.glEnableVertexAttribArray(mGLAttribPosition);
+    GLES20.glEnableVertexAttribArray(mGLAttribTextureCoordinate);
   }
 
   /**
    * terminating, this should be called in GL context
    */
   @Deprecated public void release() {
-    if (hProgram >= 0) GLES20.glDeleteProgram(hProgram);
-    hProgram = -1;
+    if (mGLProgId >= 0) GLES20.glDeleteProgram(mGLProgId);
+    mGLProgId = -1;
   }
 
   /**
@@ -214,7 +213,7 @@ public class GLDrawer2D {
   }
 
   @Deprecated public int getProgram() {
-    return hProgram;
+    return mGLProgId;
   }
 
   /**
@@ -225,7 +224,7 @@ public class GLDrawer2D {
    * array and needs at least 16 of float)
    */
   @Deprecated public void draw(final int texId, final float[] texMatrix) {
-    GLES20.glUseProgram(hProgram);
+    GLES20.glUseProgram(mGLProgId);
     if (texMatrix != null) GLES20.glUniformMatrix4fv(muTexMatrixLoc, 1, false, texMatrix, 0);
     GLES20.glUniformMatrix4fv(muMVPMatrixLoc, 1, false, mMvpMatrix, 0);
     GLES20.glActiveTexture(GLES20.GL_TEXTURE0);

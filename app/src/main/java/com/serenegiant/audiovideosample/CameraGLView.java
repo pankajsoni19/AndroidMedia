@@ -176,12 +176,14 @@ public final class CameraGLView extends GLSurfaceView {
   }
 
   public void setVideoEncoder(final MediaVideoEncoder encoder) {
-    if (DEBUG) Log.v(TAG, "setVideoEncoder:tex_id=" + mRenderer.hTex + ",encoder=" + encoder);
+    if (DEBUG) {
+      Log.v(TAG, "setVideoEncoder:tex_id=" + mRenderer.mGLTextureId + ",encoder=" + encoder);
+    }
     queueEvent(new Runnable() {
       @Override public void run() {
         synchronized (mRenderer) {
           if (encoder != null) {
-            encoder.setEglContext(EGL14.eglGetCurrentContext(), mRenderer.hTex);
+            encoder.setEglContext(EGL14.eglGetCurrentContext(), mRenderer.mGLTextureId);
           }
           mRenderer.mVideoEncoder = encoder;
         }
@@ -211,7 +213,7 @@ public final class CameraGLView extends GLSurfaceView {
     private final float[] mMvpMatrix = new float[16];
     private final Queue<Runnable> mRunOnDraw = new LinkedList<>();
     private SurfaceTexture mSTexture;  // API >= 11
-    private int hTex;
+    private int mGLTextureId;
     private GLDrawer2D mDrawer;
     private MediaVideoEncoder mVideoEncoder;
     private volatile boolean requestUpdateTex = false;
@@ -262,9 +264,9 @@ public final class CameraGLView extends GLSurfaceView {
         throw new RuntimeException("This system does not support OES_EGL_image_external.");
       }
       // create texture ID
-      hTex = GLDrawer2D.initTex();
+      mGLTextureId = GLDrawer2D.initTex();
       // create SurfaceTexture with texture ID.
-      mSTexture = new SurfaceTexture(hTex);
+      mSTexture = new SurfaceTexture(mGLTextureId);
       mSTexture.setOnFrameAvailableListener(this);
       // clear screen with yellow color so that you can see rendering rectangle
       GLES20.glClearColor(1.0f, 1.0f, 0.0f, 1.0f);
@@ -300,7 +302,7 @@ public final class CameraGLView extends GLSurfaceView {
         mSTexture.release();
         mSTexture = null;
       }
-      GLDrawer2D.deleteTex(hTex);
+      GLDrawer2D.deleteTex(mGLTextureId);
     }
 
     private void updateViewport() {
@@ -384,7 +386,7 @@ public final class CameraGLView extends GLSurfaceView {
 
       runAll(mRunOnDraw);
       // draw to preview screen
-      mDrawer.draw(mProgramId, hTex, mStMatrix);
+      mDrawer.draw(mProgramId, mGLTextureId, mStMatrix);
       flip = !flip;
       if (flip) {  // ~30fps
         synchronized (this) {
