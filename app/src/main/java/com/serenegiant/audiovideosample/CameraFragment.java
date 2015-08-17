@@ -43,6 +43,7 @@ import com.serenegiant.glutils.GLArtFilter;
 import com.serenegiant.glutils.GLBloomFilter;
 import com.serenegiant.glutils.GLGrayscaleFilter;
 import com.serenegiant.glutils.GLPosterizeFilter;
+import com.serenegiant.glutils.GLToneCurveFilter;
 import com.serenegiant.mediaaudiotest.R;
 import java.io.IOException;
 
@@ -148,6 +149,11 @@ public class CameraFragment extends Fragment {
         break;
       case R.id.action_bloom:
         mCameraView.setDrawer(new GLBloomFilter());
+        break;
+      case R.id.action_tone_curve:
+        GLToneCurveFilter toneCurveFilter = new GLToneCurveFilter();
+        toneCurveFilter.setFromCurveFileInputStream(getActivity().getResources().openRawResource(R.raw.frozen));
+        mCameraView.setDrawer(toneCurveFilter);
         break;
     }
     return super.onOptionsItemSelected(item);

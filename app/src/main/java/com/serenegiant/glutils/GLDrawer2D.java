@@ -36,6 +36,8 @@ import java.util.LinkedList;
  */
 public class GLDrawer2D {
 
+  public static final int NO_TEXTURE = -1;
+
   public static final String NO_FILTER_VERTEX_SHADER = "" +
       "uniform mat4 uMVPMatrix;\n" +
       "uniform mat4 uTexMatrix;\n" +

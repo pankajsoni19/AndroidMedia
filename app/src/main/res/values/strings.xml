@@ -9,5 +9,6 @@
   <string name="action_art">Art</string>
   <string name="action_1977">1977</string>
   <string name="action_bloom">Bloom</string>
+  <string name="action_tone_curve">Tone Curve</string>
 
 </resources>

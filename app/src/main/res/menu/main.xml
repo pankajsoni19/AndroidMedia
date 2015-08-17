@@ -33,4 +33,10 @@
       android:title="@string/action_bloom"
       />
 
+  <item
+      android:id="@+id/action_tone_curve"
+      android:showAsAction="never"
+      android:title="@string/action_tone_curve"
+      />
+
 </menu>
