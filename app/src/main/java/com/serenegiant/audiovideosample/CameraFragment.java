@@ -80,6 +80,7 @@ public class CameraFragment extends Fragment {
      */
     private CameraGLView mCameraView;
     private ImageView mFlashView;
+    private ImageView mCameraSwitcher;
     private String mediaPath;
 
     /**
@@ -120,6 +121,9 @@ public class CameraFragment extends Fragment {
                 case R.id.iv_flash:
                     mCameraView.toggleFlash();
                     break;
+                case R.id.iv_switch_camera:
+                    mCameraView.toggleCamera();
+                    break;
                 case R.id.record_button:
                     if (mMuxer == null) {
                         startRecording();
@@ -146,14 +150,17 @@ public class CameraFragment extends Fragment {
     public View onCreateView(@NonNull final LayoutInflater inflater, final ViewGroup container,
                              final Bundle savedInstanceState) {
         final View rootView = inflater.inflate(R.layout.fragment_main, container, false);
+
         mCameraView = rootView.findViewById(R.id.cameraView);
         mFlashView = rootView.findViewById(R.id.iv_flash);
+        mCameraSwitcher = rootView.findViewById(R.id.iv_switch_camera);
 
         mCameraView.setVideoSize();
         mCameraView.setOnClickListener(mOnClickListener);
         mRecordButton = rootView.findViewById(R.id.record_button);
         mRecordButton.setOnClickListener(mOnClickListener);
         mFlashView.setOnClickListener(mOnClickListener);
+        mCameraSwitcher.setOnClickListener(mOnClickListener);
         return rootView;
     }
 
@@ -196,6 +203,7 @@ public class CameraFragment extends Fragment {
         Log.d(TAG, "onResume:");
         mCameraView.onResume();
         mCameraView.setFlashImageView(mFlashView);
+        mCameraView.setCameraSwitcher(mCameraSwitcher);
     }
 
     @Override

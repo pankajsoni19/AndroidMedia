@@ -147,6 +147,16 @@ public class CameraHelper {
         return bestSize;
     }
 
+    public static boolean isFrontCameraAvailable(Context context) {
+        PackageManager pm = context.getPackageManager();
+        return pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_FRONT);
+    }
+
+    public static boolean isFlashAvailable(Context context) {
+        PackageManager pm = context.getPackageManager();
+        return pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH);
+    }
+
     public static int getFrontCameraID(Context context) {
         PackageManager pm = context.getPackageManager();
         if (pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_FRONT)) {
