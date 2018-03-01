@@ -13,5 +13,6 @@
     <string name="action_sepia">Sepia</string>
 
     <string name="action_invert">Color Invert</string>
+    <string name="cancel">Cancel</string>
 
 </resources>
