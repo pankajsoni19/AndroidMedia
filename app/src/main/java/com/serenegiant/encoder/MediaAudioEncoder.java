@@ -190,7 +190,7 @@ public class MediaAudioEncoder extends MediaEncoder {
      * select the first codec that match a specific MIME type
      */
     private static MediaCodecInfo selectAudioCodec(final String mimeType) {
-        Log.v(TAG, "selectAudioCodec:");
+        Log.d(TAG, "selectAudioCodec:");
 
         // get the list of available codecs
         final int numCodecs = MediaCodecList.getCodecCount();

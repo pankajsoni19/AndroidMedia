@@ -333,11 +333,11 @@ public abstract class MediaEncoder implements Runnable {
                     if (++count > 5) break LOOP;    // out of while
                 }
             } else if (encoderStatus == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
-                Log.v(TAG, "INFO_OUTPUT_BUFFERS_CHANGED");
+                Log.d(TAG, "INFO_OUTPUT_BUFFERS_CHANGED");
                 // this shoud not come when encoding
                 encoderOutputBuffers = mMediaCodec.getOutputBuffers();
             } else if (encoderStatus == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
-                Log.v(TAG, "INFO_OUTPUT_FORMAT_CHANGED");
+                Log.d(TAG, "INFO_OUTPUT_FORMAT_CHANGED");
                 // this status indicate the output format of codec is changed
                 // this should come only once before actual encoded data
                 // but this status never come on Android4.3 or less

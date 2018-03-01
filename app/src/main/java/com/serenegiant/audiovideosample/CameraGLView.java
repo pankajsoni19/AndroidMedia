@@ -62,9 +62,6 @@ public final class CameraGLView extends GLSurfaceView {
 
     private static final String TAG = "CameraGLView";
 
-    private static final int PREFERRED_PREVIEW_WIDTH = 640;
-    private static final int PREFERRED_PREVIEW_HEIGHT = 480;
-
     private int cameraId = CameraHelper.getBackCameraID();
 
     private final CameraSurfaceRenderer mRenderer;
@@ -144,6 +141,7 @@ public final class CameraGLView extends GLSurfaceView {
             mVideoHeight = width;
         }
 
+        Log.d(TAG, "setVideoSize: width: " + width + " height: " + height);
         queueEvent(mRenderer::updateViewport);
     }
 
@@ -189,6 +187,7 @@ public final class CameraGLView extends GLSurfaceView {
     //********************************************************************************
     //********************************************************************************
     private synchronized void startPreview(final int width, final int height) {
+        if (width == 0 || height == 0) { return; }
         if (mCameraHandler == null) {
             final CameraThread thread = new CameraThread(this);
             thread.start();
@@ -283,8 +282,12 @@ public final class CameraGLView extends GLSurfaceView {
         public void onSurfaceChanged(final GL10 unused, final int width, final int height) {
             Log.d(TAG, String.format("onSurfaceChanged:(%d,%d)", width, height));
             // if at least with or height is zero, initialization of this view is still progress.
-            if ((width == 0) || (height == 0)) return;
+            if (width == 0 || height == 0) {
+                return;
+            }
+
             updateViewport();
+
             final CameraGLView parent = mWeakParent.get();
             if (parent != null) {
                 parent.startPreview(width, height);
@@ -296,7 +299,20 @@ public final class CameraGLView extends GLSurfaceView {
          */
         public void onSurfaceDestroyed() {
             Log.d(TAG, "onSurfaceDestroyed:");
+            GLSurfaceView parent = mWeakParent.get();
+            if (parent != null) {
+                parent.queueEvent(new Runnable() {
+                    @Override
+                    public void run() {
+                        cleanUp();
+                    }
+                });
+            } else {
+                cleanUp();
+            }
+        }
 
+        private void cleanUp() {
             if (mDrawer != null) {
                 mDrawer.release(mProgramId);
             }
@@ -327,9 +343,8 @@ public final class CameraGLView extends GLSurfaceView {
             Matrix.setIdentityM(mMvpMatrix, 0);
             final double view_aspect = view_width / (double) view_height;
 
-            Log.i(TAG,
-                    String.format("view(%d,%d)%f,video(%1.0f,%1.0f)", view_width, view_height, view_aspect,
-                            video_width, video_height));
+            Log.i(TAG, String.format("updateViewport view: (%d,%d) view_aspect: %f,video: (%1.0f,%1.0f)",
+                            view_width, view_height, view_aspect, video_width, video_height));
 
             switch (parent.mScaleMode) {
                 case ScaleType.SCALE_STRETCH_FIT:
@@ -458,6 +473,8 @@ public final class CameraGLView extends GLSurfaceView {
     private static final class CameraHandler extends Handler {
         private static final int MSG_PREVIEW_START = 1;
         private static final int MSG_PREVIEW_STOP = 2;
+        private static final long DELAY_START_PREVIEW = 200; //android min animation duration
+
         private CameraThread mThread;
 
         public CameraHandler(final CameraThread thread) {
@@ -465,7 +482,8 @@ public final class CameraGLView extends GLSurfaceView {
         }
 
         public void startPreview(final int width, final int height) {
-            sendMessage(obtainMessage(MSG_PREVIEW_START, width, height));
+            removeMessages(MSG_PREVIEW_START);
+            sendMessageDelayed(obtainMessage(MSG_PREVIEW_START, width, height), DELAY_START_PREVIEW);
         }
 
         /**
@@ -608,27 +626,15 @@ public final class CameraGLView extends GLSurfaceView {
                 // if you want to use other size, you also need to change the recording size.
                 Log.d(TAG, "requested: width: " + width + " height: " + height);
 
-                int previewWidth = width;
-                if (previewWidth <= 0) {
-                    previewWidth = PREFERRED_PREVIEW_WIDTH;
-                }
-
-                int previewHeight = height;
-                if (previewHeight <= 0) {
-                    previewHeight = PREFERRED_PREVIEW_HEIGHT;
-                }
-
-                Log.d(TAG, "preview: width: " + width + " height: " + height);
-
                 final Camera.Size closestSize = CameraHelper.getOptimalSize(
-                        params.getSupportedPreviewSizes(), previewWidth, previewHeight);
+                        params.getSupportedPreviewSizes(), width, height);
 
                 params.setPreviewSize(closestSize.width, closestSize.height);
 
                 Log.d(TAG, String.format("closestSize(%d, %d)", closestSize.width, closestSize.height));
 
                 final Camera.Size pictureSize = CameraHelper.getOptimalSize(
-                        params.getSupportedPictureSizes(), previewWidth, previewHeight);
+                        params.getSupportedPictureSizes(), width, height);
 
                 params.setPictureSize(pictureSize.width, pictureSize.height);
 

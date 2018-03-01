@@ -9,7 +9,6 @@ import android.util.Log;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.Locale;
 
 /**
@@ -19,7 +18,7 @@ import java.util.Locale;
 @SuppressWarnings("WeakerAccess")
 public class FileHandler {
 
-    private static final String LOG_TAG = "FileHandler";
+    private static final String TAG = "FileHandler";
 
     private static String getApplicationName(Context context) {
         ApplicationInfo applicationInfo = context.getApplicationInfo();
@@ -34,7 +33,7 @@ public class FileHandler {
 
     public static File getTempFile(String albumName) {
         File dir = getPublicAlbumStorageDir(albumName);
-        final String filename = "IMG_" + getDateTimeString() + ".png";
+        final String filename = "IMG_" + getDateTimeString() + ".mp4";
         return new File(dir, filename);
     }
 
@@ -42,8 +41,9 @@ public class FileHandler {
         // Get the directory for the user's public pictures directory.
         File file = new File(Environment.getExternalStoragePublicDirectory(
                 Environment.DIRECTORY_MOVIES), albumName);
-        if (!file.mkdirs()) {
-            Log.e(LOG_TAG, "Directory not created");
+        //noinspection ResultOfMethodCallIgnored
+        if (!file.exists() && !file.mkdirs()) {
+            Log.e(TAG, "Directory not created");
         }
         return file;
     }
