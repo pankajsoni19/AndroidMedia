@@ -22,10 +22,12 @@ package com.serenegiant.audiovideosample;
  * All files in the folder are under this Apache License, Version 2.0.
 */
 
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -41,6 +43,7 @@ import com.serenegiant.encoder.MediaAudioEncoder;
 import com.serenegiant.encoder.MediaEncoder;
 import com.serenegiant.encoder.MediaMuxerWrapper;
 import com.serenegiant.encoder.MediaVideoEncoder;
+import com.serenegiant.enums.ScaleType;
 import com.serenegiant.fileio.FileHandler;
 import com.serenegiant.glutils.GL1977Filter;
 import com.serenegiant.glutils.GLArtFilter;
@@ -48,10 +51,8 @@ import com.serenegiant.glutils.GLBloomFilter;
 import com.serenegiant.glutils.GLGrayscaleFilter;
 import com.serenegiant.glutils.GLPosterizeFilter;
 import com.serenegiant.glutils.GLToneCurveFilter;
-import com.serenegiant.mediaaudiotest.BuildConfig;
 import com.serenegiant.mediaaudiotest.R;
 
-import java.io.File;
 import java.io.IOException;
 
 public class CameraFragment extends Fragment {
@@ -64,6 +65,7 @@ public class CameraFragment extends Fragment {
         return newInstance(null);
     }
 
+    @SuppressWarnings("SameParameterValue")
     public static CameraFragment newInstance(@Nullable String mediaPath) {
         Bundle args = new Bundle();
         args.putString(INTENT_FILEPATH, mediaPath);
@@ -71,6 +73,7 @@ public class CameraFragment extends Fragment {
         fragment.setArguments(args);
         return fragment;
     }
+
     /**
      * for camera preview display
      */
@@ -115,7 +118,7 @@ public class CameraFragment extends Fragment {
         public void onClick(final View view) {
             switch (view.getId()) {
                 case R.id.cameraView:
-                    final int scale_mode = (mCameraView.getScaleMode() + 1) % 4;
+                    final int scale_mode = (mCameraView.getScaleMode() + 1) % 5;
                     mCameraView.setScaleMode(scale_mode);
                     updateScaleModeText();
                     break;
@@ -208,21 +211,24 @@ public class CameraFragment extends Fragment {
     }
 
     private void updateScaleModeText() {
-        final int scale_mode = mCameraView.getScaleMode();
+        final @ScaleType int scale_mode = mCameraView.getScaleMode();
 
         String scaleText;
         switch (scale_mode) {
-            case 0:
+            case ScaleType.SCALE_STRETCH_FIT:
                 scaleText = "scale to fit";
                 break;
-            case 1:
+            case ScaleType.SCALE_KEEP_ASPECT_VIEWPORT:
                 scaleText = "keep aspect(viewport)";
                 break;
-            case 2:
+            case ScaleType.SCALE_KEEP_ASPECT:
                 scaleText = "keep aspect(matrix)";
                 break;
-            case 3:
+            case ScaleType.SCALE_CROP_CENTER:
                 scaleText = "keep aspect(crop center)";
+                break;
+            case ScaleType.SCALE_SQUARE:
+                scaleText = "square mode";
                 break;
             default:
                 scaleText = "";
@@ -245,9 +251,25 @@ public class CameraFragment extends Fragment {
             mRecordButton.setColorFilter(0xffff0000);  // turn red
             mMuxer = new MediaMuxerWrapper(mediaPath);  // if you record audio only, ".m4a" is also OK.
 
+            int outputVideoWidth;
+            int outputVideoHeight;
+
+
+            if (mCameraView.getScaleMode() == ScaleType.SCALE_SQUARE) {
+                DisplayMetrics dm = Resources.getSystem().getDisplayMetrics();
+                final int size = Math.min(dm.widthPixels, dm.heightPixels);
+                outputVideoWidth = size;
+                outputVideoHeight = size;
+                Log.d(TAG, "pixels: width" + dm.widthPixels + " height: " + dm.heightPixels);
+            } else {
+                outputVideoWidth = mCameraView.getVideoWidth();
+                outputVideoHeight = mCameraView.getVideoHeight();
+            }
+
+            Log.d(TAG, "output: width: " + outputVideoWidth + " height: " + outputVideoWidth);
             // for video capturing
-            new MediaVideoEncoder(mMuxer, mMediaEncoderListener, mCameraView.getVideoWidth(),
-                    mCameraView.getVideoHeight(), mCameraView.getDrawer());
+            new MediaVideoEncoder(mMuxer, mMediaEncoderListener, outputVideoWidth,
+                    outputVideoHeight, mCameraView.getDrawer());
 
             // for audio capturing
             new MediaAudioEncoder(mMuxer, mMediaEncoderListener);

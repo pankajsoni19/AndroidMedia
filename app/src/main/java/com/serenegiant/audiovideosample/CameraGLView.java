@@ -40,6 +40,7 @@ import android.view.SurfaceHolder;
 import android.view.WindowManager;
 
 import com.serenegiant.encoder.MediaVideoEncoder;
+import com.serenegiant.enums.ScaleType;
 import com.serenegiant.glutils.GLDrawer2D;
 import com.serenegiant.mediaaudiotest.BuildConfig;
 import com.serenegiant.utils.CameraHelper;
@@ -64,13 +65,6 @@ public final class CameraGLView extends GLSurfaceView {
     private static final int PREFERRED_PREVIEW_WIDTH = 640;
     private static final int PREFERRED_PREVIEW_HEIGHT = 480;
 
-    private static final int SCALE_STRETCH_FIT = 0;
-    private static final int SCALE_KEEP_ASPECT_VIEWPORT = 1;
-    private static final int SCALE_KEEP_ASPECT = 2;
-    private static final int SCALE_CROP_CENTER = 3;
-
-    private int previewWidth = PREFERRED_PREVIEW_WIDTH;
-    private int previewHeight = PREFERRED_PREVIEW_HEIGHT;
     private int cameraId = CameraHelper.getBackCameraID();
 
     private final CameraSurfaceRenderer mRenderer;
@@ -78,7 +72,9 @@ public final class CameraGLView extends GLSurfaceView {
     private CameraHandler mCameraHandler = null;
     private int mVideoWidth, mVideoHeight;
     private int mRotation;
-    private int mScaleMode = SCALE_STRETCH_FIT;
+    private @ScaleType
+    int mScaleMode = ScaleType.SCALE_STRETCH_FIT;
+
     private GLDrawer2D mDrawer = new GLDrawer2D();
 
     public CameraGLView(final Context context) {
@@ -112,11 +108,9 @@ public final class CameraGLView extends GLSurfaceView {
     public void onResume() {
         Log.d(TAG, "onResume:");
         super.onResume();
-        if (mHasSurface) {
-            if (mCameraHandler == null) {
-                Log.d(TAG, "surface already exist");
-                startPreview(getWidth(), getHeight());
-            }
+        if (mHasSurface && mCameraHandler == null) {
+            Log.d(TAG, "surface already exist");
+            startPreview(getWidth(), getHeight());
         }
     }
 
@@ -263,6 +257,11 @@ public final class CameraGLView extends GLSurfaceView {
             if (!extensions.contains("OES_EGL_image_external")) {
                 throw new RuntimeException("This system does not support OES_EGL_image_external.");
             }
+
+            if (mGLTextureId > 0) {
+                GLDrawer2D.deleteTex(mGLTextureId);
+            }
+
             // create texture ID
             mGLTextureId = GLDrawer2D.initTex();
             // create SurfaceTexture with texture ID.
@@ -301,6 +300,7 @@ public final class CameraGLView extends GLSurfaceView {
             if (mDrawer != null) {
                 mDrawer.release(mProgramId);
             }
+
             if (mSTexture != null) {
                 mSTexture.release();
                 mSTexture = null;
@@ -332,9 +332,9 @@ public final class CameraGLView extends GLSurfaceView {
                             video_width, video_height));
 
             switch (parent.mScaleMode) {
-                case SCALE_STRETCH_FIT:
+                case ScaleType.SCALE_STRETCH_FIT:
                     break;
-                case SCALE_KEEP_ASPECT_VIEWPORT: {
+                case ScaleType.SCALE_KEEP_ASPECT_VIEWPORT: {
                     final double req = video_width / video_height;
                     int x, y;
                     int width, height;
@@ -357,12 +357,12 @@ public final class CameraGLView extends GLSurfaceView {
                     GLES20.glViewport(x, y, width, height);
                     break;
                 }
-                case SCALE_KEEP_ASPECT:
-                case SCALE_CROP_CENTER: {
+                case ScaleType.SCALE_KEEP_ASPECT:
+                case ScaleType.SCALE_CROP_CENTER: {
                     final double scale_x = view_width / video_width;
                     final double scale_y = view_height / video_height;
                     final double scale =
-                            (parent.mScaleMode == SCALE_CROP_CENTER ? Math.max(scale_x, scale_y)
+                            (parent.mScaleMode == ScaleType.SCALE_CROP_CENTER ? Math.max(scale_x, scale_y)
                                     : Math.min(scale_x, scale_y));
                     final double width = scale * video_width;
                     final double height = scale * video_height;
@@ -373,6 +373,36 @@ public final class CameraGLView extends GLSurfaceView {
 
                     Matrix.scaleM(mMvpMatrix, 0, (float) (width / view_width),
                             (float) (height / view_height), 1.0f);
+                    break;
+                }
+                case ScaleType.SCALE_SQUARE: {
+                    int view_x = 0;
+                    int view_y = 0;
+                    float scale_x = 1;
+                    float scale_y = 1;
+                    final int newPreviewSize;
+
+                    if (view_width >= view_height) {
+                        newPreviewSize = view_height;
+                        view_x = (view_width - newPreviewSize) / 2;
+
+                    } else {
+                        newPreviewSize = view_width;
+                        view_y = (view_height - newPreviewSize) / 2;
+                    }
+
+                    final float video_aspect = (float) (video_width / video_height);
+                    if (video_aspect >= 1) {
+                        scale_x = video_aspect;
+                    } else {
+                        scale_y = 1 / video_aspect;
+                    }
+                    Log.v(TAG, "scale square: " + scale_x + " " + scale_y);
+
+                    GLES20.glViewport(view_x, view_y, newPreviewSize, newPreviewSize);
+                    GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+
+                    Matrix.scaleM(mMvpMatrix, 0, scale_x, scale_y, 1.0f);
                     break;
                 }
             }
@@ -407,7 +437,7 @@ public final class CameraGLView extends GLSurfaceView {
                 synchronized (this) {
                     if (mVideoEncoder != null) {
                         // notify to capturing thread that the camera frame is available.
-                        mVideoEncoder.frameAvailableSoon(mStMatrix);
+                        mVideoEncoder.frameAvailableSoon(mStMatrix, mMvpMatrix);
                     }
                 }
             }
@@ -576,16 +606,33 @@ public final class CameraGLView extends GLSurfaceView {
                 // request preview size
                 // this is a sample project and just use fixed value
                 // if you want to use other size, you also need to change the recording size.
-                List<Camera.Size> previewSizes = params.getSupportedPreviewSizes();
-                Camera.Size previewSize = CameraHelper.getOptimalSize(previewSizes,
-                        parent.previewWidth, parent.previewHeight);
+                Log.d(TAG, "requested: width: " + width + " height: " + height);
 
-                Log.i(TAG, String.format("previewSize(%d, %d)", previewSize.width, previewSize.height));
+                int previewWidth = width;
+                if (previewWidth <= 0) {
+                    previewWidth = PREFERRED_PREVIEW_WIDTH;
+                }
 
-                // rotate camera preview according to the device orientation
-                /**
-                 * rotate preview screen according to the device orientation
-                 */
+                int previewHeight = height;
+                if (previewHeight <= 0) {
+                    previewHeight = PREFERRED_PREVIEW_HEIGHT;
+                }
+
+                Log.d(TAG, "preview: width: " + width + " height: " + height);
+
+                final Camera.Size closestSize = CameraHelper.getOptimalSize(
+                        params.getSupportedPreviewSizes(), previewWidth, previewHeight);
+
+                params.setPreviewSize(closestSize.width, closestSize.height);
+
+                Log.d(TAG, String.format("closestSize(%d, %d)", closestSize.width, closestSize.height));
+
+                final Camera.Size pictureSize = CameraHelper.getOptimalSize(
+                        params.getSupportedPictureSizes(), previewWidth, previewHeight);
+
+                params.setPictureSize(pictureSize.width, pictureSize.height);
+
+                Log.d(TAG, String.format("pictureSize(%d, %d)", pictureSize.width, pictureSize.height));
 
                 final int degrees = CameraHelper.getDisplayOrientation(parent.getContext(), parent.cameraId);
                 mCamera.setDisplayOrientation(degrees);
@@ -594,6 +641,9 @@ public final class CameraGLView extends GLSurfaceView {
                 parent.mRotation = degrees;
 
                 mCamera.setParameters(params);
+
+                final Camera.Size previewSize = mCamera.getParameters().getPreviewSize();
+                Log.d(TAG, String.format("previewSize(%d, %d)", previewSize.width, previewSize.height));
 
                 // adjust view size with keeping the aspect ration of camera preview.
                 // here is not a UI thread and we should request parent view to execute.

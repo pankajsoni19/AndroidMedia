@@ -24,12 +24,11 @@ package com.serenegiant.glutils;
 
 import android.graphics.SurfaceTexture;
 import android.opengl.EGLContext;
+import android.opengl.Matrix;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
-
-import com.serenegiant.mediaaudiotest.BuildConfig;
 
 /**
  * Helper class to draw texture to whole view on private thread
@@ -40,11 +39,12 @@ public final class RenderHandler implements Runnable {
     private static final String TAG = "RenderHandler";
 
     private final Object mSync = new Object();
-    private EGLContext mShard_context;
+    private EGLContext mShared_context;
     private boolean mIsRecordable;
     private Object mSurface;
     private int mTexId = -1;
-    private float[] mTexMatrix;
+
+    private float[] mMatrix = new float[32];
 
     private boolean mRequestSetEglContext;
     private boolean mRequestRelease;
@@ -85,11 +85,13 @@ public final class RenderHandler implements Runnable {
 
         synchronized (mSync) {
             if (mRequestRelease) return;
-            mShard_context = shared_context;
+            mShared_context = shared_context;
             mTexId = tex_id;
             mSurface = surface;
             mIsRecordable = isRecordable;
             mRequestSetEglContext = true;
+            Matrix.setIdentityM(mMatrix, 0);
+            Matrix.setIdentityM(mMatrix, 16);
             mSync.notifyAll();
             try {
                 mSync.wait();
@@ -99,26 +101,45 @@ public final class RenderHandler implements Runnable {
     }
 
     public final void draw() {
-        draw(mTexId, mTexMatrix);
+        draw(mTexId, mMatrix, null);
     }
 
     public final void draw(final int tex_id) {
-        draw(tex_id, mTexMatrix);
+        draw(tex_id, mMatrix, null);
     }
 
     public final void draw(final float[] tex_matrix) {
-        draw(mTexId, tex_matrix);
+        draw(mTexId, tex_matrix, null);
+    }
+
+    public final void draw(final float[] tex_matrix, final float[] mvp_matrix) {
+        draw(mTexId, tex_matrix, mvp_matrix);
     }
 
     public final void draw(final int tex_id, final float[] tex_matrix) {
+        draw(tex_id, tex_matrix, null);
+    }
+
+    public final void draw(final int tex_id, final float[] tex_matrix, final float[] mvp_matrix) {
         synchronized (mSync) {
             if (mRequestRelease) return;
             mTexId = tex_id;
-            mTexMatrix = tex_matrix;
+            if ((tex_matrix != null) && (tex_matrix.length >= 16)) {
+                System.arraycopy(tex_matrix, 0, mMatrix, 0, 16);
+            } else {
+                Matrix.setIdentityM(mMatrix, 0);
+            }
+
+            if ((mvp_matrix != null) && (mvp_matrix.length >= 16)) {
+                System.arraycopy(mvp_matrix, 0, mMatrix, 16, 16);
+            } else {
+                Matrix.setIdentityM(mMatrix, 16);
+            }
+
             mRequestDraw++;
             mSync.notifyAll();
 /*			try {
-        mSync.wait();
+				mSync.wait();
 			} catch (final InterruptedException e) {
 			} */
         }
@@ -168,7 +189,7 @@ public final class RenderHandler implements Runnable {
 
                 if (localRequestDraw) {
                     mRequestDraw--;
-                    //					mSync.notifyAll();
+                    // mSync.notifyAll();
                 }
             }
 
@@ -176,7 +197,7 @@ public final class RenderHandler implements Runnable {
             if (localRequestDraw) {
                 if ((mEgl != null) && mTexId >= 0) {
                     mInputSurface.makeCurrent();
-                    mDrawer.draw(mProgramId, mTexId, mTexMatrix);
+                    mDrawer.draw(mProgramId, mTexId, mMatrix);
                     mInputSurface.swap();
                 }
             } else {
@@ -202,7 +223,7 @@ public final class RenderHandler implements Runnable {
     private void internalPrepare() {
         Log.d(TAG, "internalPrepare:");
         internalRelease();
-        mEgl = new EGLBase(mShard_context, false, mIsRecordable);
+        mEgl = new EGLBase(mShared_context, false, mIsRecordable);
 
         mInputSurface = mEgl.createFromSurface(mSurface);
 
