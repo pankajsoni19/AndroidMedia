@@ -77,9 +77,6 @@ public class CameraFragment extends Fragment {
     /**
      * for camera preview display
      */
-    private static final int PREFERRED_PREVIEW_WIDTH = 640;
-    private static final int PREFERRED_PREVIEW_HEIGHT = 480;
-
     private CameraGLView mCameraView;
     private String mediaPath;
     /**
@@ -156,7 +153,7 @@ public class CameraFragment extends Fragment {
                              final Bundle savedInstanceState) {
         final View rootView = inflater.inflate(R.layout.fragment_main, container, false);
         mCameraView = rootView.findViewById(R.id.cameraView);
-        mCameraView.setVideoSize(PREFERRED_PREVIEW_WIDTH, PREFERRED_PREVIEW_HEIGHT);
+        mCameraView.setVideoSize();
         mCameraView.setOnClickListener(mOnClickListener);
         mScaleModeView = rootView.findViewById(R.id.scalemode_textview);
         updateScaleModeText();
@@ -256,7 +253,6 @@ public class CameraFragment extends Fragment {
 
             int outputVideoWidth;
             int outputVideoHeight;
-
 
             if (mCameraView.getScaleMode() == ScaleType.SCALE_SQUARE) {
                 DisplayMetrics dm = Resources.getSystem().getDisplayMetrics();

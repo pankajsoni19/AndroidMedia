@@ -64,13 +64,17 @@ public final class CameraGLView extends GLSurfaceView {
 
     private int cameraId = CameraHelper.getBackCameraID();
 
+    public static final int PREFERRED_PREVIEW_WIDTH = 640;
+    public static final int PREFERRED_PREVIEW_HEIGHT = 480;
+
     private final CameraSurfaceRenderer mRenderer;
     private boolean mHasSurface;
     private CameraHandler mCameraHandler = null;
     private int mVideoWidth, mVideoHeight;
     private int mRotation;
+
     private @ScaleType
-    int mScaleMode = ScaleType.SCALE_STRETCH_FIT;
+    int mScaleMode = ScaleType.SCALE_SQUARE;
 
     private GLDrawer2D mDrawer = new GLDrawer2D();
 
@@ -130,6 +134,10 @@ public final class CameraGLView extends GLSurfaceView {
             mScaleMode = mode;
             queueEvent(mRenderer::updateViewport);
         }
+    }
+
+    public void setVideoSize() {
+        setVideoSize(PREFERRED_PREVIEW_WIDTH, PREFERRED_PREVIEW_HEIGHT);
     }
 
     public void setVideoSize(final int width, final int height) {
@@ -580,7 +588,7 @@ public final class CameraGLView extends GLSurfaceView {
         /**
          * start camera preview
          */
-        private void startPreview(final int width, final int height) {
+        private void startPreview(final int reqWidth, final int reqHeight) {
             Log.d(TAG, "startPreview:");
 
             final CameraGLView parent = mWeakParent.get();
@@ -621,10 +629,14 @@ public final class CameraGLView extends GLSurfaceView {
                 }
 
                 params.setRecordingHint(true);
+                final int width = Math.min(reqWidth, PREFERRED_PREVIEW_WIDTH);
+                final int height = Math.min(reqHeight, PREFERRED_PREVIEW_HEIGHT);
+
                 // request preview size
                 // this is a sample project and just use fixed value
                 // if you want to use other size, you also need to change the recording size.
-                Log.d(TAG, "requested: width: " + width + " height: " + height);
+                Log.d(TAG, "requested: width: " + reqWidth + " height: " + reqHeight
+                        + " selected: width: " + width + " height: " + height);
 
                 final Camera.Size closestSize = CameraHelper.getOptimalSize(
                         params.getSupportedPreviewSizes(), width, height);
