@@ -24,6 +24,7 @@ package com.serenegiant.audiovideosample;
 
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -40,6 +41,7 @@ import com.serenegiant.encoder.MediaAudioEncoder;
 import com.serenegiant.encoder.MediaEncoder;
 import com.serenegiant.encoder.MediaMuxerWrapper;
 import com.serenegiant.encoder.MediaVideoEncoder;
+import com.serenegiant.fileio.FileHandler;
 import com.serenegiant.glutils.GL1977Filter;
 import com.serenegiant.glutils.GLArtFilter;
 import com.serenegiant.glutils.GLBloomFilter;
@@ -49,16 +51,22 @@ import com.serenegiant.glutils.GLToneCurveFilter;
 import com.serenegiant.mediaaudiotest.BuildConfig;
 import com.serenegiant.mediaaudiotest.R;
 
+import java.io.File;
 import java.io.IOException;
 
 public class CameraFragment extends Fragment {
 
     public final String TAG = "CameraFragment";
 
-    private static final boolean DEBUG = BuildConfig.DEBUG;
+    private static final String INTENT_FILEPATH = "com.wafer.picker.image.file";
 
     public static CameraFragment newInstance() {
+        return newInstance(null);
+    }
+
+    public static CameraFragment newInstance(@Nullable String mediaPath) {
         Bundle args = new Bundle();
+        args.putString(INTENT_FILEPATH, mediaPath);
         CameraFragment fragment = new CameraFragment();
         fragment.setArguments(args);
         return fragment;
@@ -67,6 +75,7 @@ public class CameraFragment extends Fragment {
      * for camera preview display
      */
     private CameraGLView mCameraView;
+    private String mediaPath;
     /**
      * callback methods from encoder
      */
@@ -74,7 +83,7 @@ public class CameraFragment extends Fragment {
             new MediaEncoder.MediaEncoderListener() {
                 @Override
                 public void onPrepared(final MediaEncoder encoder) {
-                    if (DEBUG) Log.v(TAG, "onPrepared:encoder=" + encoder);
+                    Log.d(TAG, "onPrepared:encoder=" + encoder);
                     if (encoder instanceof MediaVideoEncoder) {
                         mCameraView.setVideoEncoder((MediaVideoEncoder) encoder);
                     }
@@ -82,7 +91,7 @@ public class CameraFragment extends Fragment {
 
                 @Override
                 public void onStopped(final MediaEncoder encoder) {
-                    if (DEBUG) Log.v(TAG, "onStopped:encoder=" + encoder);
+                    Log.d(TAG, "onStopped:encoder=" + encoder);
                     if (encoder instanceof MediaVideoEncoder) mCameraView.setVideoEncoder(null);
                 }
             };
@@ -129,6 +138,11 @@ public class CameraFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
+        //noinspection ConstantConditions
+        mediaPath = getArguments().getString(INTENT_FILEPATH);
+        if (mediaPath == null) {
+            mediaPath = FileHandler.getTempFile(getContext()).getPath();
+        }
     }
 
     @Override
@@ -181,13 +195,13 @@ public class CameraFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        if (DEBUG) Log.v(TAG, "onResume:");
+        Log.d(TAG, "onResume:");
         mCameraView.onResume();
     }
 
     @Override
     public void onPause() {
-        if (DEBUG) Log.v(TAG, "onPause:");
+        Log.d(TAG, "onPause:");
         stopRecording();
         mCameraView.onPause();
         super.onPause();
@@ -195,9 +209,27 @@ public class CameraFragment extends Fragment {
 
     private void updateScaleModeText() {
         final int scale_mode = mCameraView.getScaleMode();
-        mScaleModeView.setText(scale_mode == 0 ? "scale to fit"
-                : (scale_mode == 1 ? "keep aspect(viewport)" : (scale_mode == 2 ? "keep aspect(matrix)"
-                : (scale_mode == 3 ? "keep aspect(crop center)" : ""))));
+
+        String scaleText;
+        switch (scale_mode) {
+            case 0:
+                scaleText = "scale to fit";
+                break;
+            case 1:
+                scaleText = "keep aspect(viewport)";
+                break;
+            case 2:
+                scaleText = "keep aspect(matrix)";
+                break;
+            case 3:
+                scaleText = "keep aspect(crop center)";
+                break;
+            default:
+                scaleText = "";
+                break;
+        }
+
+        mScaleModeView.setText(scaleText);
     }
 
     /**
@@ -207,10 +239,11 @@ public class CameraFragment extends Fragment {
      * of encoder is heavy work
      */
     private void startRecording() {
-        if (DEBUG) Log.v(TAG, "startRecording:");
+        Log.d(TAG, "startRecording:");
+
         try {
             mRecordButton.setColorFilter(0xffff0000);  // turn red
-            mMuxer = new MediaMuxerWrapper(".mp4");  // if you record audio only, ".m4a" is also OK.
+            mMuxer = new MediaMuxerWrapper(mediaPath);  // if you record audio only, ".m4a" is also OK.
 
             // for video capturing
             new MediaVideoEncoder(mMuxer, mMediaEncoderListener, mCameraView.getVideoWidth(),
@@ -231,8 +264,10 @@ public class CameraFragment extends Fragment {
      * request stop recording
      */
     private void stopRecording() {
-        if (DEBUG) Log.v(TAG, "stopRecording:mMuxer=" + mMuxer);
+        Log.d(TAG, "stopRecording:mMuxer=" + mMuxer);
+
         mRecordButton.setColorFilter(0);  // return to default color
+
         if (mMuxer != null) {
             mMuxer.stopRecording();
             mMuxer = null;

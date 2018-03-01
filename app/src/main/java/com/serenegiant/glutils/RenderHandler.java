@@ -29,12 +29,14 @@ import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 
+import com.serenegiant.mediaaudiotest.BuildConfig;
+
 /**
  * Helper class to draw texture to whole view on private thread
  */
 @SuppressWarnings("WeakerAccess")
 public final class RenderHandler implements Runnable {
-    private static final boolean DEBUG = false;  // TODO set false on release
+
     private static final String TAG = "RenderHandler";
 
     private final Object mSync = new Object();
@@ -59,7 +61,8 @@ public final class RenderHandler implements Runnable {
     }
 
     public static RenderHandler createHandler(final String name, GLDrawer2D drawer) {
-        if (DEBUG) Log.v(TAG, "createHandler:");
+        Log.d(TAG, "createHandler:");
+
         final RenderHandler handler = new RenderHandler(drawer);
         synchronized (handler.mSync) {
             new Thread(handler, !TextUtils.isEmpty(name) ? name : TAG).start();
@@ -73,11 +76,13 @@ public final class RenderHandler implements Runnable {
 
     public final void setEglContext(final EGLContext shared_context, final int tex_id,
                                     final Object surface, final boolean isRecordable) {
-        if (DEBUG) Log.i(TAG, "setEglContext:");
+        Log.d(TAG, "setEglContext:");
+
         if (!(surface instanceof Surface) && !(surface instanceof SurfaceTexture)
                 && !(surface instanceof SurfaceHolder)) {
             throw new RuntimeException("unsupported window type:" + surface);
         }
+
         synchronized (mSync) {
             if (mRequestRelease) return;
             mShard_context = shared_context;
@@ -126,7 +131,8 @@ public final class RenderHandler implements Runnable {
     }
 
     public final void release() {
-        if (DEBUG) Log.i(TAG, "release:");
+        Log.d(TAG, "release:");
+
         synchronized (mSync) {
             if (mRequestRelease) return;
             mRequestRelease = true;
@@ -140,26 +146,33 @@ public final class RenderHandler implements Runnable {
 
     @Override
     public final void run() {
-        if (DEBUG) Log.i(TAG, "RenderHandler thread started:");
+        Log.d(TAG, "RenderHandler thread started:");
+
         synchronized (mSync) {
             mRequestSetEglContext = mRequestRelease = false;
             mRequestDraw = 0;
             mSync.notifyAll();
         }
+
         boolean localRequestDraw;
         for (; ; ) {
             synchronized (mSync) {
                 if (mRequestRelease) break;
+
                 if (mRequestSetEglContext) {
                     mRequestSetEglContext = false;
                     internalPrepare();
                 }
+
                 localRequestDraw = mRequestDraw > 0;
+
                 if (localRequestDraw) {
                     mRequestDraw--;
                     //					mSync.notifyAll();
                 }
             }
+
+
             if (localRequestDraw) {
                 if ((mEgl != null) && mTexId >= 0) {
                     mInputSurface.makeCurrent();
@@ -176,16 +189,18 @@ public final class RenderHandler implements Runnable {
                 }
             }
         }
+
         synchronized (mSync) {
             mRequestRelease = true;
             internalRelease();
             mSync.notifyAll();
         }
-        if (DEBUG) Log.i(TAG, "RenderHandler thread finished:");
+
+        Log.d(TAG, "RenderHandler thread finished:");
     }
 
     private void internalPrepare() {
-        if (DEBUG) Log.i(TAG, "internalPrepare:");
+        Log.d(TAG, "internalPrepare:");
         internalRelease();
         mEgl = new EGLBase(mShard_context, false, mIsRecordable);
 
@@ -198,14 +213,17 @@ public final class RenderHandler implements Runnable {
     }
 
     private void internalRelease() {
-        if (DEBUG) Log.i(TAG, "internalRelease:");
+        Log.d(TAG, "internalRelease:");
+
         if (mInputSurface != null) {
             mInputSurface.release();
             mInputSurface = null;
         }
+
         if (mDrawer != null) {
             mDrawer.release(mProgramId);
         }
+
         if (mEgl != null) {
             mEgl.release();
             mEgl = null;

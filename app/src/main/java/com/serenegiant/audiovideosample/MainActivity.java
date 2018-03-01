@@ -23,28 +23,59 @@ package com.serenegiant.audiovideosample;
 */
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 
 import com.serenegiant.mediaaudiotest.R;
+import com.serenegiant.permission.PermissionCallBack;
+import com.serenegiant.permission.PermissionManager;
+import com.serenegiant.permission.PermissionRequest;
 
-public class MainActivity extends FragmentActivity {
+public class MainActivity extends FragmentActivity implements PermissionCallBack {
+
+    private Handler uiThreadHandler;
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        uiThreadHandler = new Handler();
 
-        if (savedInstanceState == null) {
+        PermissionManager.videoPermission(this, this);
+    }
+
+    private void launchCameraFragment() {
+        FragmentManager manager = getSupportFragmentManager();
+
+        if (manager.getBackStackEntryCount() == 0) {
             CameraFragment fragment = CameraFragment.newInstance();
-
-            FragmentManager manager = getSupportFragmentManager();
             FragmentTransaction transaction = manager.beginTransaction();
             transaction.replace(R.id.container, fragment, fragment.TAG);
             transaction.addToBackStack(fragment.TAG);
             transaction.commit();
-
         }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        PermissionManager.onRequestPermissionResult(requestCode, grantResults, this);
+    }
+
+    @Override
+    public void onAccessPermission(boolean permissionGranted, int permission) {
+        if (!permissionGranted || permission != PermissionRequest.REQUEST_CODE_VIDEO) {
+            return;
+        }
+
+        uiThreadHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                launchCameraFragment();
+            }
+        }, 500L);
     }
 }

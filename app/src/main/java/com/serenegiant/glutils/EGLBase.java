@@ -40,7 +40,6 @@ import com.serenegiant.mediaaudiotest.BuildConfig;
 public class EGLBase {
 
     private static final String TAG = "EGLBase";
-    private static final boolean DEBUG = BuildConfig.DEBUG;
 
     private static final int EGL_RECORDABLE_ANDROID = 0x3142;
 
@@ -55,7 +54,8 @@ public class EGLBase {
         private final int mWidth, mHeight;
 
         EglSurface(final EGLBase egl, final Object surface) {
-            if (DEBUG) Log.v(TAG, "EglSurface:");
+            Log.d(TAG, "EglSurface:");
+
             if (!(surface instanceof SurfaceView) && !(surface instanceof Surface)
                     && !(surface instanceof SurfaceHolder) && !(surface instanceof SurfaceTexture)) {
                 throw new IllegalArgumentException("unsupported surface");
@@ -64,11 +64,12 @@ public class EGLBase {
             mEglSurface = mEgl.createWindowSurface(surface);
             mWidth = mEgl.querySurface(mEglSurface, EGL14.EGL_WIDTH);
             mHeight = mEgl.querySurface(mEglSurface, EGL14.EGL_HEIGHT);
-            if (DEBUG) Log.v(TAG, String.format("EglSurface:size(%d,%d)", mWidth, mHeight));
+            Log.d(TAG, String.format("EglSurface:size(%d,%d)", mWidth, mHeight));
         }
 
         EglSurface(final EGLBase egl, final int width, final int height) {
-            if (DEBUG) Log.v(TAG, "EglSurface:");
+            Log.d(TAG, "EglSurface:");
+
             mEgl = egl;
             mEglSurface = mEgl.createOffscreenSurface(width, height);
             mWidth = width;
@@ -88,7 +89,7 @@ public class EGLBase {
         }
 
         public void release() {
-            if (DEBUG) Log.v(TAG, "EglSurface:release:");
+            Log.d(TAG, "EglSurface:release:");
             mEgl.makeDefault();
             mEgl.destroyWindowSurface(mEglSurface);
             mEglSurface = EGL14.EGL_NO_SURFACE;
@@ -105,30 +106,34 @@ public class EGLBase {
 
     public EGLBase(final EGLContext shared_context, final boolean with_depth_buffer,
                    final boolean isRecordable) {
-        if (DEBUG) Log.v(TAG, "EGLBase:");
+        Log.d(TAG, "EGLBase:");
         init(shared_context, with_depth_buffer, isRecordable);
     }
 
     public void release() {
-        if (DEBUG) Log.v(TAG, "release:");
+        Log.d(TAG, "release:");
+
         if (mEglDisplay != EGL14.EGL_NO_DISPLAY) {
             destroyContext();
             EGL14.eglTerminate(mEglDisplay);
             EGL14.eglReleaseThread();
         }
+
         mEglDisplay = EGL14.EGL_NO_DISPLAY;
         mEglContext = EGL14.EGL_NO_CONTEXT;
     }
 
     public EglSurface createFromSurface(final Object surface) {
-        if (DEBUG) Log.v(TAG, "createFromSurface:");
+        Log.d(TAG, "createFromSurface:");
+
         final EglSurface eglSurface = new EglSurface(this, surface);
         eglSurface.makeCurrent();
         return eglSurface;
     }
 
     public EglSurface createOffscreen(final int width, final int height) {
-        if (DEBUG) Log.v(TAG, "createOffscreen:");
+        Log.d(TAG, "createOffscreen:");
+
         final EglSurface eglSurface = new EglSurface(this, width, height);
         eglSurface.makeCurrent();
         return eglSurface;
@@ -146,7 +151,8 @@ public class EGLBase {
 
     private void init(EGLContext shared_context, final boolean with_depth_buffer,
                       final boolean isRecordable) {
-        if (DEBUG) Log.v(TAG, "init:");
+        Log.d(TAG, "init:");
+
         if (mEglDisplay != EGL14.EGL_NO_DISPLAY) {
             throw new RuntimeException("EGL already set up");
         }
@@ -174,7 +180,7 @@ public class EGLBase {
         // confirm whether the EGL rendering context is successfully created
         final int[] values = new int[1];
         EGL14.eglQueryContext(mEglDisplay, mEglContext, EGL14.EGL_CONTEXT_CLIENT_VERSION, values, 0);
-        if (DEBUG) Log.d(TAG, "EGLContext created, client version " + values[0]);
+        Log.d(TAG, "EGLContext created, client version " + values[0]);
         makeDefault();  // makeCurrent(EGL14.EGL_NO_SURFACE);
     }
 
@@ -184,7 +190,7 @@ public class EGLBase {
     private boolean makeCurrent(final EGLSurface surface) {
         //		if (DEBUG) Log.v(TAG, "makeCurrent:");
         if (mEglDisplay == null) {
-            if (DEBUG) Log.d(TAG, "makeCurrent:eglDisplay not initialized");
+            Log.d(TAG, "makeCurrent:eglDisplay not initialized");
         }
         if (surface == null || surface == EGL14.EGL_NO_SURFACE) {
             final int error = EGL14.eglGetError();
@@ -202,7 +208,8 @@ public class EGLBase {
     }
 
     private void makeDefault() {
-        if (DEBUG) Log.v(TAG, "makeDefault:");
+        Log.d(TAG, "makeDefault:");
+
         if (!EGL14.eglMakeCurrent(mEglDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE,
                 EGL14.EGL_NO_CONTEXT)) {
             Log.w("TAG", "makeDefault" + EGL14.eglGetError());
@@ -213,7 +220,8 @@ public class EGLBase {
         //		if (DEBUG) Log.v(TAG, "swap:");
         if (!EGL14.eglSwapBuffers(mEglDisplay, surface)) {
             final int err = EGL14.eglGetError();
-            if (DEBUG) Log.w(TAG, "swap:err=" + err);
+            Log.d(TAG, "swap:err=" + err);
+
             return err;
         }
         return EGL14.EGL_SUCCESS;
@@ -232,7 +240,7 @@ public class EGLBase {
     }
 
     private void destroyContext() {
-        if (DEBUG) Log.v(TAG, "destroyContext:");
+        Log.d(TAG, "destroyContext:");
 
         if (!EGL14.eglDestroyContext(mEglDisplay, mEglContext)) {
             Log.e("destroyContext", "display:" + mEglDisplay + " context: " + mEglContext);
@@ -249,7 +257,7 @@ public class EGLBase {
     }
 
     private EGLSurface createWindowSurface(final Object nativeWindow) {
-        if (DEBUG) Log.v(TAG, "createWindowSurface:nativeWindow=" + nativeWindow);
+        Log.d(TAG, "createWindowSurface:nativeWindow=" + nativeWindow);
 
         final int[] surfaceAttribs = {
                 EGL14.EGL_NONE
@@ -268,7 +276,8 @@ public class EGLBase {
      * Creates an EGL surface associated with an offscreen buffer.
      */
     private EGLSurface createOffscreenSurface(final int width, final int height) {
-        if (DEBUG) Log.v(TAG, "createOffscreenSurface:");
+        Log.d(TAG, "createOffscreenSurface:");
+
         final int[] surfaceAttribs = {
                 EGL14.EGL_WIDTH, width, EGL14.EGL_HEIGHT, height, EGL14.EGL_NONE
         };
@@ -279,8 +288,6 @@ public class EGLBase {
             if (result == null) {
                 throw new RuntimeException("surface was null");
             }
-        } catch (final IllegalArgumentException e) {
-            Log.e(TAG, "createOffscreenSurface", e);
         } catch (final RuntimeException e) {
             Log.e(TAG, "createOffscreenSurface", e);
         }
@@ -288,15 +295,16 @@ public class EGLBase {
     }
 
     private void destroyWindowSurface(EGLSurface surface) {
-        if (DEBUG) Log.v(TAG, "destroySurface:");
+        Log.d(TAG, "destroySurface:");
 
         if (surface != EGL14.EGL_NO_SURFACE) {
             EGL14.eglMakeCurrent(mEglDisplay, EGL14.EGL_NO_SURFACE, EGL14.EGL_NO_SURFACE,
                     EGL14.EGL_NO_CONTEXT);
             EGL14.eglDestroySurface(mEglDisplay, surface);
         }
+        //noinspection UnusedAssignment
         surface = EGL14.EGL_NO_SURFACE;
-        if (DEBUG) Log.v(TAG, "destroySurface:finished");
+        Log.d(TAG, "destroySurface:finished");
     }
 
     private void checkEglError(final String msg) {
@@ -319,24 +327,33 @@ public class EGLBase {
                 // with_depth_buffer ? 16 : 0,
                 EGL14.EGL_NONE
         };
+
         int offset = 10;
-        if (false) {        // ステンシルバッファ(常時未使用)
+
+        /**
+         * Stencil buffer always unused
+         * if (false) {        // ステンシルバッファ(常時未使用)
             attribList[offset++] = EGL14.EGL_STENCIL_SIZE;
             attribList[offset++] = 8;
-        }
+        }*/
+
         if (with_depth_buffer) {  // デプスバッファ
             attribList[offset++] = EGL14.EGL_DEPTH_SIZE;
             attribList[offset++] = 16;
         }
-        if (isRecordable && (Build.VERSION.SDK_INT >= 18)) {// MediaCodecの入力用Surfaceの場合
+
+        if (isRecordable) {// MediaCodecの入力用Surfaceの場合
             attribList[offset++] = EGL_RECORDABLE_ANDROID;
             attribList[offset++] = 1;
         }
+
         for (int i = attribList.length - 1; i >= offset; i--) {
             attribList[i] = EGL14.EGL_NONE;
         }
+
         final EGLConfig[] configs = new EGLConfig[1];
         final int[] numConfigs = new int[1];
+
         if (!EGL14.eglChooseConfig(mEglDisplay, attribList, 0, configs, 0, configs.length, numConfigs,
                 0)) {
             // XXX it will be better to fallback to RGB565
