@@ -42,6 +42,7 @@
         android:id="@+id/rl_header"
         android:layout_width="0dp"
         android:layout_height="24dp"
+        android:layout_marginTop="8dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
@@ -64,10 +65,7 @@
             android:layout_centerVertical="true"
             android:layout_marginEnd="8dp"
             app:srcCompat="@drawable/camera_front_white" />
-
     </RelativeLayout>
-
-
 
     <RelativeLayout
         android:id="@+id/rl_bottom"

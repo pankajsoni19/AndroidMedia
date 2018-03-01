@@ -23,7 +23,6 @@ package com.serenegiant.audiovideosample;
 */
 
 import android.content.Context;
-import android.content.ContextWrapper;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.opengl.EGL14;
@@ -57,8 +56,8 @@ import javax.microedition.khronos.opengles.GL10;
 
 import static android.hardware.Camera.CameraInfo.CAMERA_FACING_BACK;
 import static android.hardware.Camera.CameraInfo.CAMERA_FACING_FRONT;
+
 import static android.hardware.Camera.Parameters.FLASH_MODE_OFF;
-import static android.hardware.Camera.Parameters.FLASH_MODE_ON;
 import static android.hardware.Camera.Parameters.FLASH_MODE_TORCH;
 
 /**
@@ -85,6 +84,7 @@ public final class CameraGLView extends GLSurfaceView {
 
     private @ScaleType
     int mScaleMode = ScaleType.SCALE_SQUARE;
+    private volatile int cameraId = CAMERA_FACING_BACK;
 
     private GLDrawer2D mDrawer = new GLDrawer2D();
 
@@ -107,6 +107,20 @@ public final class CameraGLView extends GLSurfaceView {
 
         isFlashAvailable = CameraHelper.isFlashAvailable(context);
         isFrontCameraAvailable = CameraHelper.isFrontCameraAvailable(context);
+
+        cameraId = isFrontCameraAvailable ? CAMERA_FACING_FRONT : CAMERA_FACING_BACK;
+    }
+
+    public void onRecordingStart() {
+        if (mCameraHandler != null) {
+            mCameraHandler.onRecordingStart();
+        }
+    }
+
+    public void onRecordingStop() {
+        if (mCameraHandler != null) {
+            mCameraHandler.onRecordingStop();
+        }
     }
 
     public void setFlashImageView(ImageView imageView) {
@@ -542,6 +556,8 @@ public final class CameraGLView extends GLSurfaceView {
         private static final int MSG_UPDATE_FLASH = 4;
         private static final int MSG_TOGGLE_CAMERA = 5;
         private static final int MSG_UPDATE_CAMERA = 6;
+        private static final int MSG_RECORDING_START = 7;
+        private static final int MSG_RECORDING_STOP = 8;
 
         private static final long DELAY_START_PREVIEW = 200; //android min animation duration
 
@@ -571,6 +587,14 @@ public final class CameraGLView extends GLSurfaceView {
         public void updateCameraIcon() {
             sendEmptyMessage(MSG_UPDATE_CAMERA);
         }
+
+        public void onRecordingStart() {
+            sendEmptyMessage(MSG_RECORDING_START);
+        }
+
+        public void onRecordingStop() {
+            sendEmptyMessage(MSG_RECORDING_STOP);
+        }
         /**
          * request to stop camera preview
          *
@@ -597,6 +621,7 @@ public final class CameraGLView extends GLSurfaceView {
             switch (msg.what) {
                 case MSG_PREVIEW_START:
                     mThread.startPreview(msg.arg1, msg.arg2);
+                    mThread.updateCameraIcon();
                     break;
                 case MSG_PREVIEW_STOP:
                     mThread.stopPreview();
@@ -619,6 +644,12 @@ public final class CameraGLView extends GLSurfaceView {
                 case MSG_UPDATE_CAMERA:
                     mThread.updateCameraIcon();
                     break;
+                case MSG_RECORDING_START:
+                    mThread.onRecordingStart();
+                    break;
+                case MSG_RECORDING_STOP:
+                    mThread.onRecordingStop();
+                    break;
                 default:
                     throw new RuntimeException("unknown message:what=" + msg.what);
             }
@@ -633,14 +664,13 @@ public final class CameraGLView extends GLSurfaceView {
         private final WeakReference<CameraGLView> mWeakParent;
         private CameraHandler mHandler;
         private volatile boolean mIsRunning = false;
-        private volatile @FlashMode int mFlashMode = FlashMode.UNAVAILABLE;
-        private int cameraId;
+        private volatile @FlashMode
+        int mFlashMode = FlashMode.UNAVAILABLE;
         private Camera mCamera;
 
         public CameraThread(final CameraGLView parent) {
             super("Camera thread");
             mWeakParent = new WeakReference<>(parent);
-            cameraId = parent.isFrontCameraAvailable ? CAMERA_FACING_FRONT : CAMERA_FACING_BACK;
         }
 
         public CameraHandler getHandler() {
@@ -679,7 +709,9 @@ public final class CameraGLView extends GLSurfaceView {
 
         private void updateFlashStatus() {
             final CameraGLView parent = mWeakParent.get();
-            if (parent == null || parent.flashImageView == null || mCamera == null) { return; }
+            if (parent == null || parent.flashImageView == null || mCamera == null) {
+                return;
+            }
             Camera.Parameters parameters = mCamera.getParameters();
 
             List<String> flashModes = parameters.getSupportedFlashModes();
@@ -693,38 +725,20 @@ public final class CameraGLView extends GLSurfaceView {
             updateFlashImage(parent);
         }
 
-        private boolean updateCameraIcon() {
-            final CameraGLView parent = mWeakParent.get();
-            if (parent == null || parent.cameraSwitcher == null) { return false; }
-
-            parent.post(() -> {
-                if (parent.cameraSwitcher == null) { return; }
-
-                switch (cameraId) {
-                    case CAMERA_FACING_BACK:
-                        parent.cameraSwitcher.setImageResource(R.drawable.camera_front_white);
-                        break;
-                    case CAMERA_FACING_FRONT:
-                        parent.cameraSwitcher.setImageResource(R.drawable.camera_rear_white);
-                        break;
-                }
-
-                parent.cameraSwitcher.setVisibility(View.VISIBLE);
-            });
-
-            return true;
-        }
-
         private void toggleCamera() {
             final CameraGLView parent = mWeakParent.get();
-            if (parent == null || parent.cameraSwitcher == null) { return; }
+            if (parent == null || parent.cameraSwitcher == null) {
+                return;
+            }
 
-            switch (cameraId) {
+            switch (parent.cameraId) {
                 case CAMERA_FACING_BACK:
-                    cameraId = CAMERA_FACING_FRONT;
+                    parent.cameraId = CAMERA_FACING_FRONT;
                     break;
                 case CAMERA_FACING_FRONT:
-                    cameraId = CAMERA_FACING_BACK;
+                    parent.cameraId = CAMERA_FACING_BACK;
+                    break;
+                default:
                     break;
             }
 
@@ -735,12 +749,16 @@ public final class CameraGLView extends GLSurfaceView {
 
         private void toggleFlash() {
             final CameraGLView parent = mWeakParent.get();
-            if (parent == null || parent.flashImageView == null || mCamera == null) { return; }
+            if (parent == null || parent.flashImageView == null || mCamera == null) {
+                return;
+            }
 
             Camera.Parameters parameters = mCamera.getParameters();
 
             List<String> flashModes = parameters.getSupportedFlashModes();
-            if (flashModes == null || flashModes.isEmpty()) { return; }
+            if (flashModes == null || flashModes.isEmpty()) {
+                return;
+            }
 
             if (mFlashMode == FlashMode.OFF && flashModes.contains(FLASH_MODE_TORCH)) {
                 mFlashMode = FlashMode.TORCH;
@@ -751,9 +769,59 @@ public final class CameraGLView extends GLSurfaceView {
             updateFlashImage(parent);
         }
 
+        private void onRecordingStart() {
+            if (mFlashMode != FlashMode.TORCH || mCamera == null) {
+                return;
+            }
+
+            Camera.Parameters params = mCamera.getParameters();
+            params.setFlashMode(FLASH_MODE_TORCH);
+            mCamera.setParameters(params);
+        }
+
+        private void onRecordingStop() {
+            if (mFlashMode != FlashMode.TORCH || mCamera == null) {
+                return;
+            }
+
+            Camera.Parameters params = mCamera.getParameters();
+            params.setFlashMode(FLASH_MODE_OFF);
+            mCamera.setParameters(params);
+        }
+
+        private boolean updateCameraIcon() {
+            final CameraGLView parent = mWeakParent.get();
+            if (parent == null || parent.cameraSwitcher == null) {
+                return false;
+            }
+
+            parent.post(() -> {
+                if (parent.cameraSwitcher == null) {
+                    return;
+                }
+
+                switch (parent.cameraId) {
+                    case CAMERA_FACING_BACK:
+                        parent.cameraSwitcher.setImageResource(R.drawable.camera_front_white);
+                        break;
+                    case CAMERA_FACING_FRONT:
+                        parent.cameraSwitcher.setImageResource(R.drawable.camera_rear_white);
+                        break;
+                    default:
+                        break;
+                }
+            });
+
+            updateFlashImage(parent);
+
+            return true;
+        }
+
         private void updateFlashImage(final CameraGLView parent) {
             parent.post(() -> {
-                if (parent.flashImageView == null) { return; }
+                if (parent.flashImageView == null) {
+                    return;
+                }
 
                 switch (mFlashMode) {
                     case FlashMode.ON:
@@ -772,6 +840,7 @@ public final class CameraGLView extends GLSurfaceView {
                 }
             });
         }
+
         /**
          * start camera preview
          */
@@ -787,7 +856,7 @@ public final class CameraGLView extends GLSurfaceView {
             // This is a sample project so just use 0 as camera ID.
             // it is better to selecting camera is available
             try {
-                mCamera = Camera.open(cameraId);
+                mCamera = Camera.open(parent.cameraId);
                 final Camera.Parameters params = mCamera.getParameters();
 
                 final List<String> focusModes = params.getSupportedFocusModes();
@@ -839,7 +908,7 @@ public final class CameraGLView extends GLSurfaceView {
 
                 Log.d(TAG, String.format("pictureSize(%d, %d)", pictureSize.width, pictureSize.height));
 
-                final int degrees = CameraHelper.getDisplayOrientation(parent.getContext(), cameraId);
+                final int degrees = CameraHelper.getDisplayOrientation(parent.getContext(), parent.cameraId);
                 mCamera.setDisplayOrientation(degrees);
 
                 // apply rotation setting

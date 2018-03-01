@@ -38,7 +38,7 @@ import com.serenegiant.permission.PermissionRequest;
 
 import static android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN;
 
-public class MainActivity extends FragmentActivity implements PermissionCallBack {
+public class MainActivity extends FragmentActivity implements PermissionCallBack, FragmentManager.OnBackStackChangedListener {
 
     private Handler uiThreadHandler;
 
@@ -67,6 +67,18 @@ public class MainActivity extends FragmentActivity implements PermissionCallBack
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        getSupportFragmentManager().addOnBackStackChangedListener(this);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        getSupportFragmentManager().removeOnBackStackChangedListener(this);
+    }
+
+    @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         PermissionManager.onRequestPermissionResult(requestCode, grantResults, this);
@@ -84,5 +96,12 @@ public class MainActivity extends FragmentActivity implements PermissionCallBack
                 launchCameraFragment();
             }
         }, 500L);
+    }
+
+    @Override
+    public void onBackStackChanged() {
+        if (getSupportFragmentManager().getBackStackEntryCount() == 0) {
+            finish();
+        }
     }
 }

@@ -60,6 +60,8 @@ public class CameraFragment extends Fragment {
 
     public final String TAG = "CameraFragment";
 
+    private static final int SIZE = 480;
+
     private static final String INTENT_FILEPATH = "com.wafer.picker.image.file";
 
     public static CameraFragment newInstance() {
@@ -231,11 +233,8 @@ public class CameraFragment extends Fragment {
             int outputVideoHeight;
 
             if (mCameraView.getScaleMode() == ScaleType.SCALE_SQUARE) {
-                DisplayMetrics dm = Resources.getSystem().getDisplayMetrics();
-                final int size = Math.min(dm.widthPixels, dm.heightPixels);
-                outputVideoWidth = size;
-                outputVideoHeight = size;
-                Log.d(TAG, "pixels: width" + dm.widthPixels + " height: " + dm.heightPixels);
+                outputVideoWidth = SIZE;
+                outputVideoHeight = SIZE;
             } else {
                 outputVideoWidth = mCameraView.getVideoWidth();
                 outputVideoHeight = mCameraView.getVideoHeight();
@@ -254,7 +253,10 @@ public class CameraFragment extends Fragment {
         } catch (final IOException e) {
             mRecordButton.setColorFilter(0);
             Log.e(TAG, "startCapture:", e);
+            return;
         }
+
+        mCameraView.onRecordingStart();
     }
 
     /**
@@ -264,6 +266,8 @@ public class CameraFragment extends Fragment {
         Log.d(TAG, "stopRecording:mMuxer=" + mMuxer);
 
         mRecordButton.setColorFilter(0);  // return to default color
+
+        mCameraView.onRecordingStop();
 
         if (mMuxer != null) {
             mMuxer.stopRecording();
