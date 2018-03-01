@@ -249,7 +249,8 @@ public class MediaVideoEncoder extends MediaEncoder {
 
     private int calcBitRate() {
         final int bitrate = (int) (BPP * DEFAULT_FRAME_RATE * mWidth * mHeight);
-        Log.d(TAG, String.format("bitrate=%5.2f[Mbps]", bitrate / 1024f / 1024f));
+        final float mbps = bitrate / 1024f / 1024f;
+        Log.d(TAG, "bitrate: " + mbps + " [MBPS] width: " + mWidth + " height: " + mHeight);
         return bitrate;
     }
 

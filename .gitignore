@@ -1,5 +1,6 @@
 # Mac meta file
 .DS_Store
+captures/
 
 # Gradle files
 .gradle

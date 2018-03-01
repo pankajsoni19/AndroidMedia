@@ -153,8 +153,7 @@ public class MediaMuxerWrapper {
     synchronized int addTrack(final MediaFormat format) {
         if (mIsStarted) throw new IllegalStateException("muxer already started");
         final int trackIx = mMediaMuxer.addTrack(format);
-        Log.d(TAG,
-                "addTrack:trackNum=" + mEncoderCount + ",trackIx=" + trackIx + ",format=" + format);
+        Log.d(TAG, "addTrack:trackNum=" + mEncoderCount + ",trackIx=" + trackIx + ",format=" + format);
         return trackIx;
     }
 

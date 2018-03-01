@@ -1,14 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-  <string name="app_name">OpenGL Recorder</string>
-  <string name="action_settings">Settings</string>
+    <string name="app_name">OpenGL Recorder</string>
+    <string name="action_settings">Settings</string>
 
-  <string name="action_posterize">Posterize</string>
-  <string name="action_grayscale">Grayscale</string>
-  <string name="action_art">Art</string>
-  <string name="action_1977">1977</string>
-  <string name="action_bloom">Bloom</string>
-  <string name="action_tone_curve">Tone Curve</string>
+    <string name="action_posterize">Posterize</string>
+    <string name="action_grayscale">Grayscale</string>
+    <string name="action_art">Art</string>
+    <string name="action_1977">1977</string>
+    <string name="action_bloom">Bloom</string>
+
+    <string name="action_tone_cyan">Tone Cyan</string>
+    <string name="action_tone_frozen">Tone Frozen</string>
+    <string name="action_tone_glossy">Tone Glossy</string>
+    <string name="action_tone_sweet">Tone Sweet</string>
+
+    <string name="action_invert">Color Invert</string>
 
 </resources>

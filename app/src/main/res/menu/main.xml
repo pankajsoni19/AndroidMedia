@@ -1,42 +1,44 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:context="com.serenegiant.audiovideosample.MainActivity"
-    >
+    tools:context="com.serenegiant.audiovideosample.MainActivity">
 
-  <item
-      android:id="@+id/action_posterize"
-      android:showAsAction="never"
-      android:title="@string/action_posterize"
-      />
+    <item
+        android:id="@+id/action_posterize"
+        android:title="@string/action_posterize" />
 
-  <item
-      android:id="@+id/action_grayscale"
-      android:showAsAction="never"
-      android:title="@string/action_grayscale"
-      />
+    <item
+        android:id="@+id/action_grayscale"
+        android:title="@string/action_grayscale" />
 
-  <item
-      android:id="@+id/action_1977"
-      android:showAsAction="never"
-      android:title="@string/action_1977"
-      />
+    <item
+        android:id="@+id/action_1977"
+        android:title="@string/action_1977" />
 
-  <item
-      android:id="@+id/action_art"
-      android:showAsAction="never"
-      android:title="@string/action_art"
-      />
+    <item
+        android:id="@+id/action_art"
+        android:title="@string/action_art" />
 
-  <item
-      android:id="@+id/action_bloom"
-      android:showAsAction="never"
-      android:title="@string/action_bloom"
-      />
+    <item
+        android:id="@+id/action_bloom"
+        android:title="@string/action_bloom" />
 
-  <item
-      android:id="@+id/action_tone_curve"
-      android:showAsAction="never"
-      android:title="@string/action_tone_curve"
-      />
+    <item
+        android:id="@+id/action_tone_cyan"
+        android:title="@string/action_tone_cyan" />
+
+    <item
+        android:id="@+id/action_tone_frozen"
+        android:title="@string/action_tone_frozen" />
+
+    <item
+        android:id="@+id/action_tone_glossy"
+        android:title="@string/action_tone_glossy" />
+
+    <item
+        android:id="@+id/action_tone_sweet"
+        android:title="@string/action_tone_sweet" />
+
+    <item android:id="@+id/action_invert"
+        android:title="@string/action_invert"/>
 
 </menu>

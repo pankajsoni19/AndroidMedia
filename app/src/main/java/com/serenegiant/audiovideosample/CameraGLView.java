@@ -23,6 +23,7 @@ package com.serenegiant.audiovideosample;
 */
 
 import android.content.Context;
+import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.opengl.EGL14;
@@ -32,8 +33,10 @@ import android.opengl.Matrix;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.support.v7.app.AppCompatDelegate;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.ScaleGestureDetector;
 import android.view.SurfaceHolder;
 import android.view.View;
 import android.widget.ImageView;
@@ -47,6 +50,7 @@ import com.serenegiant.utils.CameraHelper;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -71,20 +75,19 @@ public final class CameraGLView extends GLSurfaceView {
     public static final int PREFERRED_PREVIEW_WIDTH = 640;
     public static final int PREFERRED_PREVIEW_HEIGHT = 480;
 
-    private final CameraSurfaceRenderer mRenderer;
-    private boolean mHasSurface;
-    private CameraHandler mCameraHandler = null;
-    private int mVideoWidth, mVideoHeight;
-    private int mRotation;
+    protected final CameraSurfaceRenderer mRenderer;
+    protected boolean mHasSurface;
+    protected CameraHandler mCameraHandler = null;
+    protected int mVideoWidth, mVideoHeight;
+    protected int mRotation;
 
-    private boolean isFlashAvailable = false;
-    private boolean isFrontCameraAvailable = false;
+    protected boolean isFlashAvailable = false;
+    protected boolean isFrontCameraAvailable = false;
 
-    private ImageView flashImageView, cameraSwitcher;
+    protected ImageView flashImageView, cameraSwitcher;
 
-    private @ScaleType
-    int mScaleMode = ScaleType.SCALE_SQUARE;
-    private volatile int cameraId = CAMERA_FACING_BACK;
+    protected @ScaleType int mScaleMode = ScaleType.SCALE_SQUARE;
+    protected volatile int cameraId = CAMERA_FACING_BACK;
 
     private GLDrawer2D mDrawer = new GLDrawer2D();
 
@@ -105,6 +108,7 @@ public final class CameraGLView extends GLSurfaceView {
     // and RENDERMODE_WHEN_DIRTY is better to reduce power consumption
 		setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY); */
 
+        AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
         isFlashAvailable = CameraHelper.isFlashAvailable(context);
         isFrontCameraAvailable = CameraHelper.isFrontCameraAvailable(context);
 
@@ -177,6 +181,7 @@ public final class CameraGLView extends GLSurfaceView {
         Log.d(TAG, "onPause:");
         if (mCameraHandler != null) {
             // just request stop previewing
+            mCameraHandler.forceTorchOff();
             mCameraHandler.stopPreview(false);
         }
 
@@ -345,8 +350,8 @@ public final class CameraGLView extends GLSurfaceView {
             // create SurfaceTexture with texture ID.
             mSTexture = new SurfaceTexture(mGLTextureId);
             mSTexture.setOnFrameAvailableListener(this);
-            // clear screen with yellow color so that you can see rendering rectangle
-            GLES20.glClearColor(1.0f, 1.0f, 0.0f, 1.0f);
+            // clear screen bg color so that you can see rendering rectangle
+            GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
             final CameraGLView parent = mWeakParent.get();
 
             if (parent != null) {
@@ -380,20 +385,16 @@ public final class CameraGLView extends GLSurfaceView {
             Log.d(TAG, "onSurfaceDestroyed:");
             GLSurfaceView parent = mWeakParent.get();
             if (parent != null) {
-                parent.queueEvent(new Runnable() {
-                    @Override
-                    public void run() {
-                        cleanUp();
-                    }
-                });
+                parent.queueEvent(this::cleanUp);
             } else {
                 cleanUp();
             }
         }
 
         private void cleanUp() {
-            if (mDrawer != null) {
+            if (mDrawer != null && mProgramId >= 0) {
                 mDrawer.release(mProgramId);
+                mProgramId = -1;
             }
 
             if (mSTexture != null) {
@@ -549,413 +550,7 @@ public final class CameraGLView extends GLSurfaceView {
     /**
      * Handler class for asynchronous camera operation
      */
-    private static final class CameraHandler extends Handler {
-        private static final int MSG_PREVIEW_START = 1;
-        private static final int MSG_PREVIEW_STOP = 2;
-        private static final int MSG_TOGGLE_FLASH = 3;
-        private static final int MSG_UPDATE_FLASH = 4;
-        private static final int MSG_TOGGLE_CAMERA = 5;
-        private static final int MSG_UPDATE_CAMERA = 6;
-        private static final int MSG_RECORDING_START = 7;
-        private static final int MSG_RECORDING_STOP = 8;
 
-        private static final long DELAY_START_PREVIEW = 200; //android min animation duration
 
-        private CameraThread mThread;
 
-        public CameraHandler(final CameraThread thread) {
-            mThread = thread;
-        }
-
-        public void startPreview(final int width, final int height) {
-            removeMessages(MSG_PREVIEW_START);
-            sendMessageDelayed(obtainMessage(MSG_PREVIEW_START, width, height), DELAY_START_PREVIEW);
-        }
-
-        public void toggleFlash() {
-            sendEmptyMessage(MSG_TOGGLE_FLASH);
-        }
-
-        public void updateFlashStatus() {
-            sendEmptyMessage(MSG_UPDATE_FLASH);
-        }
-
-        public void toggleCamera() {
-            sendEmptyMessage(MSG_TOGGLE_CAMERA);
-        }
-
-        public void updateCameraIcon() {
-            sendEmptyMessage(MSG_UPDATE_CAMERA);
-        }
-
-        public void onRecordingStart() {
-            sendEmptyMessage(MSG_RECORDING_START);
-        }
-
-        public void onRecordingStop() {
-            sendEmptyMessage(MSG_RECORDING_STOP);
-        }
-        /**
-         * request to stop camera preview
-         *
-         * @param needWait need to wait for stopping camera preview
-         */
-        public void stopPreview(final boolean needWait) {
-            synchronized (this) {
-                sendEmptyMessage(MSG_PREVIEW_STOP);
-                if (needWait && mThread.mIsRunning) {
-                    try {
-                        Log.d(TAG, "wait for terminating of camera thread");
-                        wait();
-                    } catch (final InterruptedException ignore) {
-                    }
-                }
-            }
-        }
-
-        /**
-         * message handler for camera thread
-         */
-        @Override
-        public void handleMessage(final Message msg) {
-            switch (msg.what) {
-                case MSG_PREVIEW_START:
-                    mThread.startPreview(msg.arg1, msg.arg2);
-                    mThread.updateCameraIcon();
-                    break;
-                case MSG_PREVIEW_STOP:
-                    mThread.stopPreview();
-                    synchronized (this) {
-                        notifyAll();
-                    }
-                    Looper looper = Looper.myLooper();
-                    if (looper != null) looper.quit();
-                    mThread = null;
-                    break;
-                case MSG_TOGGLE_FLASH:
-                    mThread.toggleFlash();
-                    break;
-                case MSG_UPDATE_FLASH:
-                    mThread.updateFlashStatus();
-                    break;
-                case MSG_TOGGLE_CAMERA:
-                    mThread.toggleCamera();
-                    break;
-                case MSG_UPDATE_CAMERA:
-                    mThread.updateCameraIcon();
-                    break;
-                case MSG_RECORDING_START:
-                    mThread.onRecordingStart();
-                    break;
-                case MSG_RECORDING_STOP:
-                    mThread.onRecordingStop();
-                    break;
-                default:
-                    throw new RuntimeException("unknown message:what=" + msg.what);
-            }
-        }
-    }
-
-    /**
-     * Thread for asynchronous operation of camera preview
-     */
-    private static final class CameraThread extends Thread {
-        private final Object mReadyFence = new Object();
-        private final WeakReference<CameraGLView> mWeakParent;
-        private CameraHandler mHandler;
-        private volatile boolean mIsRunning = false;
-        private volatile @FlashMode
-        int mFlashMode = FlashMode.UNAVAILABLE;
-        private Camera mCamera;
-
-        public CameraThread(final CameraGLView parent) {
-            super("Camera thread");
-            mWeakParent = new WeakReference<>(parent);
-        }
-
-        public CameraHandler getHandler() {
-            synchronized (mReadyFence) {
-                try {
-                    mReadyFence.wait();
-                } catch (final InterruptedException ignore) {
-                }
-            }
-            return mHandler;
-        }
-
-        /**
-         * message loop
-         * prepare Looper and create Handler for this thread
-         */
-        @Override
-        public void run() {
-            Log.d(TAG, "Camera thread start");
-
-            Looper.prepare();
-            synchronized (mReadyFence) {
-                mHandler = new CameraHandler(this);
-                mIsRunning = true;
-                mReadyFence.notify();
-            }
-            Looper.loop();
-
-            Log.d(TAG, "Camera thread finish");
-
-            synchronized (mReadyFence) {
-                mHandler = null;
-                mIsRunning = false;
-            }
-        }
-
-        private void updateFlashStatus() {
-            final CameraGLView parent = mWeakParent.get();
-            if (parent == null || parent.flashImageView == null || mCamera == null) {
-                return;
-            }
-            Camera.Parameters parameters = mCamera.getParameters();
-
-            List<String> flashModes = parameters.getSupportedFlashModes();
-
-            if (flashModes == null || flashModes.isEmpty() || !flashModes.contains(FLASH_MODE_TORCH)) {
-                mFlashMode = FlashMode.UNAVAILABLE;
-            } else if (mFlashMode == FlashMode.UNAVAILABLE) {
-                mFlashMode = FlashMode.OFF;
-            }
-
-            updateFlashImage(parent);
-        }
-
-        private void toggleCamera() {
-            final CameraGLView parent = mWeakParent.get();
-            if (parent == null || parent.cameraSwitcher == null) {
-                return;
-            }
-
-            switch (parent.cameraId) {
-                case CAMERA_FACING_BACK:
-                    parent.cameraId = CAMERA_FACING_FRONT;
-                    break;
-                case CAMERA_FACING_FRONT:
-                    parent.cameraId = CAMERA_FACING_BACK;
-                    break;
-                default:
-                    break;
-            }
-
-            if (updateCameraIcon()) {
-                parent.post(parent::restartPreview);
-            }
-        }
-
-        private void toggleFlash() {
-            final CameraGLView parent = mWeakParent.get();
-            if (parent == null || parent.flashImageView == null || mCamera == null) {
-                return;
-            }
-
-            Camera.Parameters parameters = mCamera.getParameters();
-
-            List<String> flashModes = parameters.getSupportedFlashModes();
-            if (flashModes == null || flashModes.isEmpty()) {
-                return;
-            }
-
-            if (mFlashMode == FlashMode.OFF && flashModes.contains(FLASH_MODE_TORCH)) {
-                mFlashMode = FlashMode.TORCH;
-            } else if (mFlashMode == FlashMode.TORCH) {
-                mFlashMode = FlashMode.OFF;
-            }
-
-            updateFlashImage(parent);
-        }
-
-        private void onRecordingStart() {
-            if (mFlashMode != FlashMode.TORCH || mCamera == null) {
-                return;
-            }
-
-            Camera.Parameters params = mCamera.getParameters();
-            params.setFlashMode(FLASH_MODE_TORCH);
-            mCamera.setParameters(params);
-        }
-
-        private void onRecordingStop() {
-            if (mFlashMode != FlashMode.TORCH || mCamera == null) {
-                return;
-            }
-
-            Camera.Parameters params = mCamera.getParameters();
-            params.setFlashMode(FLASH_MODE_OFF);
-            mCamera.setParameters(params);
-        }
-
-        private boolean updateCameraIcon() {
-            final CameraGLView parent = mWeakParent.get();
-            if (parent == null || parent.cameraSwitcher == null) {
-                return false;
-            }
-
-            parent.post(() -> {
-                if (parent.cameraSwitcher == null) {
-                    return;
-                }
-
-                switch (parent.cameraId) {
-                    case CAMERA_FACING_BACK:
-                        parent.cameraSwitcher.setImageResource(R.drawable.camera_front_white);
-                        break;
-                    case CAMERA_FACING_FRONT:
-                        parent.cameraSwitcher.setImageResource(R.drawable.camera_rear_white);
-                        break;
-                    default:
-                        break;
-                }
-            });
-
-            updateFlashImage(parent);
-
-            return true;
-        }
-
-        private void updateFlashImage(final CameraGLView parent) {
-            parent.post(() -> {
-                if (parent.flashImageView == null) {
-                    return;
-                }
-
-                switch (mFlashMode) {
-                    case FlashMode.ON:
-                    case FlashMode.AUTO:
-                    case FlashMode.TORCH:
-                        parent.flashImageView.setImageResource(R.drawable.flash_on_white);
-                        parent.flashImageView.setVisibility(View.VISIBLE);
-                        break;
-                    case FlashMode.OFF:
-                        parent.flashImageView.setImageResource(R.drawable.flash_off_white);
-                        parent.flashImageView.setVisibility(View.VISIBLE);
-                        break;
-                    case FlashMode.UNAVAILABLE:
-                        parent.flashImageView.setVisibility(View.INVISIBLE);
-                        break;
-                }
-            });
-        }
-
-        /**
-         * start camera preview
-         */
-        private void startPreview(final int reqWidth, final int reqHeight) {
-            Log.d(TAG, "startPreview:");
-
-            final CameraGLView parent = mWeakParent.get();
-
-            if ((parent == null) || (mCamera != null)) {
-                return;
-            }
-
-            // This is a sample project so just use 0 as camera ID.
-            // it is better to selecting camera is available
-            try {
-                mCamera = Camera.open(parent.cameraId);
-                final Camera.Parameters params = mCamera.getParameters();
-
-                final List<String> focusModes = params.getSupportedFocusModes();
-
-                if (focusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
-                    params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
-                } else if (focusModes.contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
-                    params.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
-                }
-
-                // let's try fastest frame rate. You will get near 60fps, but your device become hot.
-                final List<int[]> supportedFpsRange = params.getSupportedPreviewFpsRange();
-
-                if (supportedFpsRange != null) {
-                    //TODO: get 30fps rate
-                    final int n = supportedFpsRange.size();
-
-                    for (int i = 0; i < n; i++) {
-                        int range[] = supportedFpsRange.get(i);
-                        Log.d(TAG, String.format("supportedFpsRange(%d)=(%d,%d)", i, range[0], range[1]));
-                    }
-
-                    final int[] max_fps = supportedFpsRange.get(supportedFpsRange.size() - 1);
-                    Log.d(TAG, String.format("fps:%d-%d", max_fps[0], max_fps[1]));
-                    params.setPreviewFpsRange(max_fps[0], max_fps[1]);
-                }
-
-                params.setRecordingHint(true);
-                final int width = Math.min(reqWidth, PREFERRED_PREVIEW_WIDTH);
-                final int height = Math.min(reqHeight, PREFERRED_PREVIEW_HEIGHT);
-
-                // request preview size
-                // this is a sample project and just use fixed value
-                // if you want to use other size, you also need to change the recording size.
-                Log.d(TAG, "requested: width: " + reqWidth + " height: " + reqHeight
-                        + " selected: width: " + width + " height: " + height);
-
-                final Camera.Size closestSize = CameraHelper.getOptimalSize(
-                        params.getSupportedPreviewSizes(), width, height);
-
-                params.setPreviewSize(closestSize.width, closestSize.height);
-
-                Log.d(TAG, String.format("closestSize(%d, %d)", closestSize.width, closestSize.height));
-
-                final Camera.Size pictureSize = CameraHelper.getOptimalSize(
-                        params.getSupportedPictureSizes(), width, height);
-
-                params.setPictureSize(pictureSize.width, pictureSize.height);
-
-                Log.d(TAG, String.format("pictureSize(%d, %d)", pictureSize.width, pictureSize.height));
-
-                final int degrees = CameraHelper.getDisplayOrientation(parent.getContext(), parent.cameraId);
-                mCamera.setDisplayOrientation(degrees);
-
-                // apply rotation setting
-                parent.mRotation = degrees;
-
-                mCamera.setParameters(params);
-
-                final Camera.Size previewSize = mCamera.getParameters().getPreviewSize();
-                Log.d(TAG, String.format("previewSize(%d, %d)", previewSize.width, previewSize.height));
-
-                // adjust view size with keeping the aspect ration of camera preview.
-                // here is not a UI thread and we should request parent view to execute.
-                parent.post(() -> parent.setVideoSize(previewSize.width, previewSize.height));
-
-                final SurfaceTexture st = parent.getSurfaceTexture();
-                //noinspection ConstantConditions
-                st.setDefaultBufferSize(previewSize.width, previewSize.height);
-                mCamera.setPreviewTexture(st);
-            } catch (final IOException | RuntimeException e) {
-                Log.e(TAG, "startPreview:", e);
-                if (mCamera != null) {
-                    mCamera.release();
-                    mCamera = null;
-                }
-            }
-
-            if (mCamera != null) {
-                // start camera preview display
-                mCamera.startPreview();
-            }
-        }
-
-        /**
-         * stop camera preview
-         */
-        private void stopPreview() {
-            Log.d(TAG, "stopPreview:");
-
-            if (mCamera != null) {
-                mCamera.stopPreview();
-                mCamera.release();
-                mCamera = null;
-            }
-
-            final CameraGLView parent = mWeakParent.get();
-            if (parent == null) return;
-            parent.mCameraHandler = null;
-        }
-    }
 }

@@ -71,6 +71,7 @@
         android:id="@+id/rl_bottom"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:padding="8dp"
         android:background="@android:color/black"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -83,11 +84,8 @@
             android:layout_height="48dp"
             android:layout_alignParentBottom="true"
             android:layout_centerHorizontal="true"
-            android:layout_marginBottom="8dp"
             android:src="@android:drawable/ic_menu_camera"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent" />
+            android:padding="0dp"/>
     </RelativeLayout>
 
 </android.support.constraint.ConstraintLayout>

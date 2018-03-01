@@ -22,12 +22,10 @@ package com.serenegiant.audiovideosample;
  * All files in the folder are under this Apache License, Version 2.0.
 */
 
-import android.content.res.Resources;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -38,7 +36,6 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.TextView;
 
 import com.serenegiant.encoder.MediaAudioEncoder;
 import com.serenegiant.encoder.MediaEncoder;
@@ -49,6 +46,7 @@ import com.serenegiant.fileio.FileHandler;
 import com.serenegiant.glutils.GL1977Filter;
 import com.serenegiant.glutils.GLArtFilter;
 import com.serenegiant.glutils.GLBloomFilter;
+import com.serenegiant.glutils.GLColorInvertFilter;
 import com.serenegiant.glutils.GLGrayscaleFilter;
 import com.serenegiant.glutils.GLPosterizeFilter;
 import com.serenegiant.glutils.GLToneCurveFilter;
@@ -190,9 +188,27 @@ public class CameraFragment extends Fragment {
             case R.id.action_bloom:
                 mCameraView.setDrawer(new GLBloomFilter());
                 break;
-            case R.id.action_tone_curve:
+            case R.id.action_invert:
+                mCameraView.setDrawer(new GLColorInvertFilter());
+                break;
+            case R.id.action_tone_cyan:
                 GLToneCurveFilter toneCurveFilter = new GLToneCurveFilter();
+                toneCurveFilter.setFromCurveFileInputStream(getResources().openRawResource(R.raw.cyan));
+                mCameraView.setDrawer(toneCurveFilter);
+                break;
+            case R.id.action_tone_frozen:
+                toneCurveFilter = new GLToneCurveFilter();
                 toneCurveFilter.setFromCurveFileInputStream(getResources().openRawResource(R.raw.frozen));
+                mCameraView.setDrawer(toneCurveFilter);
+                break;
+            case R.id.action_tone_glossy:
+                toneCurveFilter = new GLToneCurveFilter();
+                toneCurveFilter.setFromCurveFileInputStream(getResources().openRawResource(R.raw.glossy));
+                mCameraView.setDrawer(toneCurveFilter);
+                break;
+            case R.id.action_tone_sweet:
+                toneCurveFilter = new GLToneCurveFilter();
+                toneCurveFilter.setFromCurveFileInputStream(getResources().openRawResource(R.raw.sweet));
                 mCameraView.setDrawer(toneCurveFilter);
                 break;
         }

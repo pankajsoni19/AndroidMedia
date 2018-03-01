@@ -112,8 +112,10 @@ public class MediaAudioEncoder extends MediaEncoder {
     }
 
     private static final int[] AUDIO_SOURCES = new int[]{
-            MediaRecorder.AudioSource.MIC, MediaRecorder.AudioSource.DEFAULT,
-            MediaRecorder.AudioSource.CAMCORDER, MediaRecorder.AudioSource.VOICE_COMMUNICATION,
+            MediaRecorder.AudioSource.CAMCORDER,
+            MediaRecorder.AudioSource.MIC,
+            MediaRecorder.AudioSource.DEFAULT,
+            MediaRecorder.AudioSource.VOICE_COMMUNICATION,
             MediaRecorder.AudioSource.VOICE_RECOGNITION,
     };
 
