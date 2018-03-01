@@ -37,6 +37,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.serenegiant.encoder.MediaAudioEncoder;
@@ -78,7 +79,9 @@ public class CameraFragment extends Fragment {
      * for camera preview display
      */
     private CameraGLView mCameraView;
+    private ImageView mFlashView;
     private String mediaPath;
+
     /**
      * callback methods from encoder
      */
@@ -98,10 +101,7 @@ public class CameraFragment extends Fragment {
                     if (encoder instanceof MediaVideoEncoder) mCameraView.setVideoEncoder(null);
                 }
             };
-    /**
-     * for scale mode display
-     */
-    private TextView mScaleModeView;
+
     /**
      * button for start/stop recording
      */
@@ -117,10 +117,8 @@ public class CameraFragment extends Fragment {
         @Override
         public void onClick(final View view) {
             switch (view.getId()) {
-                case R.id.cameraView:
-                    final int scale_mode = (mCameraView.getScaleMode() + 1) % 5;
-                    mCameraView.setScaleMode(scale_mode);
-                    updateScaleModeText();
+                case R.id.iv_flash:
+                    mCameraView.toggleFlash();
                     break;
                 case R.id.record_button:
                     if (mMuxer == null) {
@@ -132,10 +130,6 @@ public class CameraFragment extends Fragment {
             }
         }
     };
-
-    public CameraFragment() {
-        // need default constructor
-    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -153,12 +147,13 @@ public class CameraFragment extends Fragment {
                              final Bundle savedInstanceState) {
         final View rootView = inflater.inflate(R.layout.fragment_main, container, false);
         mCameraView = rootView.findViewById(R.id.cameraView);
+        mFlashView = rootView.findViewById(R.id.iv_flash);
+
         mCameraView.setVideoSize();
         mCameraView.setOnClickListener(mOnClickListener);
-        mScaleModeView = rootView.findViewById(R.id.scalemode_textview);
-        updateScaleModeText();
         mRecordButton = rootView.findViewById(R.id.record_button);
         mRecordButton.setOnClickListener(mOnClickListener);
+        mFlashView.setOnClickListener(mOnClickListener);
         return rootView;
     }
 
@@ -200,6 +195,7 @@ public class CameraFragment extends Fragment {
         super.onResume();
         Log.d(TAG, "onResume:");
         mCameraView.onResume();
+        mCameraView.setFlashImageView(mFlashView);
     }
 
     @Override
@@ -208,34 +204,6 @@ public class CameraFragment extends Fragment {
         stopRecording();
         mCameraView.onPause();
         super.onPause();
-    }
-
-    private void updateScaleModeText() {
-        final @ScaleType int scale_mode = mCameraView.getScaleMode();
-
-        String scaleText;
-        switch (scale_mode) {
-            case ScaleType.SCALE_STRETCH_FIT:
-                scaleText = "scale to fit";
-                break;
-            case ScaleType.SCALE_KEEP_ASPECT_VIEWPORT:
-                scaleText = "keep aspect(viewport)";
-                break;
-            case ScaleType.SCALE_KEEP_ASPECT:
-                scaleText = "keep aspect(matrix)";
-                break;
-            case ScaleType.SCALE_CROP_CENTER:
-                scaleText = "keep aspect(crop center)";
-                break;
-            case ScaleType.SCALE_SQUARE:
-                scaleText = "square mode";
-                break;
-            default:
-                scaleText = "";
-                break;
-        }
-
-        mScaleModeView.setText(scaleText);
     }
 
     /**

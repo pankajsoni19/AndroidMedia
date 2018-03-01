@@ -23,6 +23,7 @@ package com.serenegiant.audiovideosample;
 */
 
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.opengl.EGL14;
@@ -34,15 +35,15 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.Display;
-import android.view.Surface;
 import android.view.SurfaceHolder;
-import android.view.WindowManager;
+import android.view.View;
+import android.widget.ImageView;
 
 import com.serenegiant.encoder.MediaVideoEncoder;
+import com.serenegiant.enums.FlashMode;
 import com.serenegiant.enums.ScaleType;
 import com.serenegiant.glutils.GLDrawer2D;
-import com.serenegiant.mediaaudiotest.BuildConfig;
+import com.serenegiant.mediaaudiotest.R;
 import com.serenegiant.utils.CameraHelper;
 
 import java.io.IOException;
@@ -53,6 +54,10 @@ import java.util.Queue;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
+
+import static android.hardware.Camera.Parameters.FLASH_MODE_OFF;
+import static android.hardware.Camera.Parameters.FLASH_MODE_ON;
+import static android.hardware.Camera.Parameters.FLASH_MODE_TORCH;
 
 /**
  * Sub class of GLSurfaceView to display camera preview and write video frame to capturing surface
@@ -72,6 +77,8 @@ public final class CameraGLView extends GLSurfaceView {
     private CameraHandler mCameraHandler = null;
     private int mVideoWidth, mVideoHeight;
     private int mRotation;
+
+    private ImageView flashImageView;
 
     private @ScaleType
     int mScaleMode = ScaleType.SCALE_SQUARE;
@@ -94,6 +101,21 @@ public final class CameraGLView extends GLSurfaceView {
 /*		// the frequency of refreshing of camera preview is at most 15 fps
     // and RENDERMODE_WHEN_DIRTY is better to reduce power consumption
 		setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY); */
+    }
+
+    public void setFlashImageView(ImageView imageView) {
+        flashImageView = imageView;
+        if (mCameraHandler != null) {
+            mCameraHandler.updateFlashStatus();
+        } else {
+            flashImageView.setVisibility(View.INVISIBLE);
+        }
+    }
+
+    public void toggleFlash() {
+        if (mCameraHandler != null) {
+            mCameraHandler.toggleFlash();
+        }
     }
 
     public GLDrawer2D getDrawer() {
@@ -122,6 +144,7 @@ public final class CameraGLView extends GLSurfaceView {
             // just request stop previewing
             mCameraHandler.stopPreview(false);
         }
+        flashImageView = null;
         super.onPause();
     }
 
@@ -195,7 +218,9 @@ public final class CameraGLView extends GLSurfaceView {
     //********************************************************************************
     //********************************************************************************
     private synchronized void startPreview(final int width, final int height) {
-        if (width == 0 || height == 0) { return; }
+        if (width == 0 || height == 0) {
+            return;
+        }
         if (mCameraHandler == null) {
             final CameraThread thread = new CameraThread(this);
             thread.start();
@@ -352,7 +377,7 @@ public final class CameraGLView extends GLSurfaceView {
             final double view_aspect = view_width / (double) view_height;
 
             Log.i(TAG, String.format("updateViewport view: (%d,%d) view_aspect: %f,video: (%1.0f,%1.0f)",
-                            view_width, view_height, view_aspect, video_width, video_height));
+                    view_width, view_height, view_aspect, video_width, video_height));
 
             switch (parent.mScaleMode) {
                 case ScaleType.SCALE_STRETCH_FIT:
@@ -481,6 +506,9 @@ public final class CameraGLView extends GLSurfaceView {
     private static final class CameraHandler extends Handler {
         private static final int MSG_PREVIEW_START = 1;
         private static final int MSG_PREVIEW_STOP = 2;
+        private static final int MSG_TOGGLE_FLASH = 3;
+        private static final int MSG_UPDATE_FLASH = 4;
+
         private static final long DELAY_START_PREVIEW = 200; //android min animation duration
 
         private CameraThread mThread;
@@ -492,6 +520,14 @@ public final class CameraGLView extends GLSurfaceView {
         public void startPreview(final int width, final int height) {
             removeMessages(MSG_PREVIEW_START);
             sendMessageDelayed(obtainMessage(MSG_PREVIEW_START, width, height), DELAY_START_PREVIEW);
+        }
+
+        public void toggleFlash() {
+            sendEmptyMessage(MSG_TOGGLE_FLASH);
+        }
+
+        public void updateFlashStatus(){
+            sendEmptyMessage(MSG_UPDATE_FLASH);
         }
 
         /**
@@ -530,6 +566,12 @@ public final class CameraGLView extends GLSurfaceView {
                     if (looper != null) looper.quit();
                     mThread = null;
                     break;
+                case MSG_TOGGLE_FLASH:
+                    mThread.toggleFlash();
+                    break;
+                case MSG_UPDATE_FLASH:
+                    mThread.updateFlashStatus();
+                    break;
                 default:
                     throw new RuntimeException("unknown message:what=" + msg.what);
             }
@@ -544,6 +586,7 @@ public final class CameraGLView extends GLSurfaceView {
         private final WeakReference<CameraGLView> mWeakParent;
         private CameraHandler mHandler;
         private volatile boolean mIsRunning = false;
+        private volatile @FlashMode int mFlashMode = FlashMode.UNAVAILABLE;
         private Camera mCamera;
 
         public CameraThread(final CameraGLView parent) {
@@ -585,6 +628,59 @@ public final class CameraGLView extends GLSurfaceView {
             }
         }
 
+        private void updateFlashStatus() {
+            final CameraGLView parent = mWeakParent.get();
+            if (parent == null || parent.flashImageView == null || mCamera == null) { return; }
+            Camera.Parameters parameters = mCamera.getParameters();
+
+            List<String> flashModes = parameters.getSupportedFlashModes();
+
+            if (flashModes == null || flashModes.isEmpty() || !flashModes.contains(FLASH_MODE_TORCH)) {
+                mFlashMode = FlashMode.UNAVAILABLE;
+            } else if (mFlashMode == FlashMode.UNAVAILABLE) {
+                mFlashMode = FlashMode.OFF;
+            }
+
+            updateFlashImage(parent);
+        }
+
+        private void toggleFlash() {
+            final CameraGLView parent = mWeakParent.get();
+            if (parent == null || parent.flashImageView == null || mCamera == null) { return; }
+
+            Camera.Parameters parameters = mCamera.getParameters();
+
+            List<String> flashModes = parameters.getSupportedFlashModes();
+            if (flashModes == null || flashModes.isEmpty()) { return; }
+
+            if (mFlashMode == FlashMode.OFF && flashModes.contains(FLASH_MODE_TORCH)) {
+                mFlashMode = FlashMode.TORCH;
+            } else if (mFlashMode == FlashMode.TORCH) {
+                mFlashMode = FlashMode.OFF;
+            }
+
+            updateFlashImage(parent);
+        }
+
+        private void updateFlashImage(final CameraGLView parent) {
+            parent.post(() -> {
+                switch (mFlashMode) {
+                    case FlashMode.ON:
+                    case FlashMode.AUTO:
+                    case FlashMode.TORCH:
+                        parent.flashImageView.setImageResource(R.drawable.flash_on_white);
+                        parent.flashImageView.setVisibility(View.VISIBLE);
+                        break;
+                    case FlashMode.OFF:
+                        parent.flashImageView.setImageResource(R.drawable.flash_off_white);
+                        parent.flashImageView.setVisibility(View.VISIBLE);
+                        break;
+                    case FlashMode.UNAVAILABLE:
+                        parent.flashImageView.setVisibility(View.INVISIBLE);
+                        break;
+                }
+            });
+        }
         /**
          * start camera preview
          */
@@ -665,12 +761,7 @@ public final class CameraGLView extends GLSurfaceView {
 
                 // adjust view size with keeping the aspect ration of camera preview.
                 // here is not a UI thread and we should request parent view to execute.
-                parent.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        parent.setVideoSize(previewSize.width, previewSize.height);
-                    }
-                });
+                parent.post(() -> parent.setVideoSize(previewSize.width, previewSize.height));
 
                 final SurfaceTexture st = parent.getSurfaceTexture();
                 //noinspection ConstantConditions
