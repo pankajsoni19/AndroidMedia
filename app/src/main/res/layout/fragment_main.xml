@@ -47,56 +47,66 @@
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/camera_front_white" />
 
+    <ImageView
+        android:id="@+id/seperator"
+        android:layout_width="48dp"
+        android:layout_height="8dp"
+        android:layout_margin="8dp"
+        android:src="@drawable/rectangle_white"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/cameraView" />
+
     <com.serenegiant.audiovideosample.CameraGLView
         android:id="@+id/effect_1"
         android:layout_width="64dp"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="@id/record_button"
+        app:layout_constraintBottom_toTopOf="@id/record_button"
         app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintEnd_toStartOf="@id/effect_2"
         app:layout_constraintHorizontal_chainStyle="spread"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/cameraView" />
+        app:layout_constraintTop_toBottomOf="@id/seperator" />
 
     <com.serenegiant.audiovideosample.CameraGLView
         android:id="@+id/effect_2"
         android:layout_width="64dp"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="@id/record_button"
+        app:layout_constraintBottom_toTopOf="@id/record_button"
         app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintEnd_toStartOf="@id/effect_3"
         app:layout_constraintStart_toEndOf="@id/effect_1"
-        app:layout_constraintTop_toBottomOf="@id/cameraView" />
+        app:layout_constraintTop_toBottomOf="@id/seperator" />
 
     <com.serenegiant.audiovideosample.CameraGLView
         android:id="@+id/effect_3"
         android:layout_width="64dp"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="@id/record_button"
+        app:layout_constraintBottom_toTopOf="@id/record_button"
         app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintEnd_toStartOf="@id/effect_4"
         app:layout_constraintStart_toEndOf="@id/effect_2"
-        app:layout_constraintTop_toBottomOf="@id/cameraView" />
+        app:layout_constraintTop_toBottomOf="@id/seperator" />
 
     <com.serenegiant.audiovideosample.CameraGLView
         android:id="@+id/effect_4"
         android:layout_width="64dp"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="@id/record_button"
+        app:layout_constraintBottom_toTopOf="@id/record_button"
         app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintEnd_toStartOf="@id/effect_5"
         app:layout_constraintStart_toEndOf="@id/effect_3"
-        app:layout_constraintTop_toBottomOf="@id/cameraView" />
+        app:layout_constraintTop_toBottomOf="@id/seperator" />
 
     <com.serenegiant.audiovideosample.CameraGLView
         android:id="@+id/effect_5"
         android:layout_width="64dp"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="@id/record_button"
+        app:layout_constraintBottom_toTopOf="@id/record_button"
         app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/effect_4"
-        app:layout_constraintTop_toBottomOf="@id/cameraView" />
+        app:layout_constraintTop_toBottomOf="@id/seperator" />
 
     <ImageView
         android:layout_width="36dp"
