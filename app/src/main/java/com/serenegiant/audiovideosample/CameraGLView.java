@@ -203,11 +203,13 @@ public final class CameraGLView extends GLSurfaceView {
         return mScaleMode;
     }
 
+    public void updateScaleMode() {
+        setScaleMode(mScaleMode);
+    }
+
     public void setScaleMode(final int mode) {
-        if (mScaleMode != mode) {
-            mScaleMode = mode;
-            queueEvent(mRenderer::updateViewport);
-        }
+        mScaleMode = mode;
+        queueEvent(mRenderer::updateViewport);
     }
 
     public void setVideoSize() {
@@ -323,11 +325,15 @@ public final class CameraGLView extends GLSurfaceView {
             runOnDraw(() -> {
                 GLDrawer2D old = mDrawer;
                 mDrawer = drawer;
-                if (old != null) {
+                if (old != null && mProgramId >= 0) {
                     old.release(mProgramId);
                 }
                 mProgramId = mDrawer.init();
                 GLES20.glUseProgram(mProgramId);
+                CameraGLView parent = mWeakParent.get();
+                if (parent != null) {
+                    parent.updateScaleMode();
+                }
             });
         }
 
