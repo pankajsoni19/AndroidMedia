@@ -49,7 +49,6 @@ import com.serenegiant.glutils.GLBloomFilter;
 import com.serenegiant.glutils.GLColorInvertFilter;
 import com.serenegiant.glutils.GLGrayscaleFilter;
 import com.serenegiant.glutils.GLPosterizeFilter;
-import com.serenegiant.glutils.GLToneCurveFilter;
 import com.serenegiant.mediaaudiotest.R;
 
 import java.io.IOException;
@@ -190,26 +189,6 @@ public class CameraFragment extends Fragment {
                 break;
             case R.id.action_invert:
                 mCameraView.setDrawer(new GLColorInvertFilter());
-                break;
-            case R.id.action_tone_cyan:
-                GLToneCurveFilter toneCurveFilter = new GLToneCurveFilter();
-                toneCurveFilter.setFromCurveFileInputStream(getResources().openRawResource(R.raw.cyan));
-                mCameraView.setDrawer(toneCurveFilter);
-                break;
-            case R.id.action_tone_frozen:
-                toneCurveFilter = new GLToneCurveFilter();
-                toneCurveFilter.setFromCurveFileInputStream(getResources().openRawResource(R.raw.frozen));
-                mCameraView.setDrawer(toneCurveFilter);
-                break;
-            case R.id.action_tone_glossy:
-                toneCurveFilter = new GLToneCurveFilter();
-                toneCurveFilter.setFromCurveFileInputStream(getResources().openRawResource(R.raw.glossy));
-                mCameraView.setDrawer(toneCurveFilter);
-                break;
-            case R.id.action_tone_sweet:
-                toneCurveFilter = new GLToneCurveFilter();
-                toneCurveFilter.setFromCurveFileInputStream(getResources().openRawResource(R.raw.sweet));
-                mCameraView.setDrawer(toneCurveFilter);
                 break;
         }
         return super.onOptionsItemSelected(item);

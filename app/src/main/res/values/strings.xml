@@ -10,10 +10,7 @@
     <string name="action_1977">1977</string>
     <string name="action_bloom">Bloom</string>
 
-    <string name="action_tone_cyan">Tone Cyan</string>
-    <string name="action_tone_frozen">Tone Frozen</string>
-    <string name="action_tone_glossy">Tone Glossy</string>
-    <string name="action_tone_sweet">Tone Sweet</string>
+    <string name="action_sepia">Sepia</string>
 
     <string name="action_invert">Color Invert</string>
 

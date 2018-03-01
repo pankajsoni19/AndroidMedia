@@ -22,22 +22,6 @@
         android:id="@+id/action_bloom"
         android:title="@string/action_bloom" />
 
-    <item
-        android:id="@+id/action_tone_cyan"
-        android:title="@string/action_tone_cyan" />
-
-    <item
-        android:id="@+id/action_tone_frozen"
-        android:title="@string/action_tone_frozen" />
-
-    <item
-        android:id="@+id/action_tone_glossy"
-        android:title="@string/action_tone_glossy" />
-
-    <item
-        android:id="@+id/action_tone_sweet"
-        android:title="@string/action_tone_sweet" />
-
     <item android:id="@+id/action_invert"
         android:title="@string/action_invert"/>
 
