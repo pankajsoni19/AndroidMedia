@@ -28,11 +28,14 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.view.Window;
 
 import com.serenegiant.mediaaudiotest.R;
 import com.serenegiant.permission.PermissionCallBack;
 import com.serenegiant.permission.PermissionManager;
 import com.serenegiant.permission.PermissionRequest;
+
+import static android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN;
 
 public class MainActivity extends FragmentActivity implements PermissionCallBack, FragmentManager.OnBackStackChangedListener {
 
@@ -41,8 +44,8 @@ public class MainActivity extends FragmentActivity implements PermissionCallBack
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        //requestWindowFeature(Window.FEATURE_NO_TITLE);
-        //getWindow().setFlags(FLAG_FULLSCREEN, FLAG_FULLSCREEN);
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        getWindow().setFlags(FLAG_FULLSCREEN, FLAG_FULLSCREEN);
 
         setContentView(R.layout.activity_main);
         uiThreadHandler = new Handler();
