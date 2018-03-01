@@ -1,13 +1,15 @@
 apply plugin: 'com.android.application'
 
 android {
-  compileSdkVersion 22
-  buildToolsVersion "22.0.1"
+  compileSdkVersion 27
+    buildToolsVersion '27.0.3'
 
   defaultConfig {
     applicationId "com.serenegiant.mediaaudiotest"
-    minSdkVersion 18
-    targetSdkVersion 22
+    minSdkVersion 19
+    targetSdkVersion 27
+        versionCode 1
+        versionName '1.0.0'
   }
 
   buildTypes {
@@ -16,8 +18,20 @@ android {
       proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
     }
   }
+  
+  compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    
+    productFlavors {
+
+    }
 }
 
 dependencies {
-  compile 'com.android.support:support-v4:22.2.1'
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation 'com.android.support:appcompat-v7:27.1.0'
+//    implementation 'com.android.support:support-v4:27.1.0'
 }
+
