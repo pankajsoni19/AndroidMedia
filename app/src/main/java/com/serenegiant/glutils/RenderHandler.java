@@ -32,181 +32,183 @@ import android.view.SurfaceHolder;
 /**
  * Helper class to draw texture to whole view on private thread
  */
+@SuppressWarnings("WeakerAccess")
 public final class RenderHandler implements Runnable {
-  private static final boolean DEBUG = false;  // TODO set false on release
-  private static final String TAG = "RenderHandler";
+    private static final boolean DEBUG = false;  // TODO set false on release
+    private static final String TAG = "RenderHandler";
 
-  private final Object mSync = new Object();
-  private EGLContext mShard_context;
-  private boolean mIsRecordable;
-  private Object mSurface;
-  private int mTexId = -1;
-  private float[] mTexMatrix;
+    private final Object mSync = new Object();
+    private EGLContext mShard_context;
+    private boolean mIsRecordable;
+    private Object mSurface;
+    private int mTexId = -1;
+    private float[] mTexMatrix;
 
-  private boolean mRequestSetEglContext;
-  private boolean mRequestRelease;
-  private int mRequestDraw;
-  //********************************************************************************
-  //********************************************************************************
-  private EGLBase mEgl;
-  private EGLBase.EglSurface mInputSurface;
-  private GLDrawer2D mDrawer;
-  private int mProgramId;
+    private boolean mRequestSetEglContext;
+    private boolean mRequestRelease;
+    private int mRequestDraw;
+    //********************************************************************************
+    //********************************************************************************
+    private EGLBase mEgl;
+    private EGLBase.EglSurface mInputSurface;
+    private GLDrawer2D mDrawer;
+    private int mProgramId;
 
-  public RenderHandler(GLDrawer2D drawer) {
-    mDrawer = drawer;
-  }
-
-  public static RenderHandler createHandler(final String name, GLDrawer2D drawer) {
-    if (DEBUG) Log.v(TAG, "createHandler:");
-    final RenderHandler handler = new RenderHandler(drawer);
-    synchronized (handler.mSync) {
-      new Thread(handler, !TextUtils.isEmpty(name) ? name : TAG).start();
-      try {
-        handler.mSync.wait();
-      } catch (final InterruptedException ignore) {
-      }
+    public RenderHandler(GLDrawer2D drawer) {
+        mDrawer = drawer;
     }
-    return handler;
-  }
 
-  public final void setEglContext(final EGLContext shared_context, final int tex_id,
-      final Object surface, final boolean isRecordable) {
-    if (DEBUG) Log.i(TAG, "setEglContext:");
-    if (!(surface instanceof Surface) && !(surface instanceof SurfaceTexture)
-        && !(surface instanceof SurfaceHolder)) {
-      throw new RuntimeException("unsupported window type:" + surface);
+    public static RenderHandler createHandler(final String name, GLDrawer2D drawer) {
+        if (DEBUG) Log.v(TAG, "createHandler:");
+        final RenderHandler handler = new RenderHandler(drawer);
+        synchronized (handler.mSync) {
+            new Thread(handler, !TextUtils.isEmpty(name) ? name : TAG).start();
+            try {
+                handler.mSync.wait();
+            } catch (final InterruptedException ignore) {
+            }
+        }
+        return handler;
     }
-    synchronized (mSync) {
-      if (mRequestRelease) return;
-      mShard_context = shared_context;
-      mTexId = tex_id;
-      mSurface = surface;
-      mIsRecordable = isRecordable;
-      mRequestSetEglContext = true;
-      mSync.notifyAll();
-      try {
-        mSync.wait();
-      } catch (final InterruptedException ignore) {
-      }
+
+    public final void setEglContext(final EGLContext shared_context, final int tex_id,
+                                    final Object surface, final boolean isRecordable) {
+        if (DEBUG) Log.i(TAG, "setEglContext:");
+        if (!(surface instanceof Surface) && !(surface instanceof SurfaceTexture)
+                && !(surface instanceof SurfaceHolder)) {
+            throw new RuntimeException("unsupported window type:" + surface);
+        }
+        synchronized (mSync) {
+            if (mRequestRelease) return;
+            mShard_context = shared_context;
+            mTexId = tex_id;
+            mSurface = surface;
+            mIsRecordable = isRecordable;
+            mRequestSetEglContext = true;
+            mSync.notifyAll();
+            try {
+                mSync.wait();
+            } catch (final InterruptedException ignore) {
+            }
+        }
     }
-  }
 
-  public final void draw() {
-    draw(mTexId, mTexMatrix);
-  }
+    public final void draw() {
+        draw(mTexId, mTexMatrix);
+    }
 
-  public final void draw(final int tex_id) {
-    draw(tex_id, mTexMatrix);
-  }
+    public final void draw(final int tex_id) {
+        draw(tex_id, mTexMatrix);
+    }
 
-  public final void draw(final float[] tex_matrix) {
-    draw(mTexId, tex_matrix);
-  }
+    public final void draw(final float[] tex_matrix) {
+        draw(mTexId, tex_matrix);
+    }
 
-  public final void draw(final int tex_id, final float[] tex_matrix) {
-    synchronized (mSync) {
-      if (mRequestRelease) return;
-      mTexId = tex_id;
-      mTexMatrix = tex_matrix;
-      mRequestDraw++;
-      mSync.notifyAll();
+    public final void draw(final int tex_id, final float[] tex_matrix) {
+        synchronized (mSync) {
+            if (mRequestRelease) return;
+            mTexId = tex_id;
+            mTexMatrix = tex_matrix;
+            mRequestDraw++;
+            mSync.notifyAll();
 /*			try {
         mSync.wait();
 			} catch (final InterruptedException e) {
 			} */
-    }
-  }
-
-  public boolean isValid() {
-    synchronized (mSync) {
-      return !(mSurface instanceof Surface) || ((Surface) mSurface).isValid();
-    }
-  }
-
-  public final void release() {
-    if (DEBUG) Log.i(TAG, "release:");
-    synchronized (mSync) {
-      if (mRequestRelease) return;
-      mRequestRelease = true;
-      mSync.notifyAll();
-      try {
-        mSync.wait();
-      } catch (final InterruptedException ignore) {
-      }
-    }
-  }
-
-  @Override public final void run() {
-    if (DEBUG) Log.i(TAG, "RenderHandler thread started:");
-    synchronized (mSync) {
-      mRequestSetEglContext = mRequestRelease = false;
-      mRequestDraw = 0;
-      mSync.notifyAll();
-    }
-    boolean localRequestDraw;
-    for (; ; ) {
-      synchronized (mSync) {
-        if (mRequestRelease) break;
-        if (mRequestSetEglContext) {
-          mRequestSetEglContext = false;
-          internalPrepare();
         }
-        localRequestDraw = mRequestDraw > 0;
-        if (localRequestDraw) {
-          mRequestDraw--;
-          //					mSync.notifyAll();
-        }
-      }
-      if (localRequestDraw) {
-        if ((mEgl != null) && mTexId >= 0) {
-          mInputSurface.makeCurrent();
-          mDrawer.draw(mProgramId, mTexId, mTexMatrix);
-          mInputSurface.swap();
-        }
-      } else {
+    }
+
+    public boolean isValid() {
         synchronized (mSync) {
-          try {
-            mSync.wait();
-          } catch (final InterruptedException e) {
-            break;
-          }
+            return !(mSurface instanceof Surface) || ((Surface) mSurface).isValid();
         }
-      }
     }
-    synchronized (mSync) {
-      mRequestRelease = true;
-      internalRelease();
-      mSync.notifyAll();
-    }
-    if (DEBUG) Log.i(TAG, "RenderHandler thread finished:");
-  }
 
-  private void internalPrepare() {
-    if (DEBUG) Log.i(TAG, "internalPrepare:");
-    internalRelease();
-    mEgl = new EGLBase(mShard_context, false, mIsRecordable);
-
-    mInputSurface = mEgl.createFromSurface(mSurface);
-
-    mInputSurface.makeCurrent();
-    mProgramId = mDrawer.init();
-    mSurface = null;
-    mSync.notifyAll();
-  }
-
-  private void internalRelease() {
-    if (DEBUG) Log.i(TAG, "internalRelease:");
-    if (mInputSurface != null) {
-      mInputSurface.release();
-      mInputSurface = null;
+    public final void release() {
+        if (DEBUG) Log.i(TAG, "release:");
+        synchronized (mSync) {
+            if (mRequestRelease) return;
+            mRequestRelease = true;
+            mSync.notifyAll();
+            try {
+                mSync.wait();
+            } catch (final InterruptedException ignore) {
+            }
+        }
     }
-    if (mDrawer != null) {
-      mDrawer.release(mProgramId);
+
+    @Override
+    public final void run() {
+        if (DEBUG) Log.i(TAG, "RenderHandler thread started:");
+        synchronized (mSync) {
+            mRequestSetEglContext = mRequestRelease = false;
+            mRequestDraw = 0;
+            mSync.notifyAll();
+        }
+        boolean localRequestDraw;
+        for (; ; ) {
+            synchronized (mSync) {
+                if (mRequestRelease) break;
+                if (mRequestSetEglContext) {
+                    mRequestSetEglContext = false;
+                    internalPrepare();
+                }
+                localRequestDraw = mRequestDraw > 0;
+                if (localRequestDraw) {
+                    mRequestDraw--;
+                    //					mSync.notifyAll();
+                }
+            }
+            if (localRequestDraw) {
+                if ((mEgl != null) && mTexId >= 0) {
+                    mInputSurface.makeCurrent();
+                    mDrawer.draw(mProgramId, mTexId, mTexMatrix);
+                    mInputSurface.swap();
+                }
+            } else {
+                synchronized (mSync) {
+                    try {
+                        mSync.wait();
+                    } catch (final InterruptedException e) {
+                        break;
+                    }
+                }
+            }
+        }
+        synchronized (mSync) {
+            mRequestRelease = true;
+            internalRelease();
+            mSync.notifyAll();
+        }
+        if (DEBUG) Log.i(TAG, "RenderHandler thread finished:");
     }
-    if (mEgl != null) {
-      mEgl.release();
-      mEgl = null;
+
+    private void internalPrepare() {
+        if (DEBUG) Log.i(TAG, "internalPrepare:");
+        internalRelease();
+        mEgl = new EGLBase(mShard_context, false, mIsRecordable);
+
+        mInputSurface = mEgl.createFromSurface(mSurface);
+
+        mInputSurface.makeCurrent();
+        mProgramId = mDrawer.init();
+        mSurface = null;
+        mSync.notifyAll();
     }
-  }
+
+    private void internalRelease() {
+        if (DEBUG) Log.i(TAG, "internalRelease:");
+        if (mInputSurface != null) {
+            mInputSurface.release();
+            mInputSurface = null;
+        }
+        if (mDrawer != null) {
+            mDrawer.release(mProgramId);
+        }
+        if (mEgl != null) {
+            mEgl.release();
+            mEgl = null;
+        }
+    }
 }

@@ -22,18 +22,29 @@ package com.serenegiant.audiovideosample;
  * All files in the folder are under this Apache License, Version 2.0.
 */
 
-import android.app.Activity;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
+
 import com.serenegiant.mediaaudiotest.R;
 
-public class MainActivity extends Activity {
+public class MainActivity extends FragmentActivity {
 
-  @Override protected void onCreate(final Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    setContentView(R.layout.activity_main);
+    @Override
+    protected void onCreate(final Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
 
-    if (savedInstanceState == null) {
-      getFragmentManager().beginTransaction().add(R.id.container, new CameraFragment()).commit();
+        if (savedInstanceState == null) {
+            CameraFragment fragment = CameraFragment.newInstance();
+
+            FragmentManager manager = getSupportFragmentManager();
+            FragmentTransaction transaction = manager.beginTransaction();
+            transaction.replace(R.id.container, fragment, fragment.TAG);
+            transaction.addToBackStack(fragment.TAG);
+            transaction.commit();
+
+        }
     }
-  }
 }
