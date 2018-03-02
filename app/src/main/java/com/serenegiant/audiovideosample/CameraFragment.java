@@ -22,10 +22,15 @@ package com.serenegiant.audiovideosample;
  * All files in the folder are under this Apache License, Version 2.0.
 */
 
+import android.content.ContentResolver;
+import android.database.Cursor;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -81,6 +86,9 @@ public class CameraFragment extends Fragment {
     private ImageView mFlashView;
     private ImageView mCameraSwitcher;
     private String mediaPath;
+    private RecyclerView recyclerView;
+    private ImageView ivGallery;
+    private GalleryAdapter adapter;
 
     /**
      * callback methods from encoder
@@ -105,7 +113,7 @@ public class CameraFragment extends Fragment {
     /**
      * button for start/stop recording
      */
-    private ImageButton mRecordButton;
+    private ImageView mRecordButton;
     /**
      * muxer for audio/video recording
      */
@@ -153,24 +161,58 @@ public class CameraFragment extends Fragment {
         mCameraView = rootView.findViewById(R.id.cameraView);
         mFlashView = rootView.findViewById(R.id.iv_flash);
         mCameraSwitcher = rootView.findViewById(R.id.iv_switch_camera);
+        recyclerView = rootView.findViewById(R.id.gallery_previews);
+        ivGallery = rootView.findViewById(R.id.iv_gallery);
 
-        mCameraView.setVideoSize();
         mCameraView.setOnClickListener(mOnClickListener);
         mRecordButton = rootView.findViewById(R.id.record_button);
         mRecordButton.setOnClickListener(mOnClickListener);
         mFlashView.setOnClickListener(mOnClickListener);
         mCameraSwitcher.setOnClickListener(mOnClickListener);
+
+        mCameraView.setVideoSize();
+
+        loadAdapter();
         return rootView;
     }
 
     @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        inflater.inflate(R.menu.main, menu);
-        super.onCreateOptionsMenu(menu, inflater);
+    public void onStop() {
+        super.onStop();
+        if (isRemoving()) {
+            adapter.changeCursor(null);
+        }
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
+    public void loadAdapter() {
+        LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
+        layoutManager.setOrientation(RecyclerView.HORIZONTAL);
+        recyclerView.setLayoutManager(layoutManager);
+
+        String[] projection = {
+                MediaStore.Video.Media._ID,
+                MediaStore.MediaColumns.DATA,
+                MediaStore.Video.Thumbnails.DATA
+        };
+
+        final String orderBy = MediaStore.Images.Media.DATE_TAKEN;
+        //noinspection ConstantConditions
+        ContentResolver contentResolver = getContext().getContentResolver();
+        Cursor cursor = contentResolver.query(MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                projection, null, null, orderBy + " DESC");
+
+        if (cursor != null && cursor.moveToFirst()) {
+
+            if (adapter == null) {
+                adapter = new GalleryAdapter(cursor);
+                recyclerView.setAdapter(adapter);
+            } else {
+                adapter.changeCursor(cursor);
+            }
+        }
+    }
+
+    private void onFilterSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_posterize:
                 mCameraView.setDrawer(new GLPosterizeFilter());
@@ -191,7 +233,6 @@ public class CameraFragment extends Fragment {
                 mCameraView.setDrawer(new GLColorInvertFilter());
                 break;
         }
-        return super.onOptionsItemSelected(item);
     }
 
     @Override

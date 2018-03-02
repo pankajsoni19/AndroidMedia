@@ -134,7 +134,7 @@ public class MediaVideoEncoder extends MediaEncoder {
         int colorFormat;
         for (int i = 0; i < caps.colorFormats.length; i++) {
             colorFormat = caps.colorFormats[i];
-            if (isRecognizedViewoFormat(colorFormat)) {
+            if (isRecognizedVideoFormat(colorFormat)) {
                 return colorFormat;
             }
         }
@@ -143,7 +143,7 @@ public class MediaVideoEncoder extends MediaEncoder {
         return 0;
     }
 
-    private static boolean isRecognizedViewoFormat(final int colorFormat) {
+    private static boolean isRecognizedVideoFormat(final int colorFormat) {
         Log.d(TAG, "isRecognizedViewoFormat:colorFormat=" + colorFormat);
 
         if (recognizedFormats == null || recognizedFormats.length == 0) {

@@ -18,8 +18,8 @@ import static android.hardware.Camera.CameraInfo.CAMERA_FACING_BACK;
 import static android.hardware.Camera.CameraInfo.CAMERA_FACING_FRONT;
 import static android.hardware.Camera.Parameters.FLASH_MODE_OFF;
 import static android.hardware.Camera.Parameters.FLASH_MODE_TORCH;
-import static com.serenegiant.audiovideosample.CameraGLView.PREFERRED_PREVIEW_HEIGHT;
-import static com.serenegiant.audiovideosample.CameraGLView.PREFERRED_PREVIEW_WIDTH;
+import static com.serenegiant.utils.Constants.PREFERRED_PREVIEW_HEIGHT;
+import static com.serenegiant.utils.Constants.PREFERRED_PREVIEW_WIDTH;
 
 /**
  * Thread for asynchronous operation of camera preview

@@ -23,46 +23,37 @@ package com.serenegiant.audiovideosample;
 */
 
 import android.content.Context;
-import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
-import android.hardware.Camera;
 import android.opengl.EGL14;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
-import android.os.Handler;
-import android.os.Looper;
-import android.os.Message;
 import android.support.v7.app.AppCompatDelegate;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.ScaleGestureDetector;
 import android.view.SurfaceHolder;
 import android.view.View;
 import android.widget.ImageView;
 
 import com.serenegiant.encoder.MediaVideoEncoder;
-import com.serenegiant.enums.FlashMode;
 import com.serenegiant.enums.ScaleType;
 import com.serenegiant.glutils.GLDrawer2D;
-import com.serenegiant.mediaaudiotest.R;
 import com.serenegiant.utils.CameraHelper;
+import com.serenegiant.utils.Constants;
 
-import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.Set;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 import static android.hardware.Camera.CameraInfo.CAMERA_FACING_BACK;
 import static android.hardware.Camera.CameraInfo.CAMERA_FACING_FRONT;
-
-import static android.hardware.Camera.Parameters.FLASH_MODE_OFF;
-import static android.hardware.Camera.Parameters.FLASH_MODE_TORCH;
 
 /**
  * Sub class of GLSurfaceView to display camera preview and write video frame to capturing surface
@@ -71,9 +62,6 @@ import static android.hardware.Camera.Parameters.FLASH_MODE_TORCH;
 public final class CameraGLView extends GLSurfaceView {
 
     private static final String TAG = "CameraGLView";
-
-    public static final int PREFERRED_PREVIEW_WIDTH = 640;
-    public static final int PREFERRED_PREVIEW_HEIGHT = 480;
 
     protected final CameraSurfaceRenderer mRenderer;
     protected boolean mHasSurface;
@@ -86,7 +74,7 @@ public final class CameraGLView extends GLSurfaceView {
 
     protected ImageView flashImageView, cameraSwitcher;
 
-    protected @ScaleType int mScaleMode = ScaleType.SCALE_SQUARE;
+    protected @ScaleType String mScaleMode = ScaleType.SCALE_SQUARE;
     protected volatile int cameraId = CAMERA_FACING_BACK;
 
     private GLDrawer2D mDrawer = new GLDrawer2D();
@@ -199,7 +187,7 @@ public final class CameraGLView extends GLSurfaceView {
         startPreview(getWidth(), getHeight());
     }
 
-    public int getScaleMode() {
+    public String getScaleMode() {
         return mScaleMode;
     }
 
@@ -207,15 +195,16 @@ public final class CameraGLView extends GLSurfaceView {
         setScaleMode(mScaleMode);
     }
 
-    public void setScaleMode(final int mode) {
+    public void setScaleMode(final String mode) {
         mScaleMode = mode;
         queueEvent(mRenderer::updateViewport);
     }
 
     public void setVideoSize() {
-        setVideoSize(PREFERRED_PREVIEW_WIDTH, PREFERRED_PREVIEW_HEIGHT);
+        setVideoSize(Constants.PREFERRED_PREVIEW_WIDTH, Constants.PREFERRED_PREVIEW_HEIGHT);
     }
 
+    @SuppressWarnings("SuspiciousNameCombination")
     public void setVideoSize(final int width, final int height) {
         if ((mRotation % 180) == 0) {
             mVideoWidth = width;
@@ -331,6 +320,7 @@ public final class CameraGLView extends GLSurfaceView {
                 mProgramId = mDrawer.init();
                 GLES20.glUseProgram(mProgramId);
                 CameraGLView parent = mWeakParent.get();
+
                 if (parent != null) {
                     parent.updateScaleMode();
                 }
@@ -356,8 +346,8 @@ public final class CameraGLView extends GLSurfaceView {
             // create SurfaceTexture with texture ID.
             mSTexture = new SurfaceTexture(mGLTextureId);
             mSTexture.setOnFrameAvailableListener(this);
-            // clear screen bg color so that you can see rendering rectangle
-            GLES20.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+            //TODO: clear screen with yellow color so that you can see rendering rectangle
+            GLES20.glClearColor(0.09f, 0.11f, 0.129f, 1.0f);
             final CameraGLView parent = mWeakParent.get();
 
             if (parent != null) {

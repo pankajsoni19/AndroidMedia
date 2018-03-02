@@ -30,6 +30,7 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.view.Window;
 
+import com.serenegiant.fileio.MemoryCache;
 import com.serenegiant.mediaaudiotest.R;
 import com.serenegiant.permission.PermissionCallBack;
 import com.serenegiant.permission.PermissionManager;
@@ -40,6 +41,7 @@ import static android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN;
 public class MainActivity extends FragmentActivity implements PermissionCallBack, FragmentManager.OnBackStackChangedListener {
 
     private Handler uiThreadHandler;
+    private MemoryCache memoryCache;
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -50,6 +52,7 @@ public class MainActivity extends FragmentActivity implements PermissionCallBack
         setContentView(R.layout.activity_main);
         uiThreadHandler = new Handler();
 
+        memoryCache = MemoryCache.getInstance();
         PermissionManager.videoPermission(this, this);
     }
 
@@ -75,6 +78,14 @@ public class MainActivity extends FragmentActivity implements PermissionCallBack
     protected void onPause() {
         super.onPause();
         getSupportFragmentManager().removeOnBackStackChangedListener(this);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (isFinishing()) {
+            memoryCache.clear();
+        }
     }
 
     @Override

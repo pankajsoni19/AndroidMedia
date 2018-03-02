@@ -157,7 +157,7 @@ public class GLDrawer2D {
         final int[] compiled = new int[1];
         GLES20.glGetShaderiv(vs, GLES20.GL_COMPILE_STATUS, compiled, 0);
         if (compiled[0] == 0) {
-                Log.d(TAG, "Failed to compile vertex shader:" + GLES20.glGetShaderInfoLog(vs));
+            Log.d(TAG, "Failed to compile vertex shader:" + GLES20.glGetShaderInfoLog(vs));
             GLES20.glDeleteShader(vs);
             vs = 0;
         }
@@ -197,8 +197,7 @@ public class GLDrawer2D {
         GLES20.glUniformMatrix4fv(muMVPMatrixLoc, 1, false, mMvpMatrix, 0);
         GLES20.glUniformMatrix4fv(muTexMatrixLoc, 1, false, mMvpMatrix, 0);
         GLES20.glVertexAttribPointer(mGLAttribPosition, 2, GLES20.GL_FLOAT, false, VERTEX_SZ, pVertex);
-        GLES20.glVertexAttribPointer(mGLAttribTextureCoordinate, 2, GLES20.GL_FLOAT, false, VERTEX_SZ,
-                pTexCoord);
+        GLES20.glVertexAttribPointer(mGLAttribTextureCoordinate, 2, GLES20.GL_FLOAT, false, VERTEX_SZ, pTexCoord);
         GLES20.glEnableVertexAttribArray(mGLAttribPosition);
         GLES20.glEnableVertexAttribArray(mGLAttribTextureCoordinate);
     }
@@ -277,12 +276,6 @@ public class GLDrawer2D {
             System.arraycopy(matrix, offset, mMvpMatrix, 0, 16);
         } else {
             Matrix.setIdentityM(mMvpMatrix, 0);
-        }
-    }
-
-    protected void runOnDraw(final Runnable runnable) {
-        synchronized (mRunOnDraw) {
-            mRunOnDraw.addLast(runnable);
         }
     }
 }

@@ -3,31 +3,31 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/black"
+    android:background="#181D21"
     tools:context="com.serenegiant.audiovideosample.CameraFragment">
 
     <com.serenegiant.audiovideosample.CameraGLView
         android:id="@+id/cameraView"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"/>
 
     <TextView
         android:id="@+id/video_dur"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:layout_marginStart="16dp"
+        android:text="00:00:00"
         android:textColor="@android:color/white"
         android:textSize="16sp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toBottomOf="@id/cameraView"
-        android:layout_marginStart="16dp"
-        android:layout_marginBottom="8dp"
-        android:text="00:00:00"/>
+        app:layout_constraintBottom_toBottomOf="@id/seperator"
+        app:layout_constraintStart_toStartOf="parent" />
 
-    <ImageView
+    <android.support.v7.widget.AppCompatImageView
         android:id="@+id/iv_flash"
         android:layout_width="24dp"
         android:layout_height="24dp"
@@ -37,7 +37,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/flash_auto_white" />
 
-    <ImageView
+    <android.support.v7.widget.AppCompatImageView
         android:id="@+id/iv_switch_camera"
         android:layout_width="24dp"
         android:layout_height="24dp"
@@ -51,67 +51,28 @@
         android:id="@+id/seperator"
         android:layout_width="48dp"
         android:layout_height="8dp"
-        android:layout_margin="8dp"
-        android:src="@drawable/rectangle_white"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:src="@drawable/rectangle_gray"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/cameraView" />
+        app:layout_constraintBottom_toTopOf="@id/gallery_previews" />
 
-    <com.serenegiant.audiovideosample.CameraGLView
-        android:id="@+id/effect_1"
-        android:layout_width="64dp"
-        android:layout_height="0dp"
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/gallery_previews"
+        android:layout_width="0dp"
+        android:layout_height="72dp"
+        android:layout_marginBottom="8dp"
+        android:background="@android:color/holo_orange_dark"
         app:layout_constraintBottom_toTopOf="@id/record_button"
-        app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintEnd_toStartOf="@id/effect_2"
-        app:layout_constraintHorizontal_chainStyle="spread"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/seperator" />
-
-    <com.serenegiant.audiovideosample.CameraGLView
-        android:id="@+id/effect_2"
-        android:layout_width="64dp"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@id/record_button"
-        app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintEnd_toStartOf="@id/effect_3"
-        app:layout_constraintStart_toEndOf="@id/effect_1"
-        app:layout_constraintTop_toBottomOf="@id/seperator" />
-
-    <com.serenegiant.audiovideosample.CameraGLView
-        android:id="@+id/effect_3"
-        android:layout_width="64dp"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@id/record_button"
-        app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintEnd_toStartOf="@id/effect_4"
-        app:layout_constraintStart_toEndOf="@id/effect_2"
-        app:layout_constraintTop_toBottomOf="@id/seperator" />
-
-    <com.serenegiant.audiovideosample.CameraGLView
-        android:id="@+id/effect_4"
-        android:layout_width="64dp"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@id/record_button"
-        app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintEnd_toStartOf="@id/effect_5"
-        app:layout_constraintStart_toEndOf="@id/effect_3"
-        app:layout_constraintTop_toBottomOf="@id/seperator" />
-
-    <com.serenegiant.audiovideosample.CameraGLView
-        android:id="@+id/effect_5"
-        android:layout_width="64dp"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@id/record_button"
-        app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/effect_4"
-        app:layout_constraintTop_toBottomOf="@id/seperator" />
+        app:layout_constraintStart_toStartOf="parent" />
 
-    <ImageView
+    <android.support.v7.widget.AppCompatImageView
+        android:id="@+id/iv_gallery"
         android:layout_width="36dp"
         android:layout_height="36dp"
-        android:layout_marginBottom="22dp"
+        android:layout_marginBottom="30dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/record_button"
         app:layout_constraintStart_toStartOf="parent"
@@ -121,7 +82,7 @@
         android:id="@+id/record_button"
         android:layout_width="64dp"
         android:layout_height="64dp"
-        android:layout_marginBottom="8dp"
+        android:layout_marginBottom="16dp"
         android:src="@drawable/circle_white"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -130,7 +91,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="24dp"
-        android:layout_marginBottom="28dp"
+        android:layout_marginBottom="36dp"
         android:text="@string/cancel"
         android:textColor="@android:color/white"
         android:textSize="16sp"
