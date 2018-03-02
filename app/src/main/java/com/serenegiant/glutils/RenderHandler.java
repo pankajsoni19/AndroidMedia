@@ -199,9 +199,9 @@ public final class RenderHandler implements Runnable {
                 if ((mEgl != null) && mTexId >= 0) {
                     mInputSurface.makeCurrent();
                     //TODO: remove yellow mark
-//					GLES20.glClearColor(1.0f, 1.0f, 0.0f, 1.0f);
-//					GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-//                    mDrawer.setMatrix(mMatrix, 16);
+                    GLES20.glClearColor(0.00f, 0.00f, 0.00f, 1.0f);
+					GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+                    mDrawer.setMatrix(mMatrix, 16);
                     //
                     mDrawer.draw(mProgramId, mTexId, mMatrix);
                     mInputSurface.swap();

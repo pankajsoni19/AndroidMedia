@@ -346,7 +346,7 @@ public final class CameraGLView extends GLSurfaceView {
             mSTexture = new SurfaceTexture(mGLTextureId);
             mSTexture.setOnFrameAvailableListener(this);
             //TODO: clear screen with yellow color so that you can see rendering rectangle
-            GLES20.glClearColor(0.09f, 0.11f, 0.129f, 1.0f);
+            GLES20.glClearColor(0.00f, 0.00f, 0.00f, 1.0f);
             final CameraGLView parent = mWeakParent.get();
 
             if (parent != null) {

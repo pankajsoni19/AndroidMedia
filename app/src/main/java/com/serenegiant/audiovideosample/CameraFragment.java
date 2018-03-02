@@ -361,7 +361,7 @@ public class CameraFragment extends Fragment implements OnClickListener {
                 outputVideoHeight = mCameraView.getVideoHeight();
             }
 
-            Log.d(TAG, "output: width: " + outputVideoWidth + " height: " + outputVideoWidth);
+            Log.d(TAG, "output: width: " + outputVideoWidth + " height: " + outputVideoHeight);
             // for video capturing
             new MediaVideoEncoder(mMuxer, mMediaEncoderListener, outputVideoWidth,
                     outputVideoHeight, mCameraView.getDrawer());
