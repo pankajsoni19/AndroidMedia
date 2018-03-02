@@ -37,7 +37,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/flash_auto_white" />
 
-    <ImageView
+    <android.support.v7.widget.AppCompatImageView
         android:id="@+id/iv_filter"
         android:layout_width="24dp"
         android:layout_height="24dp"
@@ -56,6 +56,26 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/camera_front_white" />
+
+    <GridView
+        android:id="@+id/grid_filters"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="8dp"
+        android:columnWidth="96dp"
+        android:numColumns="auto_fit"
+        android:stretchMode="spacingWidthUniform"
+        android:gravity="center"
+        android:verticalSpacing="16dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/iv_filter"
+        app:layout_constraintBottom_toTopOf="@id/separator"
+        android:visibility="gone"
+        android:listSelector="#00000000"/>
 
     <ImageView
         android:id="@+id/separator"
@@ -84,22 +104,22 @@
     <android.support.v7.widget.RecyclerView
         android:id="@+id/gallery_previews"
         android:layout_width="0dp"
-        android:layout_height="72dp"
+        android:layout_height="96dp"
         android:layout_marginBottom="8dp"
         android:background="@android:color/transparent"
         app:layout_constraintBottom_toTopOf="@id/record_button"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
-    <!--<android.support.v7.widget.AppCompatImageView-->
-        <!--android:id="@+id/iv_gallery"-->
-        <!--android:layout_width="36dp"-->
-        <!--android:layout_height="36dp"-->
-        <!--android:layout_marginBottom="8dp"-->
-        <!--app:layout_constraintBottom_toBottomOf="parent"-->
-        <!--app:layout_constraintEnd_toStartOf="@+id/record_button"-->
-        <!--app:layout_constraintStart_toStartOf="parent"-->
-        <!--app:srcCompat="@drawable/photo_library_white" />-->
+    <android.support.v7.widget.AppCompatImageView
+        android:id="@+id/iv_gallery"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_marginBottom="30dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/record_button"
+        app:layout_constraintStart_toStartOf="parent"
+        app:srcCompat="@drawable/photo_library_white" />
 
     <ImageView
         android:id="@+id/record_button"

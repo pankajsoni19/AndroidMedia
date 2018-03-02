@@ -85,8 +85,7 @@ public class GalleryAdapter extends CursorRecyclerAdapter<GalleryAdapter.ViewHol
             holder.iv_select.setVisibility(View.GONE);
         }
 
-        holder.iv_image.setOnClickListener(clickListener);
-        holder.iv_select.setOnClickListener(clickListener);
+        holder.itemView.setOnClickListener(clickListener);
     }
 
     private class GalleryClickListener implements View.OnClickListener {

@@ -33,7 +33,7 @@ public class FileHandler {
 
     public static File getTempFile(String albumName) {
         File dir = getPublicAlbumStorageDir(albumName);
-        final String filename = "IMG_" + getDateTimeString() + ".mp4";
+        final String filename = "VID_" + getDateTimeString() + ".mp4";
         return new File(dir, filename);
     }
 
