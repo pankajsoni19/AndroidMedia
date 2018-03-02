@@ -17,12 +17,12 @@ import static com.serenegiant.enums.ScaleType.SCALE_STRETCH_FIT;
  * Copyright (c) 2018 Software Joint. All rights reserved.
  */
 @Retention(RetentionPolicy.SOURCE)
-@StringDef({SCALE_STRETCH_FIT, SCALE_KEEP_ASPECT_VIEWPORT, SCALE_KEEP_ASPECT,
+@IntDef({SCALE_STRETCH_FIT, SCALE_KEEP_ASPECT_VIEWPORT, SCALE_KEEP_ASPECT,
         SCALE_CROP_CENTER, SCALE_SQUARE})
 public @interface ScaleType {
-    String SCALE_STRETCH_FIT = "strechFit";
-    String SCALE_KEEP_ASPECT_VIEWPORT = "aspectViewport";
-    String SCALE_KEEP_ASPECT = "aspect";
-    String SCALE_CROP_CENTER = "cropCenter";
-    String SCALE_SQUARE = "square";
+    int SCALE_STRETCH_FIT = 0;
+    int SCALE_KEEP_ASPECT_VIEWPORT = 1;
+    int SCALE_KEEP_ASPECT = 2;
+    int SCALE_CROP_CENTER = 3;
+    int SCALE_SQUARE = 4;
 }

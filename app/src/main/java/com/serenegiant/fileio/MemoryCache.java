@@ -59,10 +59,13 @@ public class MemoryCache {
         }
     }
 
-    public synchronized void put(String id, Bitmap bitmap) {
+    synchronized void put(String id, Bitmap bitmap) {
+        if (bitmap == null) { return; }
+
         try {
-            if (cache.containsKey(id))
+            if (cache.containsKey(id)) {
                 size -= getSizeInBytes(cache.get(id));
+            }
             cache.put(id, bitmap);
             size += getSizeInBytes(bitmap);
             checkSize();

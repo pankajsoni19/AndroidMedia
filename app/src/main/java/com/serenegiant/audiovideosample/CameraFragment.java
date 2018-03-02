@@ -24,6 +24,7 @@ package com.serenegiant.audiovideosample;
 
 import android.content.ContentResolver;
 import android.database.Cursor;
+import android.database.MergeCursor;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
@@ -87,8 +88,10 @@ public class CameraFragment extends Fragment {
     private ImageView mCameraSwitcher;
     private String mediaPath;
     private RecyclerView recyclerView;
-    private ImageView ivGallery;
     private GalleryAdapter adapter;
+    private View txt_gallery;
+    private View iv_filter;
+    private @ScaleType int scaleType = ScaleType.SCALE_CROP_CENTER;
 
     /**
      * callback methods from encoder
@@ -125,6 +128,9 @@ public class CameraFragment extends Fragment {
         @Override
         public void onClick(final View view) {
             switch (view.getId()) {
+                case R.id.iv_filter:
+                    toggleShowFilters();
+                    break;
                 case R.id.iv_flash:
                     mCameraView.toggleFlash();
                     break;
@@ -132,16 +138,22 @@ public class CameraFragment extends Fragment {
                     mCameraView.toggleCamera();
                     break;
                 case R.id.record_button:
-                    if (mMuxer == null) {
-                        startRecording();
-                    } else {
-                        stopRecording();
-                    }
+//                    if (mMuxer == null) {
+//                        startRecording();
+//                    } else {
+//                        stopRecording();
+//                    }
+                    break;
+                case R.id.cancel:
+                    getActivity().finish();
                     break;
             }
         }
     };
 
+    private void toggleShowFilters() {
+
+    }
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -162,9 +174,12 @@ public class CameraFragment extends Fragment {
         mFlashView = rootView.findViewById(R.id.iv_flash);
         mCameraSwitcher = rootView.findViewById(R.id.iv_switch_camera);
         recyclerView = rootView.findViewById(R.id.gallery_previews);
-        ivGallery = rootView.findViewById(R.id.iv_gallery);
+        iv_filter = rootView.findViewById(R.id.iv_filter);
 
-        mCameraView.setOnClickListener(mOnClickListener);
+        txt_gallery = rootView.findViewById(R.id.txt_gallery);
+
+        rootView.findViewById(R.id.cancel).setOnClickListener(mOnClickListener);
+
         mRecordButton = rootView.findViewById(R.id.record_button);
         mRecordButton.setOnClickListener(mOnClickListener);
         mFlashView.setOnClickListener(mOnClickListener);
@@ -179,12 +194,14 @@ public class CameraFragment extends Fragment {
     @Override
     public void onStop() {
         super.onStop();
-        if (isRemoving()) {
+        if (isRemoving() && adapter != null) {
             adapter.changeCursor(null);
         }
     }
 
     public void loadAdapter() {
+        txt_gallery.setVisibility(View.VISIBLE);
+
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
         layoutManager.setOrientation(RecyclerView.HORIZONTAL);
         recyclerView.setLayoutManager(layoutManager);
@@ -203,8 +220,14 @@ public class CameraFragment extends Fragment {
 
         if (cursor != null && cursor.moveToFirst()) {
 
+            Log.d(TAG, "mediaCount: " + cursor.getCount());
+
+            if (cursor.getCount() > 0) {
+                txt_gallery.setVisibility(View.GONE);
+            }
+
             if (adapter == null) {
-                adapter = new GalleryAdapter(cursor);
+                adapter = new GalleryAdapter(getContext(), cursor);
                 recyclerView.setAdapter(adapter);
             } else {
                 adapter.changeCursor(cursor);
@@ -268,7 +291,7 @@ public class CameraFragment extends Fragment {
             int outputVideoWidth;
             int outputVideoHeight;
 
-            if (mCameraView.getScaleMode() == ScaleType.SCALE_SQUARE) {
+            if (ScaleType.SCALE_SQUARE == mCameraView.getScaleMode()) {
                 outputVideoWidth = SIZE;
                 outputVideoHeight = SIZE;
             } else {

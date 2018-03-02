@@ -14,5 +14,7 @@
 
     <string name="action_invert">Color Invert</string>
     <string name="cancel">Cancel</string>
+    <string name="no_videos">no_videos</string>
+    <string name="empty_gallery">Gallery Empty</string>
 
 </resources>

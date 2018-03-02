@@ -25,7 +25,9 @@ android {
 
     android {
         defaultConfig {
-            vectorDrawables.useSupportLibrary = true
+            vectorDrawables {
+                useSupportLibrary = true
+            }
         }
     }
 

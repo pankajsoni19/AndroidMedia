@@ -193,6 +193,7 @@ public final class CameraThread extends Thread {
             }
 
             parent.cameraSwitcher.setVisibility(View.VISIBLE);
+            Log.d(TAG, "mCameraSwitcher: visible: " + " front: " + (parent.cameraId == CAMERA_FACING_FRONT));
         });
 
         return true;

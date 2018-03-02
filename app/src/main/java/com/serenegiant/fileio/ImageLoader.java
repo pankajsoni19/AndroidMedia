@@ -1,13 +1,21 @@
 package com.serenegiant.fileio;
 
+import android.content.ContentResolver;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.ParcelFileDescriptor;
+import android.provider.MediaStore;
+import android.util.Log;
 import android.widget.ImageView;
 
 import com.serenegiant.mediaaudiotest.R;
 
+import java.io.File;
+import java.io.FileDescriptor;
+import java.io.FileInputStream;
 import java.lang.ref.WeakReference;
 
 /**
@@ -16,36 +24,40 @@ import java.lang.ref.WeakReference;
  */
 public class ImageLoader extends AsyncTask<String, Void, Bitmap> {
 
-    private static final int SIZE = 64;
+    private static final int SIZE = 72;
 
     private static int imageSize = SIZE;
 
     static {
-        imageSize = Resources.getSystem().getDisplayMetrics().densityDpi;
+        imageSize = (int) (SIZE * Resources.getSystem().getDisplayMetrics().density);
     }
 
-    private String filePath;
+    private Long id;
     private WeakReference<ImageView> reference;
 
 
-    public static ImageLoader with(String path) {
-        return new ImageLoader(path);
+    public static ImageLoader with(long id) {
+        return new ImageLoader(id);
     }
 
     public void loadInto(ImageView imageView) {
-        String loaderKey = (String) imageView.getTag(R.id.image_loader_key);
-        if (filePath.equals(loaderKey) && imageView.getDrawable() != null) {
+        if (id == imageView.getTag(R.id.image_loader_key) && imageView.getDrawable() != null) {
             return;
         }
 
-        reference = new WeakReference<>(imageView);
-        imageView.setTag(R.id.image_loader_key, filePath);
+        imageView.setTag(R.id.image_loader_key, id);
+        Bitmap bitmap = MemoryCache.getInstance().get(String.valueOf(id));
 
-        execute();
+        if (bitmap != null) {
+            imageView.setImageBitmap(bitmap);
+        } else {
+            reference = new WeakReference<>(imageView);
+            execute();
+        }
     }
 
-    private ImageLoader(String path) {
-        filePath = path;
+    private ImageLoader(long id) {
+        this.id = id;
     }
 
     @Override
@@ -53,8 +65,7 @@ public class ImageLoader extends AsyncTask<String, Void, Bitmap> {
         ImageView imageView = reference.get();
         if (imageView == null) { return null; }
 
-        Bitmap bitmap = MemoryCache.getInstance().get(filePath);
-        if (bitmap != null) { return bitmap; }
+        ContentResolver crThumb = imageView.getContext().getContentResolver();
 
         int imgHeight = imageView.getHeight();
         int imgWidth = imageView.getWidth();
@@ -62,17 +73,19 @@ public class ImageLoader extends AsyncTask<String, Void, Bitmap> {
         imgHeight =  imgHeight > 0 ? imgHeight : imageSize;
         imgWidth =  imgWidth > 0 ? imgWidth : imageSize;
 
-        int imgSize = Math.min(imgHeight, imgWidth);
+        final int imgSize = Math.min(imgHeight, imgWidth);
 
         BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inJustDecodeBounds = true;
-        BitmapFactory.decodeFile(filePath, options);
-
+        options.outHeight = 96;
+        options.outWidth = 96;
         options.inSampleSize = calculateInSampleSize(options, imgSize, imgSize);
-        options.inJustDecodeBounds = false;
 
-        bitmap = BitmapFactory.decodeFile(filePath, options);
-        MemoryCache.getInstance().put(filePath, bitmap);
+        Bitmap bitmap =
+                MediaStore.Video.Thumbnails.getThumbnail(crThumb, id,
+                        MediaStore.Video.Thumbnails.MICRO_KIND, options);
+
+        MemoryCache.getInstance().put(String.valueOf(id), bitmap);
+
         return bitmap;
     }
 
@@ -80,7 +93,8 @@ public class ImageLoader extends AsyncTask<String, Void, Bitmap> {
     protected void onPostExecute(Bitmap bitmap) {
         super.onPostExecute(bitmap);
         ImageView imageView = reference.get();
-        if (imageView != null && filePath.equals(imageView.getTag(R.id.image_loader_key))) {
+
+        if (imageView != null && id == imageView.getTag(R.id.image_loader_key)) {
             imageView.setImageBitmap(bitmap);
         }
     }

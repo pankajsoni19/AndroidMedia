@@ -1,8 +1,10 @@
 package com.serenegiant.audiovideosample;
 
 import android.app.Activity;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
+import android.net.Uri;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
@@ -15,6 +17,7 @@ import android.widget.ImageView;
 import com.serenegiant.fileio.ImageLoader;
 import com.serenegiant.mediaaudiotest.R;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import io.github.ypdieguez.cursorrecycleradapter.CursorRecyclerAdapter;
@@ -25,25 +28,29 @@ import io.github.ypdieguez.cursorrecycleradapter.CursorRecyclerAdapter;
  */
 public class GalleryAdapter extends CursorRecyclerAdapter<GalleryAdapter.ViewHolder> {
 
-    /**
-     * Constructor.
-     *
-     * @param c The cursor from which to get the data.
-     */
+    private static final String TAG = "GalleryAdapter";
+
+    private static final int MAX_SELECTION = 1;
+
     private int colIdIndex = 0;
     private int colDataIndex = 1;
-    private int thumbIndex = 2;
-    private Cursor cursor;
+    private int colthumbIndex = 2;
+    //private Cursor cursor;
+    private ContentResolver resolver;
+    private int maxSelection = MAX_SELECTION;
 
-    public GalleryAdapter(Cursor cursor) {
+    private List<String> selected = new ArrayList<>();
+
+    GalleryAdapter(Context context, Cursor cursor) {
         super(cursor);
         colIdIndex = cursor.getColumnIndexOrThrow(MediaStore.Video.Media._ID);
         colDataIndex = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA);
-        thumbIndex = cursor.getColumnIndexOrThrow(MediaStore.Video.Thumbnails.DATA);
-        this.cursor = cursor;
+        colthumbIndex = cursor.getColumnIndexOrThrow(MediaStore.Video.Thumbnails.DATA);
+        resolver = context.getContentResolver();
+
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+    static class ViewHolder extends RecyclerView.ViewHolder {
 
         ImageView iv_image;
         ImageView iv_select;
@@ -52,16 +59,7 @@ public class GalleryAdapter extends CursorRecyclerAdapter<GalleryAdapter.ViewHol
             super(v);
             iv_image = v.findViewById(R.id.iv_video);
             iv_select = v.findViewById(R.id.iv_select);
-            iv_image.setOnClickListener(this);
-            iv_select.setOnClickListener(this);
         }
-
-        @Override
-        public void onClick(View v) {
-            getAdapterPosition()
-        }
-
-        oncli
     }
 
     @Override
@@ -72,35 +70,55 @@ public class GalleryAdapter extends CursorRecyclerAdapter<GalleryAdapter.ViewHol
 
     @Override
     public void onBindViewHolder(ViewHolder holder, Cursor cursor) {
+        if (cursor == null || cursor.isClosed()) { return; }
 
+        final long itemId = cursor.getLong(colIdIndex);
+        final String mediaPath = cursor.getString(colDataIndex);
 
+        ImageLoader.with(itemId).loadInto(holder.iv_image);
 
-        String mediaPath = cursor.getString(colDataIndex);
-        cursor.getPosition();
-        Log.e("Column", absolutePathOfImage);
-        Log.e("Folder", cursor.getString(column_index_folder_name));
-        Log.e("column_id", cursor.getString(column_id));
-        Log.e("thum", cursor.getString(thum));
+        GalleryClickListener clickListener = new GalleryClickListener(mediaPath, holder);
 
-        Model_Video obj_model = new Model_Video();
-        obj_model.setBoolean_selected(false);
-        obj_model.setStr_path(absolutePathOfImage);
-        obj_model.setStr_thumb(cursor.getString(thum));
+        if (selected.contains(mediaPath)) {
+            holder.iv_select.setVisibility(View.VISIBLE);
+        } else {
+            holder.iv_select.setVisibility(View.GONE);
+        }
 
-        al_video.add(obj_model);
+        holder.iv_image.setOnClickListener(clickListener);
+        holder.iv_select.setOnClickListener(clickListener);
+    }
 
-        ImageLoader.with()
+    private class GalleryClickListener implements View.OnClickListener {
 
+        private String mediaPath;
+        private ViewHolder viewHolder;
 
-        Vholder.rl_select.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent_gallery = new Intent(context, Activity_galleryview.class);
-                intent_gallery.putExtra("video", al_video.get(position).getStr_path());
-                activity.startActivity(intent_gallery);
+        GalleryClickListener(String mediaPath, ViewHolder holder) {
+            this.mediaPath = mediaPath;
+            this.viewHolder = holder;
+        }
 
+        @Override
+        public void onClick(View v) {
+            int position = viewHolder.getAdapterPosition();
+
+            if (selected.contains(mediaPath)) {
+                selected.remove(position);
+                viewHolder.iv_select.setVisibility(View.GONE);
+            } else if (selected.size() < maxSelection) {
+                selected.add(mediaPath);
+
+                if (selected.size() == maxSelection) {
+                    onMaxSelection();
+                } else {
+                    viewHolder.iv_select.setVisibility(View.VISIBLE);
+                }
             }
-        });
+        }
+    }
 
+    private void onMaxSelection() {
+        Log.d(TAG, "onMaxSelection");
     }
 }

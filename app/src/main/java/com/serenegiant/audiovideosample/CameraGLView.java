@@ -74,7 +74,7 @@ public final class CameraGLView extends GLSurfaceView {
 
     protected ImageView flashImageView, cameraSwitcher;
 
-    protected @ScaleType String mScaleMode = ScaleType.SCALE_SQUARE;
+    protected @ScaleType int mScaleMode = ScaleType.SCALE_SQUARE;
     protected volatile int cameraId = CAMERA_FACING_BACK;
 
     private GLDrawer2D mDrawer = new GLDrawer2D();
@@ -130,6 +130,7 @@ public final class CameraGLView extends GLSurfaceView {
             mCameraHandler.updateCameraIcon();
         } else {
             cameraSwitcher.setVisibility(View.INVISIBLE);
+            Log.d(TAG, "mCameraSwitcher: INVISIBLE: ");
         }
     }
 
@@ -187,7 +188,7 @@ public final class CameraGLView extends GLSurfaceView {
         startPreview(getWidth(), getHeight());
     }
 
-    public String getScaleMode() {
+    public @ScaleType int getScaleMode() {
         return mScaleMode;
     }
 
@@ -195,7 +196,7 @@ public final class CameraGLView extends GLSurfaceView {
         setScaleMode(mScaleMode);
     }
 
-    public void setScaleMode(final String mode) {
+    public void setScaleMode(@ScaleType final int mode) {
         mScaleMode = mode;
         queueEvent(mRenderer::updateViewport);
     }

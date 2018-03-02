@@ -24,31 +24,41 @@
         android:text="00:00:00"
         android:textColor="@android:color/white"
         android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="@id/seperator"
+        app:layout_constraintBottom_toBottomOf="@id/separator"
         app:layout_constraintStart_toStartOf="parent" />
 
-    <android.support.v7.widget.AppCompatImageView
+    <ImageView
         android:id="@+id/iv_flash"
         android:layout_width="24dp"
         android:layout_height="24dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="16dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/flash_auto_white" />
 
-    <android.support.v7.widget.AppCompatImageView
+    <ImageView
+        android:id="@+id/iv_filter"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginTop="16dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/movie_filter_white_24dp" />
+
+    <ImageView
         android:id="@+id/iv_switch_camera"
         android:layout_width="24dp"
         android:layout_height="24dp"
         android:layout_marginEnd="16dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="16dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/camera_front_white" />
 
     <ImageView
-        android:id="@+id/seperator"
+        android:id="@+id/separator"
         android:layout_width="48dp"
         android:layout_height="8dp"
         android:layout_marginTop="8dp"
@@ -58,37 +68,51 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintBottom_toTopOf="@id/gallery_previews" />
 
+    <TextView
+        android:id="@+id/txt_gallery"
+        android:layout_width="0dp"
+        android:layout_height="72dp"
+        android:layout_marginBottom="8dp"
+        android:text="@string/empty_gallery"
+        android:textSize="16sp"
+        android:textColor="@android:color/white"
+        android:gravity="center"
+        app:layout_constraintBottom_toTopOf="@id/record_button"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
     <android.support.v7.widget.RecyclerView
         android:id="@+id/gallery_previews"
         android:layout_width="0dp"
         android:layout_height="72dp"
         android:layout_marginBottom="8dp"
-        android:background="@android:color/holo_orange_dark"
+        android:background="@android:color/transparent"
         app:layout_constraintBottom_toTopOf="@id/record_button"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
-    <android.support.v7.widget.AppCompatImageView
-        android:id="@+id/iv_gallery"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
-        android:layout_marginBottom="30dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/record_button"
-        app:layout_constraintStart_toStartOf="parent"
-        app:srcCompat="@drawable/photo_library_white" />
+    <!--<android.support.v7.widget.AppCompatImageView-->
+        <!--android:id="@+id/iv_gallery"-->
+        <!--android:layout_width="36dp"-->
+        <!--android:layout_height="36dp"-->
+        <!--android:layout_marginBottom="8dp"-->
+        <!--app:layout_constraintBottom_toBottomOf="parent"-->
+        <!--app:layout_constraintEnd_toStartOf="@+id/record_button"-->
+        <!--app:layout_constraintStart_toStartOf="parent"-->
+        <!--app:srcCompat="@drawable/photo_library_white" />-->
 
     <ImageView
         android:id="@+id/record_button"
         android:layout_width="64dp"
         android:layout_height="64dp"
         android:layout_marginBottom="16dp"
-        android:src="@drawable/circle_white"
+        android:src="@drawable/ring_white"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
     <TextView
+        android:id="@+id/cancel"
         android:layout_width="wrap_content"
         android:layout_height="24dp"
         android:layout_marginBottom="36dp"
