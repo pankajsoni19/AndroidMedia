@@ -27,9 +27,11 @@ import android.animation.AnimatorListenerAdapter;
 import android.content.ContentResolver;
 import android.content.Intent;
 import android.database.Cursor;
-import android.media.Image;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.CountDownTimer;
+import android.os.Handler;
 import android.provider.MediaStore;
 import android.support.annotation.ColorInt;
 import android.support.annotation.ColorRes;
@@ -40,12 +42,14 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.util.TimeUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.GridView;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.serenegiant.encoder.MediaAudioEncoder;
 import com.serenegiant.encoder.MediaEncoder;
@@ -56,12 +60,16 @@ import com.serenegiant.fileio.FileHandler;
 import com.serenegiant.fileio.FilePathUtil;
 import com.serenegiant.glutils.GLDrawer2D;
 import com.serenegiant.mediaaudiotest.R;
+import com.serenegiant.utils.TimeParseUtils;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import static android.app.Activity.RESULT_OK;
 
-public class CameraFragment extends Fragment {
+public class CameraFragment extends Fragment implements OnClickListener {
 
     public final String TAG = "CameraFragment";
 
@@ -95,9 +103,20 @@ public class CameraFragment extends Fragment {
     private View txt_gallery, iv_filter;
     private GridView grid_filters;
     private View iv_gallery;
-    private View separator;
+    private ImageView iv_vid_crop;
+    private TextView txtVideoDur;
+    private Timer timer;
+    private @ScaleType int scaleType = ScaleType.SCALE_SQUARE;
+    private Handler uiThreadHandler;
 
-    private @ScaleType int scaleType = ScaleType.SCALE_CROP_CENTER;
+    /**
+     * button for start/stop recording
+     */
+    private ImageView mRecordButton;
+    /**
+     * muxer for audio/video recording
+     */
+    private MediaMuxerWrapper mMuxer;
 
     /**
      * callback methods from encoder
@@ -119,81 +138,6 @@ public class CameraFragment extends Fragment {
                 }
             };
 
-    /**
-     * button for start/stop recording
-     */
-    private ImageView mRecordButton;
-    /**
-     * muxer for audio/video recording
-     */
-    private MediaMuxerWrapper mMuxer;
-    /**
-     * method when touch record button
-     */
-    private final OnClickListener mOnClickListener = new OnClickListener() {
-        @Override
-        public void onClick(final View view) {
-            switch (view.getId()) {
-                case R.id.iv_gallery:
-                    openGallery();
-                    break;
-                case R.id.iv_filter:
-                    toggleShowFilters();
-                    break;
-                case R.id.iv_flash:
-                    mCameraView.toggleFlash();
-                    break;
-                case R.id.iv_switch_camera:
-                    mCameraView.toggleCamera();
-                    break;
-                case R.id.record_button:
-                    if (mMuxer == null) {
-                        iv_filter.setVisibility(View.GONE);
-                        grid_filters.setVisibility(View.GONE);
-                        iv_gallery.setVisibility(View.GONE);
-                        setColorFilter(mRecordButton, android.R.color.holo_red_dark);
-                        startRecording();
-                    } else {
-                        setColorFilter(mRecordButton, android.R.color.white);
-                        stopRecording();
-                        Log.d(TAG, "file recorded");
-                    }
-                    break;
-                case R.id.cancel:
-                    getActivity().finish();
-                    break;
-            }
-        }
-    };
-
-    private void setColorFilter(ImageView view, @ColorRes int colorRes) {
-        @ColorInt int colorInt = ContextCompat.getColor(view.getContext(), colorRes);
-        view.setColorFilter(colorInt);
-
-    }
-
-    private void toggleShowFilters() {
-        if (grid_filters.getVisibility() == View.VISIBLE) {
-            grid_filters.animate().alpha(0).setDuration(300).setListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    super.onAnimationEnd(animation);
-                    grid_filters.setVisibility(View.GONE);
-                }
-            }).start();
-        } else {
-            grid_filters.setAlpha(0);
-            grid_filters.setVisibility(View.VISIBLE);
-            grid_filters.animate().alpha(1).setDuration(300).setListener(null).start();
-        }
-    }
-
-    private void openGallery() {
-        Intent intent = new Intent();
-        intent.setType("video/*");
-        intent.setAction(Intent.ACTION_GET_CONTENT);
-        startActivityForResult(Intent.createChooser(intent,"Select Video"), REQUEST_TAKE_GALLERY_VIDEO);
-    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -204,6 +148,8 @@ public class CameraFragment extends Fragment {
         if (mediaPath == null) {
             mediaPath = FileHandler.getTempFile(getContext()).getPath();
         }
+
+        uiThreadHandler = new Handler();
     }
 
     @Override
@@ -221,22 +167,26 @@ public class CameraFragment extends Fragment {
 
         iv_gallery = rootView.findViewById(R.id.iv_gallery);
         txt_gallery = rootView.findViewById(R.id.txt_gallery);
-        separator = rootView.findViewById(R.id.separator);
+        iv_vid_crop = rootView.findViewById(R.id.iv_vid_crop);
 
-        iv_filter.setOnClickListener(mOnClickListener);
-
-        iv_gallery.setOnClickListener(mOnClickListener);
-        rootView.findViewById(R.id.cancel).setOnClickListener(mOnClickListener);
-
+        txtVideoDur = rootView.findViewById(R.id.video_dur);
         mRecordButton = rootView.findViewById(R.id.record_button);
-        mRecordButton.setOnClickListener(mOnClickListener);
-        mFlashView.setOnClickListener(mOnClickListener);
-        mCameraSwitcher.setOnClickListener(mOnClickListener);
 
+        iv_filter.setOnClickListener(this);
+        iv_gallery.setOnClickListener(this);
+
+        rootView.findViewById(R.id.cancel).setOnClickListener(this);
+
+        iv_vid_crop.setOnClickListener(this);
+        mRecordButton.setOnClickListener(this);
+        mFlashView.setOnClickListener(this);
+        mCameraSwitcher.setOnClickListener(this);
+
+        mCameraView.setScaleType(scaleType);
         mCameraView.setVideoSize();
+        updateScaleUI();
 
         grid_filters.setAdapter(new FilterAdapter());
-
         grid_filters.setOnItemClickListener((parent, view, position, id) -> {
             FilterAdapter adapter = (FilterAdapter) parent.getAdapter();
             adapter.markSelected(position);
@@ -245,13 +195,8 @@ public class CameraFragment extends Fragment {
         });
 
         loadVideoAdapter();
-        return rootView;
-    }
 
-    @Override
-    public void onStart() {
-        super.onStart();
-        iv_filter.setVisibility(View.VISIBLE);
+        return rootView;
     }
 
     @Override
@@ -281,17 +226,117 @@ public class CameraFragment extends Fragment {
         Log.d(TAG, "onPause:");
         stopRecording();
         mCameraView.onPause();
+        cancelTimer();
         super.onPause();
     }
-
 
     @Override
     public void onStop() {
         super.onStop();
+        txtVideoDur.setVisibility(View.INVISIBLE);
+        setColorFilter(mRecordButton, android.R.color.white);
         if (isRemoving() && adapter != null) {
             adapter.changeCursor(null);
         }
     }
+
+    @Override
+    public void onClick(final View view) {
+        switch (view.getId()) {
+            case R.id.iv_vid_crop:
+                toggleScaleType();
+                break;
+            case R.id.iv_gallery:
+                openGallery();
+                break;
+            case R.id.iv_filter:
+                toggleShowFilters();
+                break;
+            case R.id.iv_flash:
+                mCameraView.toggleFlash();
+                break;
+            case R.id.iv_switch_camera:
+                mCameraView.toggleCamera();
+                break;
+            case R.id.record_button:
+                if (mMuxer == null) {
+                    startRecording();
+                } else {
+                    stopRecording();
+                }
+                break;
+            case R.id.cancel:
+                getActivity().finish();
+                break;
+        }
+    }
+
+    private void startTimer() {
+        cancelTimer();
+        timer = new Timer();
+        timer.scheduleAtFixedRate(new TimerTask() {
+
+            private long startTime = System.currentTimeMillis();
+
+            @Override
+            public void run() {
+                long delta = (System.currentTimeMillis() - startTime);
+                String parsed = TimeParseUtils.getFormattedTimeHHMMSS(delta);
+                uiThreadHandler.post(() -> txtVideoDur.setText(parsed));
+            }
+        }, 1000L, 1000L);
+    }
+
+    private void cancelTimer() {
+        if (timer != null) { timer.cancel(); }
+    }
+
+    private void setColorFilter(ImageView view, @ColorRes int colorRes) {
+        @ColorInt int colorInt = ContextCompat.getColor(view.getContext(), colorRes);
+        view.setColorFilter(colorInt);
+    }
+
+    private void toggleScaleType() {
+        if (mCameraView.getScaleType() == ScaleType.SCALE_SQUARE) {
+            mCameraView.setScaleType(ScaleType.SCALE_CROP_CENTER);
+        } else {
+            mCameraView.setScaleType(ScaleType.SCALE_SQUARE);
+        }
+
+        updateScaleUI();
+    }
+
+    private void updateScaleUI() {
+        if (mCameraView.getScaleType() == ScaleType.SCALE_SQUARE) {
+            iv_vid_crop.setImageResource(R.drawable.crop_square);
+        } else {
+            iv_vid_crop.setImageResource(R.drawable.crop_free);
+        }
+    }
+
+    private void toggleShowFilters() {
+        if (grid_filters.getVisibility() == View.VISIBLE) {
+            grid_filters.animate().alpha(0).setDuration(300).setListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    super.onAnimationEnd(animation);
+                    grid_filters.setVisibility(View.GONE);
+                }
+            }).start();
+        } else {
+            grid_filters.setAlpha(0);
+            grid_filters.setVisibility(View.VISIBLE);
+            grid_filters.animate().alpha(1).setDuration(300).setListener(null).start();
+        }
+    }
+
+    private void openGallery() {
+        Intent intent = new Intent();
+        intent.setType("video/*");
+        intent.setAction(Intent.ACTION_GET_CONTENT);
+        startActivityForResult(Intent.createChooser(intent, "Select Video"), REQUEST_TAKE_GALLERY_VIDEO);
+    }
+
     /**
      * start resorcing
      * This is a sample project and call this on UI thread to avoid being complicated
@@ -308,7 +353,7 @@ public class CameraFragment extends Fragment {
             int outputVideoWidth;
             int outputVideoHeight;
 
-            if (ScaleType.SCALE_SQUARE == mCameraView.getScaleMode()) {
+            if (ScaleType.SCALE_SQUARE == mCameraView.getScaleType()) {
                 outputVideoWidth = DEF_VID_SIZE;
                 outputVideoHeight = DEF_VID_SIZE;
             } else {
@@ -332,6 +377,16 @@ public class CameraFragment extends Fragment {
             return;
         }
 
+        iv_filter.setVisibility(View.GONE);
+        grid_filters.setVisibility(View.GONE);
+        iv_gallery.setVisibility(View.GONE);
+        txt_gallery.setVisibility(View.GONE);
+        recyclerView.setVisibility(View.GONE);
+        mCameraSwitcher.setVisibility(View.GONE);
+        setColorFilter(mRecordButton, android.R.color.holo_red_dark);
+        txtVideoDur.setVisibility(View.VISIBLE);
+        startTimer();
+
         mCameraView.onRecordingStart();
     }
 
@@ -340,6 +395,10 @@ public class CameraFragment extends Fragment {
      */
     private void stopRecording() {
         Log.d(TAG, "stopRecording:mMuxer=" + mMuxer);
+
+        txtVideoDur.setVisibility(View.INVISIBLE);
+        setColorFilter(mRecordButton, android.R.color.white);
+        cancelTimer();
 
         mRecordButton.setColorFilter(0);  // return to default color
 

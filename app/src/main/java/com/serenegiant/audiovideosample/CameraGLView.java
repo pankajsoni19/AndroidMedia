@@ -42,12 +42,8 @@ import com.serenegiant.utils.CameraHelper;
 import com.serenegiant.utils.Constants;
 
 import java.lang.ref.WeakReference;
-import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Queue;
-import java.util.Set;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -74,7 +70,7 @@ public final class CameraGLView extends GLSurfaceView {
 
     protected ImageView flashImageView, cameraSwitcher;
 
-    protected @ScaleType int mScaleMode = ScaleType.SCALE_SQUARE;
+    protected @ScaleType int mScaleType = ScaleType.SCALE_SQUARE;
     protected volatile int cameraId = CAMERA_FACING_BACK;
 
     private GLDrawer2D mDrawer = new GLDrawer2D();
@@ -188,17 +184,19 @@ public final class CameraGLView extends GLSurfaceView {
         startPreview(getWidth(), getHeight());
     }
 
-    public @ScaleType int getScaleMode() {
-        return mScaleMode;
+    public @ScaleType int getScaleType() {
+        return mScaleType;
     }
 
-    public void updateScaleMode() {
-        setScaleMode(mScaleMode);
-    }
-
-    public void setScaleMode(@ScaleType final int mode) {
-        mScaleMode = mode;
+    public void updateScaleType() {
         queueEvent(mRenderer::updateViewport);
+    }
+
+    public void setScaleType(@ScaleType final int type) {
+        if (mScaleType != type) {
+            mScaleType = type;
+            queueEvent(mRenderer::updateViewport);
+        }
     }
 
     public void setVideoSize() {
@@ -323,7 +321,7 @@ public final class CameraGLView extends GLSurfaceView {
                 CameraGLView parent = mWeakParent.get();
 
                 if (parent != null) {
-                    parent.updateScaleMode();
+                    parent.updateScaleType();
                 }
             });
         }
@@ -423,7 +421,7 @@ public final class CameraGLView extends GLSurfaceView {
             Log.i(TAG, String.format("updateViewport view: (%d,%d) view_aspect: %f,video: (%1.0f,%1.0f)",
                     view_width, view_height, view_aspect, video_width, video_height));
 
-            switch (parent.mScaleMode) {
+            switch (parent.mScaleType) {
                 case ScaleType.SCALE_STRETCH_FIT:
                     break;
                 case ScaleType.SCALE_KEEP_ASPECT_VIEWPORT: {
@@ -454,7 +452,7 @@ public final class CameraGLView extends GLSurfaceView {
                     final double scale_x = view_width / video_width;
                     final double scale_y = view_height / video_height;
                     final double scale =
-                            (parent.mScaleMode == ScaleType.SCALE_CROP_CENTER ? Math.max(scale_x, scale_y)
+                            (parent.mScaleType == ScaleType.SCALE_CROP_CENTER ? Math.max(scale_x, scale_y)
                                     : Math.min(scale_x, scale_y));
                     final double width = scale * video_width;
                     final double height = scale * video_height;
