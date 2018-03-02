@@ -25,8 +25,10 @@ package com.serenegiant.encoder;
 import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.media.MediaMuxer;
+import android.media.MediaScannerConnection;
 import android.util.Log;
 
+import com.serenegiant.MainApp;
 import com.serenegiant.mediaaudiotest.BuildConfig;
 
 import java.io.IOException;
@@ -37,9 +39,6 @@ public class MediaMuxerWrapper {
 
     private static final String TAG = "MediaMuxerWrapper";
 
-    private static final boolean DEBUG = BuildConfig.DEBUG;
-
-    private String mOutputPath;
     private final MediaMuxer mMediaMuxer;  // API >= 18
     private int mEncoderCount, mStartedCount;
     private boolean mIsStarted;
@@ -52,14 +51,9 @@ public class MediaMuxerWrapper {
      * @throws IOException
      */
     public MediaMuxerWrapper(String filePath) throws IOException {
-        mOutputPath = filePath;
-        mMediaMuxer = new MediaMuxer(mOutputPath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+        mMediaMuxer = new MediaMuxer(filePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
         mEncoderCount = mStartedCount = 0;
         mIsStarted = false;
-    }
-
-    public String getOutputPath() {
-        return mOutputPath;
     }
 
     public void prepare() throws IOException {

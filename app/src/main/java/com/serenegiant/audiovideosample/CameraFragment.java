@@ -28,6 +28,7 @@ import android.content.ContentResolver;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.drawable.Drawable;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.CountDownTimer;
@@ -51,6 +52,7 @@ import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.serenegiant.MainApp;
 import com.serenegiant.encoder.MediaAudioEncoder;
 import com.serenegiant.encoder.MediaEncoder;
 import com.serenegiant.encoder.MediaMuxerWrapper;
@@ -62,6 +64,7 @@ import com.serenegiant.glutils.GLDrawer2D;
 import com.serenegiant.mediaaudiotest.R;
 import com.serenegiant.utils.TimeParseUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Timer;
@@ -408,6 +411,15 @@ public class CameraFragment extends Fragment implements OnClickListener {
             mMuxer.stopRecording();
             mMuxer = null;
             // you should not wait here
+        }
+
+        if (new File(mediaPath).exists()) {
+            //noinspection ConstantConditions
+            MediaScannerConnection.scanFile(getContext().getApplicationContext(), new String[] {
+                    mediaPath
+            }, new String [] {
+                    "video/mp4"
+            }, null);
         }
     }
 
