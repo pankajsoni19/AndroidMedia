@@ -1,6 +1,6 @@
-<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.softwarejoint.demo">
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.softwarejoint.media" >
 
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
@@ -24,14 +24,14 @@
         android:name="android.hardware.camera.front"
         android:required="false" />
 
+    <uses-sdk android:minSdkVersion="19" tools:ignore="GradleOverrides" />
+
     <application
-        android:allowBackup="true"
-        android:icon="@drawable/ic_launcher"
-        android:label="@string/app_name"
         android:theme="@style/AppTheme">
 
         <activity
-            android:name="com.softwarejoint.demo.DemoActivity"
+            android:name=".camera.PickerActivity"
+            android:exported="true"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="stateAlwaysHidden">
             <intent-filter>
@@ -39,5 +39,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
     </application>
+
 </manifest>

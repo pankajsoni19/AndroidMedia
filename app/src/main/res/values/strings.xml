@@ -1,20 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">OpenGL Recorder</string>
-    <string name="action_settings">Settings</string>
-
-    <string name="action_posterize">Posterize</string>
-    <string name="action_grayscale">Grayscale</string>
-    <string name="action_art">Art</string>
-    <string name="action_1977">1977</string>
-    <string name="action_bloom">Bloom</string>
-
-    <string name="action_sepia">Sepia</string>
-
-    <string name="action_invert">Color Invert</string>
-    <string name="cancel">Cancel</string>
-    <string name="no_videos">no_videos</string>
-    <string name="empty_gallery">Gallery Empty</string>
+    <string name="app_name">Media Picker Demo</string>
 
 </resources>
