@@ -24,6 +24,38 @@ The intention is to sort out the edge cases and make it available as a library p
 2. Add dependency to project
 
 ```
-    Coming soon
+    dependencies {
+        implementation 'com.android.support:appcompat-v7:27.1.0'
+    }
+
+```
+
+3. Usage
+
+```
+    private void startPicker() {
+            new MediaPicker.Builder()
+                    .setMediaType(MediaType.VIDEO)
+                    .withGallery(Boolean.valueOf("true"))
+                    .withCamera(Boolean.valueOf("true"))
+                    .withCameraType(ScaleType.SCALE_CROP_CENTER)
+                    .withCameraFront(Boolean.valueOf("true"))
+                    .withFlash(Boolean.valueOf("true"))
+                    .withMaxPick(Integer.parseInt("2"))
+                    .startActivity(this);
+        }
+    }
+    
+    
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        Result result = MediaPicker.onActivityResult(requestCode, resultCode, data);
+        if (result != null) {
+            for (String file: result.files) {
+                Log.d(TAG, "file: picked: " + file);
+            }
+        }
+    }
 
 ```
