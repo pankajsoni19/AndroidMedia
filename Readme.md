@@ -1,4 +1,13 @@
-# OpenGL Android Video Effects
+# Android Media Picker
+
+[![Release](https://jitpack.io/v/softwarejoint/AndroidMedia.svg)](https://jitpack.io/#softwarejoint/AndroidMedia)
+
+* Supports picking multiple media files from gallery and camera
+* Support square, rectangle camera
+* Supports media/video effect filters
+* UI Design is similar to [Swift ImagePicker](https://github.com/hyperoslo/ImagePicker)
+
+## About
 
 This fork is a collection of forks from the original creator. 
 
@@ -21,11 +30,11 @@ The intention is to sort out the edge cases and make it available as a library p
 
 ```
 
-2. Add dependency to project
+2. Add dependency to project ( app build.gradle)
 
 ```
     dependencies {
-        implementation 'com.android.support:appcompat-v7:27.1.0'
+        implementation 'com.softwarejoint.media:1.0.0'
     }
 
 ```
