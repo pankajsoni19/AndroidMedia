@@ -31,6 +31,10 @@ public class FilterAdapter extends BaseAdapter {
 
     private int selectedEffect = 0;
 
+    public FilterAdapter(int selectedIdx) {
+        selectedEffect = selectedIdx;
+    }
+
     @Override
     public int getCount() {
         return items.length;

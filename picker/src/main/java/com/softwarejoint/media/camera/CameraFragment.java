@@ -22,8 +22,6 @@ package com.softwarejoint.media.camera;
  * All files in the folder are under this Apache License, Version 2.0.
 */
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
 import android.content.ContentResolver;
 import android.content.Intent;
 import android.database.Cursor;
@@ -42,12 +40,10 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.softwarejoint.media.R;
-import com.softwarejoint.media.adapter.FilterAdapter;
 import com.softwarejoint.media.adapter.GalleryAdapter;
 import com.softwarejoint.media.adapter.SelectedAdapter;
 import com.softwarejoint.media.encoder.MediaAudioEncoder;
@@ -74,10 +70,11 @@ public class CameraFragment extends Fragment implements OnClickListener {
 
     public final String TAG = "CameraFragment";
 
-    private static final int DEF_VID_SIZE = 480;
+    private static final int REQUEST_CODE_FILTER = 10001;
     private static final int REQUEST_TAKE_GALLERY_VIDEO = 1002;
 
-    @SuppressWarnings("SameParameterValue")
+    private static final int DEF_VID_SIZE = 480;
+
     public static CameraFragment newInstance(@NonNull MediaPickerOpts opts) {
         Bundle args = new Bundle();
         args.putParcelable(MediaPickerOpts.INTENT_OPTS, opts);
@@ -99,7 +96,6 @@ public class CameraFragment extends Fragment implements OnClickListener {
 
     private ImageView iv_back;
     private View txt_gallery, iv_filter;
-    private GridView grid_filters;
     private View iv_gallery;
     private ImageView iv_vid_crop;
     private TextView txtVideoDur;
@@ -107,6 +103,7 @@ public class CameraFragment extends Fragment implements OnClickListener {
 
     private Timer timer;
     private Handler uiThreadHandler;
+    private FilterPreviewDialogFragment filterPreviewDialog;
 
     /**
      * button for start/stop recording
@@ -157,7 +154,6 @@ public class CameraFragment extends Fragment implements OnClickListener {
         iv_flash = rootView.findViewById(R.id.iv_flash);
         mCameraSwitcher = rootView.findViewById(R.id.iv_switch_camera);
         recyclerView = rootView.findViewById(R.id.gallery_previews);
-        grid_filters = rootView.findViewById(R.id.grid_filters);
 
         iv_filter = rootView.findViewById(R.id.iv_filter);
 
@@ -178,15 +174,6 @@ public class CameraFragment extends Fragment implements OnClickListener {
         mCameraSwitcher.setOnClickListener(this);
 
         handleIntent();
-
-        grid_filters.setAdapter(new FilterAdapter());
-
-        grid_filters.setOnItemClickListener((parent, view, position, id) -> {
-            FilterAdapter adapter = (FilterAdapter) parent.getAdapter();
-            adapter.markSelected(position);
-            GLDrawer2D filter = adapter.getItem(position);
-            mCameraView.setDrawer(filter);
-        });
 
         return rootView;
     }
@@ -228,7 +215,6 @@ public class CameraFragment extends Fragment implements OnClickListener {
             iv_filter.setOnClickListener(this);
         } else {
             iv_filter.setVisibility(View.INVISIBLE);
-            grid_filters.setVisibility(View.GONE);
             iv_filter.setOnClickListener(null);
         }
     }
@@ -261,6 +247,10 @@ public class CameraFragment extends Fragment implements OnClickListener {
         txtVideoDur.setVisibility(View.INVISIBLE);
         if (isRemoving() && galleryAdapter != null) {
             galleryAdapter.changeCursor(null);
+        }
+
+        if (filterPreviewDialog != null) {
+            filterPreviewDialog.dismissDialog();
         }
     }
 
@@ -311,7 +301,8 @@ public class CameraFragment extends Fragment implements OnClickListener {
             }
         } else if (id == R.id.txt_done) {
             onClickDone();
-        } if (id == R.id.iv_back) {
+        }
+        if (id == R.id.iv_back) {
             //noinspection ConstantConditions
             getActivity().supportFinishAfterTransition();
         }
@@ -358,19 +349,13 @@ public class CameraFragment extends Fragment implements OnClickListener {
     }
 
     private void toggleShowFilters() {
-        if (grid_filters.getVisibility() == View.VISIBLE) {
-            grid_filters.animate().alpha(0).setDuration(300).setListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    super.onAnimationEnd(animation);
-                    grid_filters.setVisibility(View.GONE);
-                }
-            }).start();
-        } else {
-            grid_filters.setAlpha(0);
-            grid_filters.setVisibility(View.VISIBLE);
-            grid_filters.animate().alpha(1).setDuration(300).setListener(null).start();
+        if (filterPreviewDialog == null) {
+            filterPreviewDialog = new FilterPreviewDialogFragment();
+            filterPreviewDialog.setTargetFragment(this, REQUEST_CODE_FILTER);
         }
+
+        //noinspection ConstantConditions
+        filterPreviewDialog.show(getFragmentManager(), filterPreviewDialog.TAG);
     }
 
     private void openGallery() {
@@ -422,12 +407,16 @@ public class CameraFragment extends Fragment implements OnClickListener {
 
         iv_vid_crop.setVisibility(View.GONE);
         iv_filter.setVisibility(View.GONE);
-        grid_filters.setVisibility(View.GONE);
+
         iv_gallery.setVisibility(View.GONE);
         txt_gallery.setVisibility(View.GONE);
         recyclerView.setVisibility(View.GONE);
         mCameraSwitcher.setVisibility(View.GONE);
         iv_back.setVisibility(View.GONE);
+
+        if (filterPreviewDialog != null) {
+            filterPreviewDialog.dismissDialog();
+        }
 
         mRecordButton.setImageResource(R.drawable.circle_ringed_red_white);
         txtVideoDur.setText(R.string.video_start_time);
@@ -451,7 +440,9 @@ public class CameraFragment extends Fragment implements OnClickListener {
 
         mCameraView.onRecordingStop();
 
-        if (mMuxer == null) { return; }
+        if (mMuxer == null) {
+            return;
+        }
 
         mMuxer.stopRecording();
         String mediaPath = mMuxer.getOutputPath();
@@ -480,7 +471,6 @@ public class CameraFragment extends Fragment implements OnClickListener {
 
             if (opts.filtersEnabled) {
                 iv_filter.setVisibility(View.VISIBLE);
-                grid_filters.setVisibility(View.VISIBLE);
             } else {
                 iv_filter.setVisibility(View.INVISIBLE);
             }
@@ -618,5 +608,9 @@ public class CameraFragment extends Fragment implements OnClickListener {
         //noinspection ConstantConditions
         activity.setResult(RESULT_OK, resultIntent);
         activity.supportFinishAfterTransition();
+    }
+
+    public void onFilterSelected(GLDrawer2D filter) {
+        mCameraView.setDrawer(filter);
     }
 }

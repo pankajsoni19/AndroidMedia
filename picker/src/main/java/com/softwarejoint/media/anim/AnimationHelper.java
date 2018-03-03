@@ -37,7 +37,7 @@ public class AnimationHelper {
         return null;
     }
 
-    private static int getAnimationDuration(Context context) {
+    static int getAnimationDuration(Context context) {
         return context.getResources().getInteger(android.R.integer.config_mediumAnimTime);
     }
 
@@ -109,10 +109,12 @@ public class AnimationHelper {
      anim.start();
      }
 
-     static void onFinished(final AnimationFinishedListener listener) {
-     if (listener != null) {
-     listener.onAnimationFinished();
-     }
-     }
+
      */
+
+    static void onFinished(final AnimationFinishedListener listener) {
+        if (listener != null) {
+            listener.onAnimationFinished();
+        }
+    }
 }
