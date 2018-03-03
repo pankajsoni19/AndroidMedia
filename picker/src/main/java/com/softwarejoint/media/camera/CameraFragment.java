@@ -301,8 +301,7 @@ public class CameraFragment extends Fragment implements OnClickListener {
             }
         } else if (id == R.id.txt_done) {
             onClickDone();
-        }
-        if (id == R.id.iv_back) {
+        } else if (id == R.id.iv_back) {
             //noinspection ConstantConditions
             getActivity().supportFinishAfterTransition();
         }
