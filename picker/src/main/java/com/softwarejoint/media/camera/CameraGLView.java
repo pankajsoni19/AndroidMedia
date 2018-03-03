@@ -213,7 +213,7 @@ public final class CameraGLView extends GLSurfaceView {
             mVideoHeight = width;
         }
 
-        Log.d(TAG, "setVideoSize: width: " + width + " height: " + height);
+        Log.e(TAG, "setVideoSize: width: " + width + " height: " + height);
         queueEvent(mRenderer::updateViewport);
     }
 
@@ -313,9 +313,11 @@ public final class CameraGLView extends GLSurfaceView {
             runOnDraw(() -> {
                 GLDrawer2D old = mDrawer;
                 mDrawer = drawer;
+
                 if (old != null && mProgramId >= 0) {
                     old.release(mProgramId);
                 }
+
                 mProgramId = mDrawer.init();
                 GLES20.glUseProgram(mProgramId);
                 CameraGLView parent = mWeakParent.get();
@@ -407,13 +409,16 @@ public final class CameraGLView extends GLSurfaceView {
             final int view_width = parent.getWidth();
             final int view_height = parent.getHeight();
 
-            GLES20.glViewport(0, 0, view_width, view_height);
-            GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-
             final double video_width = parent.mVideoWidth;
             final double video_height = parent.mVideoHeight;
 
-            if (video_width == 0 || video_height == 0) return;
+            if (view_width == 0 || view_height == 0 || video_width == 0 || video_height == 0) {
+                Log.e(TAG, "updateViewport: view: width: " + view_width + " height: " + view_height + " video: width: " + view_width + " height: " + view_height);
+                return;
+            }
+
+            GLES20.glViewport(0, 0, view_width, view_height);
+            GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 
             Matrix.setIdentityM(mMvpMatrix, 0);
             final double view_aspect = view_width / (double) view_height;
