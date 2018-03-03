@@ -16,26 +16,15 @@
         app:layout_constraintBottom_toBottomOf="parent"/>
 
     <android.support.v7.widget.AppCompatImageView
-        android:id="@+id/iv_flash"
-        android:layout_width="40dp"
+        android:id="@+id/iv_back"
+        android:layout_width="64dp"
         android:layout_height="40dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="16dp"
         android:padding="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginTop="8dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/flash_auto_white" />
-
-    <android.support.v7.widget.AppCompatImageView
-        android:id="@+id/iv_filter"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_marginTop="16dp"
-        android:padding="6dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/movie_filter_white_24dp" />
+        app:srcCompat="@drawable/arrow_back_white" />
 
     <android.support.v7.widget.AppCompatImageView
         android:id="@+id/iv_switch_camera"
@@ -43,10 +32,43 @@
         android:layout_height="40dp"
         android:padding="8dp"
         android:layout_marginEnd="8dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="8dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/camera_front_white" />
+
+    <android.support.v7.widget.AppCompatImageView
+        android:id="@+id/iv_flash"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginTop="8dp"
+        android:padding="8dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/iv_switch_camera"
+        app:srcCompat="@drawable/flash_auto_white" />
+
+    <android.support.v7.widget.AppCompatImageView
+        android:id="@+id/iv_filter"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:padding="6dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/iv_flash"
+        app:srcCompat="@drawable/movie_filter_white_24dp" />
+
+    <android.support.v7.widget.AppCompatImageView
+        android:id="@+id/iv_vid_crop"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginEnd="8dp"
+        android:padding="8dp"
+        android:layout_marginTop="8dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/iv_filter"
+        app:srcCompat="@drawable/crop_free" />
 
     <TextView
         android:id="@+id/video_dur"
@@ -62,18 +84,6 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
-
-    <android.support.v7.widget.AppCompatImageView
-        android:id="@+id/iv_vid_crop"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_marginEnd="8dp"
-        android:padding="8dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.22"
-        app:srcCompat="@drawable/crop_free" />
 
     <GridView
         android:id="@+id/grid_filters"
@@ -98,8 +108,8 @@
     <TextView
         android:id="@+id/txt_gallery"
         android:layout_width="0dp"
-        android:layout_height="96dp"
-        android:layout_marginBottom="8dp"
+        android:layout_height="72dp"
+        android:layout_marginBottom="16dp"
         android:text="@string/empty_gallery"
         android:textSize="16sp"
         android:textColor="@android:color/white"
@@ -111,8 +121,8 @@
     <android.support.v7.widget.RecyclerView
         android:id="@+id/gallery_previews"
         android:layout_width="0dp"
-        android:layout_height="96dp"
-        android:layout_marginBottom="8dp"
+        android:layout_height="72dp"
+        android:layout_marginBottom="16dp"
         android:background="@android:color/transparent"
         app:layout_constraintBottom_toTopOf="@id/record_button"
         app:layout_constraintEnd_toEndOf="parent"
@@ -140,14 +150,15 @@
         app:layout_constraintStart_toStartOf="parent" />
 
     <TextView
-        android:id="@+id/cancel"
+        android:id="@+id/txt_done"
         android:layout_width="wrap_content"
         android:layout_height="24dp"
         android:layout_marginBottom="36dp"
-        android:text="@string/cancel"
+        android:text="@string/done"
         android:textColor="@android:color/white"
         android:textSize="16sp"
         android:gravity="center"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.50"

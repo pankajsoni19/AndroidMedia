@@ -39,7 +39,7 @@ public class MediaMuxerWrapper {
     private int mEncoderCount, mStartedCount;
     private boolean mIsStarted;
     private MediaEncoder mVideoEncoder, mAudioEncoder;
-
+    private String mOutputPath;
     /**
      * Constructor
      *
@@ -50,6 +50,11 @@ public class MediaMuxerWrapper {
         mMediaMuxer = new MediaMuxer(filePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
         mEncoderCount = mStartedCount = 0;
         mIsStarted = false;
+        mOutputPath = filePath;
+    }
+
+    public String getOutputPath() {
+        return mOutputPath;
     }
 
     public void prepare() throws IOException {

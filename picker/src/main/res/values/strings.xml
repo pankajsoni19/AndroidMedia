@@ -12,8 +12,10 @@
     <string name="action_sepia">Sepia</string>
 
     <string name="action_invert">Color Invert</string>
-    <string name="cancel">Cancel</string>
+
     <string name="no_videos">no_videos</string>
     <string name="empty_gallery">Gallery Empty</string>
+    <string name="video_start_time">00:00:00</string>
 
+    <string name="done">Done</string>
 </resources>

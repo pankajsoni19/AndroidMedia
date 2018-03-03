@@ -85,6 +85,7 @@ public final class CameraThread extends Thread {
         if (parent == null || parent.flashImageView == null || mCamera == null) {
             return;
         }
+
         Camera.Parameters parameters = mCamera.getParameters();
 
         List<String> flashModes = parameters.getSupportedFlashModes();

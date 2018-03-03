@@ -21,7 +21,7 @@ The intention is to sort out the edge cases and make it available as a library p
 
 ### Using in your project
 
-1. Include jitpack.io maven repo
+1. Include jitpack.io maven repo ( app build.gradle)
 
 ```
     repositories {

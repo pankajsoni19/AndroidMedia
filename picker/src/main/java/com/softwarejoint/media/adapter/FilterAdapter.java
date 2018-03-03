@@ -1,4 +1,4 @@
-package com.softwarejoint.media.camera;
+package com.softwarejoint.media.adapter;
 
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,7 +18,7 @@ import com.softwarejoint.media.glutils.GLPosterizeFilter;
  * Created by Pankaj Soni <pankajsoni@softwarejoint.com> on 02/03/18.
  * Copyright (c) 2018 Software Joint. All rights reserved.
  */
-class FilterAdapter extends BaseAdapter {
+public class FilterAdapter extends BaseAdapter {
 
     static int[] items = {
             R.drawable.effect_1,
@@ -80,7 +80,7 @@ class FilterAdapter extends BaseAdapter {
         return convertView;
     }
 
-    void markSelected(int position) {
+    public void markSelected(int position) {
         selectedEffect = position;
         notifyDataSetChanged();
     }

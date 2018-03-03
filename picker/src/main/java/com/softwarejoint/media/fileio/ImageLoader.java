@@ -4,6 +4,8 @@ import android.content.ContentResolver;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.media.MediaMetadataRetriever;
+import android.media.ThumbnailUtils;
 import android.os.AsyncTask;
 import android.provider.MediaStore;
 import android.widget.ImageView;
@@ -11,6 +13,8 @@ import android.widget.ImageView;
 import com.softwarejoint.media.R;
 
 import java.lang.ref.WeakReference;
+
+import static android.provider.MediaStore.Video.Thumbnails.MICRO_KIND;
 
 /**
  * Created by Pankaj Soni <pankajsoni@softwarejoint.com> on 02/03/18.
@@ -26,21 +30,40 @@ public class ImageLoader extends AsyncTask<String, Void, Bitmap> {
         imageSize = (int) (SIZE * Resources.getSystem().getDisplayMetrics().density);
     }
 
+    private String mediaPath;
     private Long id;
     private WeakReference<ImageView> reference;
 
+    private ImageLoader(String mediaPath) {
+        this.mediaPath = mediaPath;
+    }
+
+    private ImageLoader(long id) {
+        this.id = id;
+    }
 
     public static ImageLoader with(long id) {
         return new ImageLoader(id);
     }
 
+    public static ImageLoader with(String mediaPath) {
+        return new ImageLoader(mediaPath);
+    }
+
+    private String getKey() {
+        return id == null ? mediaPath : String.valueOf(id);
+    }
+
     public void loadInto(ImageView imageView) {
-        if (id == imageView.getTag(R.id.image_loader_key) && imageView.getDrawable() != null) {
+        final String key = getKey();
+
+        if (key.equals(imageView.getTag(R.id.image_loader_key))
+                && imageView.getDrawable() != null) {
             return;
         }
 
-        imageView.setTag(R.id.image_loader_key, id);
-        Bitmap bitmap = MemoryCache.getInstance().get(String.valueOf(id));
+        imageView.setTag(R.id.image_loader_key, key);
+        Bitmap bitmap = MemoryCache.getInstance().get(key);
 
         if (bitmap != null) {
             imageView.setImageBitmap(bitmap);
@@ -50,35 +73,35 @@ public class ImageLoader extends AsyncTask<String, Void, Bitmap> {
         }
     }
 
-    private ImageLoader(long id) {
-        this.id = id;
-    }
-
     @Override
     protected Bitmap doInBackground(String... strings) {
-        ImageView imageView = reference.get();
-        if (imageView == null) { return null; }
+        Bitmap bitmap = null;
 
-        ContentResolver crThumb = imageView.getContext().getContentResolver();
+        if (id != null) {
+            ImageView imageView = reference.get();
+            if (imageView == null) { return null; }
 
-        int imgHeight = imageView.getHeight();
-        int imgWidth = imageView.getWidth();
+            ContentResolver crThumb = imageView.getContext().getContentResolver();
 
-        imgHeight =  imgHeight > 0 ? imgHeight : imageSize;
-        imgWidth =  imgWidth > 0 ? imgWidth : imageSize;
+            int imgHeight = imageView.getHeight();
+            int imgWidth = imageView.getWidth();
 
-        final int imgSize = Math.min(imgHeight, imgWidth);
+            imgHeight =  imgHeight > 0 ? imgHeight : imageSize;
+            imgWidth =  imgWidth > 0 ? imgWidth : imageSize;
 
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.outHeight = 96;
-        options.outWidth = 96;
-        options.inSampleSize = calculateInSampleSize(options, imgSize, imgSize);
+            final int imgSize = Math.min(imgHeight, imgWidth);
 
-        Bitmap bitmap =
-                MediaStore.Video.Thumbnails.getThumbnail(crThumb, id,
-                        MediaStore.Video.Thumbnails.MICRO_KIND, options);
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            options.outHeight = 96;
+            options.outWidth = 96;
+            options.inSampleSize = calculateInSampleSize(options, imgSize, imgSize);
 
-        MemoryCache.getInstance().put(String.valueOf(id), bitmap);
+            bitmap = MediaStore.Video.Thumbnails.getThumbnail(crThumb, id, MICRO_KIND, options);
+        } else if (mediaPath != null) {
+            bitmap = ThumbnailUtils.createVideoThumbnail(mediaPath, MICRO_KIND);
+        }
+
+        MemoryCache.getInstance().put(getKey(), bitmap);
 
         return bitmap;
     }
@@ -86,9 +109,12 @@ public class ImageLoader extends AsyncTask<String, Void, Bitmap> {
     @Override
     protected void onPostExecute(Bitmap bitmap) {
         super.onPostExecute(bitmap);
-        ImageView imageView = reference.get();
+        final ImageView imageView = reference.get();
+        if (imageView == null) { return; }
 
-        if (imageView != null && id == imageView.getTag(R.id.image_loader_key)) {
+        final String key = getKey();
+
+        if (key.equals(imageView.getTag(R.id.image_loader_key))) {
             imageView.setImageBitmap(bitmap);
         }
     }

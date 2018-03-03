@@ -1,19 +1,16 @@
 package com.softwarejoint.demo;
 
-import android.app.Activity;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.util.Log;
-import android.view.Window;
 import android.widget.TextView;
 
 import com.softwarejoint.media.anim.BaseActivity;
 import com.softwarejoint.media.enums.MediaType;
 import com.softwarejoint.media.enums.ScaleType;
-import com.softwarejoint.media.picker.MediaPicker;
+import com.softwarejoint.media.picker.MediaPickerOpts;
 import com.softwarejoint.media.picker.Result;
 
 import java.io.File;
@@ -42,7 +39,7 @@ public class DemoActivity extends BaseActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        Result result = MediaPicker.onActivityResult(requestCode, resultCode, data);
+        Result result = MediaPickerOpts.onActivityResult(requestCode, resultCode, data);
         if (result != null) {
             StringBuilder builder = new StringBuilder();
             for (String file: result.files) {
@@ -57,14 +54,14 @@ public class DemoActivity extends BaseActivity {
     private void startPicker() {
         txt_files.setText("");
 
-        new MediaPicker.Builder()
+        new MediaPickerOpts.Builder()
                 .setMediaType(MediaType.VIDEO)
+                .canChangeScaleType(Boolean.valueOf("false"))
                 .withGallery(Boolean.valueOf("true"))
-                .withCamera(Boolean.valueOf("true"))
                 .withCameraType(ScaleType.SCALE_CROP_CENTER)
-                .withCameraFront(Boolean.valueOf("true"))
                 .withFlash(Boolean.valueOf("true"))
-                .withMaxPick(Integer.parseInt("2"))
+                .withMaxSelection(Integer.parseInt("2"))
+                .withFilters(Boolean.valueOf("true"))
                 .startActivity(this);
     }
 }

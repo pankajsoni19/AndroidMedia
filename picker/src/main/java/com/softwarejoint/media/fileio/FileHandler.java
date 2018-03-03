@@ -20,7 +20,7 @@ public class FileHandler {
 
     private static final String TAG = "FileHandler";
 
-    private static String getApplicationName(Context context) {
+    public static String getApplicationName(Context context) {
         ApplicationInfo applicationInfo = context.getApplicationInfo();
         @StringRes int stringId = applicationInfo.labelRes;
         return stringId == 0 ? applicationInfo.nonLocalizedLabel.toString() : context.getString(stringId);
@@ -52,5 +52,10 @@ public class FileHandler {
         final SimpleDateFormat mDateTimeFormat =
                 new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss", Locale.US);
         return mDateTimeFormat.format(new Date());
+    }
+
+    public static boolean exists(String mediaPath) {
+        File file = new File(mediaPath);
+        return file.exists();
     }
 }

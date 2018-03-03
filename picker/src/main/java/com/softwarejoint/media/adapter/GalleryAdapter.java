@@ -1,18 +1,16 @@
-package com.softwarejoint.media.camera;
+package com.softwarejoint.media.adapter;
 
-import android.content.ContentResolver;
-import android.content.Context;
 import android.database.Cursor;
+import android.os.Handler;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
-import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 
 import com.softwarejoint.media.R;
+import com.softwarejoint.media.camera.CameraFragment;
 import com.softwarejoint.media.fileio.ImageLoader;
 
 import java.util.ArrayList;
@@ -24,44 +22,46 @@ import io.github.ypdieguez.cursorrecycleradapter.CursorRecyclerAdapter;
  * Created by Pankaj Soni <pankajsoni@softwarejoint.com> on 02/03/18.
  * Copyright (c) 2018 Software Joint. All rights reserved.
  */
-public class GalleryAdapter extends CursorRecyclerAdapter<GalleryAdapter.ViewHolder> {
+public class GalleryAdapter extends CursorRecyclerAdapter<ViewHolder> {
 
     private static final String TAG = "GalleryAdapter";
 
-    private static final int MAX_SELECTION = 1;
-
     private int colIdIndex = 0;
     private int colDataIndex = 1;
-    private int colthumbIndex = 2;
-    //private Cursor cursor;
-    private ContentResolver resolver;
-    private int maxSelection = MAX_SELECTION;
+    private final int maxSelection;
+    private final CameraFragment cameraFragment;
 
     private List<String> selected = new ArrayList<>();
 
-    GalleryAdapter(Context context, Cursor cursor) {
+    public GalleryAdapter(Cursor cursor, int count, CameraFragment fragment) {
         super(cursor);
         colIdIndex = cursor.getColumnIndexOrThrow(MediaStore.Video.Media._ID);
         colDataIndex = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA);
-        colthumbIndex = cursor.getColumnIndexOrThrow(MediaStore.Video.Thumbnails.DATA);
-        resolver = context.getContentResolver();
-
+        maxSelection = count;
+        cameraFragment = fragment;
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder {
+    public void addSelected(String filePath) {
+        selected.add(filePath);
 
-        ImageView iv_image;
-        ImageView iv_select;
-
-        ViewHolder(View v) {
-            super(v);
-            iv_image = v.findViewById(R.id.iv_video);
-            iv_select = v.findViewById(R.id.iv_select);
+        int count = 0;
+        for (String file: selected) {
+            Log.d(TAG, "count : " + (++count) +  " selected: " + file);
         }
+
+        notifyDataSetChanged();
+    }
+
+    public int getSelectionCount() {
+        return selected.size();
+    }
+
+    public void fill(ArrayList<String> items) {
+        items.addAll(selected);
     }
 
     @Override
-    public GalleryAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.adapter_video, parent, false);
         return new ViewHolder(view);
     }
@@ -72,6 +72,8 @@ public class GalleryAdapter extends CursorRecyclerAdapter<GalleryAdapter.ViewHol
 
         final long itemId = cursor.getLong(colIdIndex);
         final String mediaPath = cursor.getString(colDataIndex);
+
+        Log.d(TAG, "mediaPath: " + mediaPath);
 
         ImageLoader.with(itemId).loadInto(holder.iv_image);
 
@@ -98,24 +100,15 @@ public class GalleryAdapter extends CursorRecyclerAdapter<GalleryAdapter.ViewHol
 
         @Override
         public void onClick(View v) {
-            int position = viewHolder.getAdapterPosition();
-
             if (selected.contains(mediaPath)) {
-                selected.remove(position);
+                selected.remove(mediaPath);
                 viewHolder.iv_select.setVisibility(View.GONE);
             } else if (selected.size() < maxSelection) {
+                viewHolder.iv_select.setVisibility(View.VISIBLE);
                 selected.add(mediaPath);
-
-                if (selected.size() == maxSelection) {
-                    onMaxSelection();
-                } else {
-                    viewHolder.iv_select.setVisibility(View.VISIBLE);
-                }
             }
-        }
-    }
 
-    private void onMaxSelection() {
-        Log.d(TAG, "onMaxSelection");
+            cameraFragment.onMediaSelectionUpdated();
+        }
     }
 }

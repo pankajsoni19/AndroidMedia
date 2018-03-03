@@ -1,10 +1,8 @@
 package com.softwarejoint.media.camera;
 
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
-import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
@@ -17,6 +15,7 @@ import com.softwarejoint.media.fileio.MemoryCache;
 import com.softwarejoint.media.permission.PermissionCallBack;
 import com.softwarejoint.media.permission.PermissionManager;
 import com.softwarejoint.media.permission.PermissionRequest;
+import com.softwarejoint.media.picker.MediaPickerOpts;
 
 import static android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN;
 
@@ -31,7 +30,7 @@ public class PickerActivity extends BaseActivity implements PermissionCallBack, 
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().setFlags(FLAG_FULLSCREEN, FLAG_FULLSCREEN);
 
-        setTransition(Gravity.START, GravityCompat.END, GravityCompat.END, GravityCompat.START);
+        setTransition(Gravity.END, GravityCompat.END, GravityCompat.END, GravityCompat.END);
 
         setContentView(R.layout.activity_main);
         uiThreadHandler = new Handler();
@@ -44,7 +43,13 @@ public class PickerActivity extends BaseActivity implements PermissionCallBack, 
         FragmentManager manager = getSupportFragmentManager();
 
         if (manager.getBackStackEntryCount() == 0) {
-            CameraFragment fragment = CameraFragment.newInstance();
+            MediaPickerOpts opts = getIntent().getParcelableExtra(MediaPickerOpts.INTENT_OPTS);
+            if (opts == null) {
+                uiThreadHandler.postDelayed(this::supportFinishAfterTransition, 500L);
+                return;
+            }
+
+            CameraFragment fragment = CameraFragment.newInstance(opts);
             FragmentTransaction transaction = manager.beginTransaction();
             transaction.replace(R.id.container, fragment, fragment.TAG);
             transaction.addToBackStack(fragment.TAG);
