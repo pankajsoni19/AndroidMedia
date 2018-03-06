@@ -39,12 +39,9 @@ public class CameraZoom implements View.OnTouchListener {
     private volatile boolean mIsFocusReady = false;
     private Camera.Area mFocusArea;
     private ArrayList<Camera.Area> mFocusAreas;
-    private final WeakReference<CameraGLView> mWeakParent;
     private CameraHandler mHandler;
-    //private boolean isRecording;
 
     CameraZoom(CameraGLView glView) {
-        mWeakParent = new WeakReference<>(glView);
         mScaleDetector = new ScaleGestureDetector(glView.getContext(), new ScaleListener());
         mFocusArea = new Camera.Area(new Rect(), 1000);
         mFocusAreas = new ArrayList<>();
@@ -53,7 +50,7 @@ public class CameraZoom implements View.OnTouchListener {
     }
 
     void setCameraHandler(CameraHandler handler) {
-        this.mHandler = handler;
+        mHandler = handler;
     }
 
     public void setCamera(Camera camera) {

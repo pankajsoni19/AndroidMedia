@@ -263,7 +263,7 @@ public final class CameraThread extends Thread {
                 }
 
                 final int[] max_fps = supportedFpsRange.get(supportedFpsRange.size() - 1);
-                Log.d(TAG, String.format("fps:%d-%d", max_fps[0], max_fps[1]));
+                Log.d(TAG, String.format("fps: %d-%d", max_fps[0], max_fps[1]));
                 params.setPreviewFpsRange(max_fps[0], max_fps[1]);
             }
 

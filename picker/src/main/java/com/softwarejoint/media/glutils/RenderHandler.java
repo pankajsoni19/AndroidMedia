@@ -55,7 +55,7 @@ public final class RenderHandler implements Runnable {
     private EGLBase mEgl;
     private EGLBase.EglSurface mInputSurface;
     private GLDrawer2D mDrawer;
-    private int mProgramId;
+    //private int mProgramId;
 
     public RenderHandler(GLDrawer2D drawer) {
         mDrawer = drawer;
@@ -203,7 +203,7 @@ public final class RenderHandler implements Runnable {
 					GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
                     mDrawer.setMatrix(mMatrix, 16);
                     //
-                    mDrawer.draw(mProgramId, mTexId, mMatrix);
+                    mDrawer.draw(mTexId, mMatrix);
                     mInputSurface.swap();
                 }
             } else {
@@ -234,7 +234,7 @@ public final class RenderHandler implements Runnable {
         mInputSurface = mEgl.createFromSurface(mSurface);
 
         mInputSurface.makeCurrent();
-        mProgramId = mDrawer.init();
+        mDrawer.init();
         mSurface = null;
         mSync.notifyAll();
     }
@@ -248,7 +248,7 @@ public final class RenderHandler implements Runnable {
         }
 
         if (mDrawer != null) {
-            mDrawer.release(mProgramId);
+            mDrawer.release();
         }
 
         if (mEgl != null) {

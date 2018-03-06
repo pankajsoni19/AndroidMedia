@@ -74,8 +74,8 @@ public class FilterPreviewDialogFragment extends DialogFragment {
             FilterAdapter adapter = (FilterAdapter) parent.getAdapter();
             selectedIdx = position;
             adapter.markSelected(position);
-            GLDrawer2D filter = adapter.getItem(position);
-            onFilterSelected(filter);
+            //GLDrawer2D filter = adapter.getItem(position);
+            //onFilterSelected(filter);
         });
 
         AnimFadeReveal.fadeIn(rootView);
@@ -85,11 +85,11 @@ public class FilterPreviewDialogFragment extends DialogFragment {
         return rootView;
     }
 
-    private void onFilterSelected(GLDrawer2D filter) {
-        if (getTargetFragment() instanceof CameraFragment) {
-            ((CameraFragment) getTargetFragment()).onFilterSelected(filter);
-        }
-    }
+//    private void onFilterSelected(GLDrawer2D filter) {
+//        if (getTargetFragment() instanceof CameraFragment) {
+//            ((CameraFragment) getTargetFragment()).onFilterSelected(filter);
+//        }
+//    }
 
     private void dismissView() {
         AnimFadeReveal.fadeOut(getView(), this::dismissDialog);

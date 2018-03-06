@@ -22,6 +22,7 @@ package com.softwarejoint.media.glutils;
  * All files in the folder are under this Apache License, Version 2.0.
 */
 
+import android.graphics.Rect;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
@@ -62,7 +63,7 @@ public class GLDrawer2D {
             "    gl_FragColor = texture2D(inputImageTexture, textureCoordinate);\n" +
             "}";
 
-    private static final String TAG = "GLDrawer2D";
+    private static String TAG = "GLrawer2D";
     private static final float[] VERTICES = {1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f, -1.0f};
     private static final float[] TEXCOORD = {1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f};
     private static final int FLOAT_SZ = Float.SIZE / 8;
@@ -81,6 +82,7 @@ public class GLDrawer2D {
     private int mGLProgId;
     private String mVertexShader;
     private String mFragmentShader;
+    private Rect rect = new Rect();
 
     /**
      * Constructor
@@ -181,6 +183,7 @@ public class GLDrawer2D {
     }
 
     public int init() {
+        Log.d(TAG, "init: " + mGLProgId);
         mGLProgId = loadShader(mVertexShader, mFragmentShader);
         onInit(mGLProgId);
         return mGLProgId;
@@ -205,7 +208,6 @@ public class GLDrawer2D {
     /**
      * terminating, this should be called in GL context
      */
-    @Deprecated
     public void release() {
         if (mGLProgId >= 0) GLES20.glDeleteProgram(mGLProgId);
         mGLProgId = -1;
@@ -232,28 +234,8 @@ public class GLDrawer2D {
      * @param texMatrix texture matrix、if this is null, the last one use(we don't check size of this
      *                  array and needs at least 16 of float)
      */
-    @Deprecated
     public void draw(final int texId, final float[] texMatrix) {
         GLES20.glUseProgram(mGLProgId);
-        if (texMatrix != null) GLES20.glUniformMatrix4fv(muTexMatrixLoc, 1, false, texMatrix, 0);
-        GLES20.glUniformMatrix4fv(muMVPMatrixLoc, 1, false, mMvpMatrix, 0);
-        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, texId);
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, VERTEX_NUM);
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
-        GLES20.glUseProgram(0);
-    }
-
-    /**
-     * draw specific texture with specific texture matrix
-     *
-     * @param programId program ID
-     * @param texId     texture ID
-     * @param texMatrix texture matrix、if this is null, the last one use(we don't check size of this
-     *                  array and needs at least 16 of float)
-     */
-    public void draw(final int programId, final int texId, final float[] texMatrix) {
-        GLES20.glUseProgram(programId);
         if (texMatrix != null) GLES20.glUniformMatrix4fv(muTexMatrixLoc, 1, false, texMatrix, 0);
         GLES20.glUniformMatrix4fv(muMVPMatrixLoc, 1, false, mMvpMatrix, 0);
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
@@ -277,5 +259,32 @@ public class GLDrawer2D {
         } else {
             Matrix.setIdentityM(mMvpMatrix, 0);
         }
+    }
+
+    public void setRect(int startX, int startY, int width, int height) {
+        rect.left = startX;
+        rect.top = startY;
+        rect.right = rect.left + width;
+        rect.bottom = rect.top + height;
+    }
+
+    public int getStartX() {
+        return rect.left;
+    }
+
+    public int getStartY() {
+        return rect.top;
+    }
+
+    public int width() {
+        return rect.width();
+    }
+
+    public int height() {
+        return rect.height();
+    }
+
+    public Rect getRect() {
+        return rect;
     }
 }

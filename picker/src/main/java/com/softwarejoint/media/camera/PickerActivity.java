@@ -3,6 +3,7 @@ package com.softwarejoint.media.camera;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
@@ -16,6 +17,8 @@ import com.softwarejoint.media.permission.PermissionCallBack;
 import com.softwarejoint.media.permission.PermissionManager;
 import com.softwarejoint.media.permission.PermissionRequest;
 import com.softwarejoint.media.picker.MediaPickerOpts;
+
+import java.util.List;
 
 import static android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN;
 
@@ -55,6 +58,19 @@ public class PickerActivity extends BaseActivity implements PermissionCallBack, 
             transaction.addToBackStack(fragment.TAG);
             transaction.commit();
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+        List<Fragment> fragments = getSupportFragmentManager().getFragments();
+        if (fragments.size() > 0) {
+            Fragment topFrag = fragments.get(fragments.size() - 1);
+            if (!topFrag.isRemoving() && topFrag instanceof CameraFragment) {
+                if (((CameraFragment) topFrag).onBackPressed()) return;
+            }
+        }
+
+        super.onBackPressed();
     }
 
     @Override

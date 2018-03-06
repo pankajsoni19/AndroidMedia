@@ -32,19 +32,21 @@ public class MediaPickerOpts implements Parcelable {
     public final boolean flashEnabled;
     public final boolean filtersEnabled;
     public final boolean scaleTypeChangeable;
+
+    public final boolean filterPreviewEnabled;
+
     public final int maxSelection;
     public final String mediaDir;
 
-    public MediaPickerOpts(@MediaType int mediaType, @ScaleType int scaleType,
-                           boolean galleryEnabled, boolean flashEnabled, boolean filtersEnabled,
+    public MediaPickerOpts(int mediaType, int scaleType, boolean galleryEnabled, boolean flashEnabled,
+                           boolean filtersEnabled, boolean filterPreviewEnabled,
                            boolean scaleTypeChangeable, int maxSelection, String mediaDir) {
-
-
         this.mediaType = mediaType;
         this.scaleType = scaleType;
         this.galleryEnabled = galleryEnabled;
         this.flashEnabled = flashEnabled;
         this.filtersEnabled = filtersEnabled;
+        this.filterPreviewEnabled = filterPreviewEnabled;
         this.scaleTypeChangeable = scaleTypeChangeable;
         this.maxSelection = maxSelection;
         this.mediaDir = mediaDir;
@@ -57,25 +59,9 @@ public class MediaPickerOpts implements Parcelable {
         flashEnabled = in.readByte() != 0;
         filtersEnabled = in.readByte() != 0;
         scaleTypeChangeable = in.readByte() != 0;
+        filterPreviewEnabled = in.readByte() != 0;
         maxSelection = in.readInt();
         mediaDir = in.readString();
-    }
-
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        dest.writeInt(mediaType);
-        dest.writeInt(scaleType);
-        dest.writeByte((byte) (galleryEnabled ? 1 : 0));
-        dest.writeByte((byte) (flashEnabled ? 1 : 0));
-        dest.writeByte((byte) (filtersEnabled ? 1 : 0));
-        dest.writeByte((byte) (scaleTypeChangeable ? 1 : 0));
-        dest.writeInt(maxSelection);
-        dest.writeString(mediaDir);
-    }
-
-    @Override
-    public int describeContents() {
-        return 0;
     }
 
     public static final Creator<MediaPickerOpts> CREATOR = new Creator<MediaPickerOpts>() {
@@ -96,6 +82,24 @@ public class MediaPickerOpts implements Parcelable {
         return new Result(data.getStringArrayListExtra(INTENT_RES));
     }
 
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeInt(mediaType);
+        dest.writeInt(scaleType);
+        dest.writeByte((byte) (galleryEnabled ? 1 : 0));
+        dest.writeByte((byte) (flashEnabled ? 1 : 0));
+        dest.writeByte((byte) (filtersEnabled ? 1 : 0));
+        dest.writeByte((byte) (scaleTypeChangeable ? 1 : 0));
+        dest.writeByte((byte) (filterPreviewEnabled ? 1 : 0));
+        dest.writeInt(maxSelection);
+        dest.writeString(mediaDir);
+    }
+
     @SuppressWarnings("unused")
     public static final class Builder {
 
@@ -108,6 +112,7 @@ public class MediaPickerOpts implements Parcelable {
         private boolean flashEnabled = true;
         private boolean filtersEnabled = true;
         private boolean scaleTypeChangeable = true;
+        private boolean filterPreviewEnabled = true;
 
         private int maxSelection = MAX_SELECTION;
         private String mediaDir;
@@ -119,7 +124,7 @@ public class MediaPickerOpts implements Parcelable {
 
             MediaPickerOpts opts =
                     new MediaPickerOpts(mediaType, scaleType, galleryEnabled, flashEnabled,
-                            filtersEnabled, scaleTypeChangeable, maxSelection, mediaDir);
+                            filtersEnabled, filterPreviewEnabled, scaleTypeChangeable, maxSelection, mediaDir);
 
             Intent newIntent = new Intent(activity, PickerActivity.class);
             newIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -166,6 +171,11 @@ public class MediaPickerOpts implements Parcelable {
 
         public Builder canChangeScaleType(boolean enabled) {
             scaleTypeChangeable = enabled;
+            return this;
+        }
+
+        public Builder withFilterPreviewEnabled(boolean enabled) {
+            filterPreviewEnabled = enabled;
             return this;
         }
 

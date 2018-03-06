@@ -23,6 +23,8 @@ package com.softwarejoint.media.camera;
 */
 
 import android.content.Context;
+import android.content.res.Resources;
+import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.opengl.EGL14;
 import android.opengl.GLES20;
@@ -30,19 +32,28 @@ import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
 import android.support.v7.app.AppCompatDelegate;
 import android.util.AttributeSet;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.View;
 import android.widget.ImageView;
 
 import com.softwarejoint.media.encoder.MediaVideoEncoder;
 import com.softwarejoint.media.enums.ScaleType;
+import com.softwarejoint.media.glutils.GL1977Filter;
+import com.softwarejoint.media.glutils.GLArtFilter;
+import com.softwarejoint.media.glutils.GLColorInvertFilter;
 import com.softwarejoint.media.glutils.GLDrawer2D;
+import com.softwarejoint.media.glutils.GLGrayscaleFilter;
+import com.softwarejoint.media.glutils.GLPosterizeFilter;
 import com.softwarejoint.media.utils.CameraHelper;
 import com.softwarejoint.media.utils.Constants;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 
 import javax.microedition.khronos.egl.EGLConfig;
@@ -72,6 +83,7 @@ public final class CameraGLView extends GLSurfaceView {
 
     protected @ScaleType int mScaleType = ScaleType.SCALE_SQUARE;
     protected volatile int cameraId = CAMERA_FACING_BACK;
+    private boolean filtersPreviewEnabled;
 
     private GLDrawer2D mDrawer = new GLDrawer2D();
 
@@ -142,13 +154,37 @@ public final class CameraGLView extends GLSurfaceView {
         }
     }
 
+    public boolean toggleShowFilters() {
+        boolean showFilters = mRenderer.showFilters;
+        queueEvent(mRenderer::toggleShowFilters);
+        return !showFilters;
+    }
+
+    public boolean isFiltersPreviewVisible() {
+        return mRenderer.showFilters;
+    }
+
     public GLDrawer2D getDrawer() {
         return mDrawer;
     }
 
-    public void setDrawer(GLDrawer2D drawer) {
-        mDrawer = drawer;
-        mRenderer.setDrawer(drawer);
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent event) {
+        if (!filtersPreviewEnabled) return super.dispatchTouchEvent(event);
+
+        Log.d(TAG, "dispatchTouchEvent");
+
+        switch (event.getActionMasked()) {
+            case MotionEvent.ACTION_DOWN:
+                final int x = (int) event.getX();
+                final int y = (int) event.getY();
+                queueEvent(() -> mRenderer.onTouched(x, y));
+                break;
+            case MotionEvent.ACTION_UP:
+                break;
+        }
+
+        return true;
     }
 
     @Override
@@ -213,7 +249,7 @@ public final class CameraGLView extends GLSurfaceView {
             mVideoHeight = width;
         }
 
-        Log.e(TAG, "setVideoSize: width: " + width + " height: " + height);
+        Log.d(TAG, "setVideoSize: width: " + width + " height: " + height);
         queueEvent(mRenderer::updateViewport);
     }
 
@@ -270,11 +306,21 @@ public final class CameraGLView extends GLSurfaceView {
         mCameraHandler.startPreview(width, height);
     }
 
+    public void setPreviewEnabled(boolean enabled) {
+        filtersPreviewEnabled = enabled;
+        queueEvent(() -> mRenderer.setFilterPreviewEnabled(enabled));
+    }
+
     /**
      * GLSurfaceViewのRenderer
+     * NOTE: Filter previews only support portrait mode
+     * //TODO: support landscape for previews
      */
     private static final class CameraSurfaceRenderer
             implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameAvailableListener {  // API >= 11
+
+        private static final int FILTERED_PREVIEW_SIZE = 96;
+        private static final int FILTER_PREVIEWS_PER_ROW = 3;
 
         private final WeakReference<CameraGLView> mWeakParent;
         private final float[] mStMatrix = new float[16];
@@ -286,13 +332,89 @@ public final class CameraGLView extends GLSurfaceView {
         private MediaVideoEncoder mVideoEncoder;
         private volatile boolean requestUpdateTex = false;
         private boolean flip = true;
-        private int mProgramId;
+        //private int mProgramId;
+        private volatile boolean showFilters = false;
+        private List<GLDrawer2D> filterPreviews = new ArrayList<>();
+        private int screenHeight, screenWidth;
+        private int filterPreviewSize;
+        private int filterStartX, filterStartY;
+        private int margin;
+        private boolean filterPreviewEnabled = true;
 
         public CameraSurfaceRenderer(final CameraGLView parent, GLDrawer2D drawer) {
             Log.d(TAG, "CameraSurfaceRenderer:");
             mWeakParent = new WeakReference<>(parent);
             Matrix.setIdentityM(mMvpMatrix, 0);
             mDrawer = drawer;
+
+            DisplayMetrics displayMetrics = Resources.getSystem().getDisplayMetrics();
+
+            screenHeight = displayMetrics.heightPixels;
+            screenWidth = displayMetrics.widthPixels;
+
+            filterPreviewSize = (int) (FILTERED_PREVIEW_SIZE * displayMetrics.density);
+
+            margin = (screenWidth - (filterPreviewSize * FILTER_PREVIEWS_PER_ROW))/(FILTER_PREVIEWS_PER_ROW + 1);
+
+            filterStartX = margin;
+            filterStartY = (int) (0.50 * screenHeight);
+        }
+
+        private void setFilterPreviewEnabled(boolean enabled) {
+            if (enabled) {
+                for (GLDrawer2D drawer: filterPreviews) {
+                    drawer.release();
+                    filterPreviews.clear();
+                }
+            }
+        }
+
+        public void onTouched(int x, int y) {
+            Rect rect = new Rect();
+            Log.d(TAG, "onTouched: rect: " + rect);
+
+            for (GLDrawer2D filter: filterPreviews) {
+                Rect openGLRect = filter.getRect();
+                final int filterTop = (screenHeight - openGLRect.top - filterPreviewSize);
+
+                Rect viewRect = new Rect(openGLRect.left, filterTop, openGLRect.left + filterPreviewSize, filterTop + filterPreviewSize);
+                if (viewRect.contains(x, y)) {
+                    onFilterSelected(filter);
+                }
+            }
+        }
+
+        private void onFilterSelected(GLDrawer2D filter) {
+            Log.d(TAG, "onFilterSelected : " + filter.getClass().getSimpleName());
+
+            runOnDraw(() -> {
+                filterPreviews.add(0, mDrawer);
+                filterPreviews.remove(filter);
+
+                mDrawer = filter;
+
+                CameraGLView parent = mWeakParent.get();
+
+                if (parent != null) {
+                    parent.updateScaleType();
+                }
+            });
+        }
+
+        public void createFilterPreviews() {
+            if (!filterPreviewEnabled) return;
+            Log.d(TAG, "createFilterPreviews");
+            addFilter(new GLPosterizeFilter());
+            addFilter(new GLGrayscaleFilter());
+            addFilter(new GLArtFilter());
+            addFilter(new GL1977Filter());
+            addFilter(new GLColorInvertFilter());
+        }
+
+        public void addFilter(GLDrawer2D drawer) {
+            drawer.init();
+            drawer.setMatrix(mMvpMatrix, 0);
+            filterPreviews.add(drawer);
         }
 
         protected void runOnDraw(final Runnable runnable) {
@@ -307,25 +429,6 @@ public final class CameraGLView extends GLSurfaceView {
                     queue.poll().run();
                 }
             }
-        }
-
-        public void setDrawer(final GLDrawer2D drawer) {
-            runOnDraw(() -> {
-                GLDrawer2D old = mDrawer;
-                mDrawer = drawer;
-
-                if (old != null && mProgramId >= 0) {
-                    old.release(mProgramId);
-                }
-
-                mProgramId = mDrawer.init();
-                GLES20.glUseProgram(mProgramId);
-                CameraGLView parent = mWeakParent.get();
-
-                if (parent != null) {
-                    parent.updateScaleType();
-                }
-            });
         }
 
         @Override
@@ -355,8 +458,9 @@ public final class CameraGLView extends GLSurfaceView {
                 parent.mHasSurface = true;
             }
 
-            mProgramId = mDrawer.init();
+            mDrawer.init();
             mDrawer.setMatrix(mMvpMatrix, 0);
+            createFilterPreviews();
         }
 
         @Override
@@ -389,10 +493,15 @@ public final class CameraGLView extends GLSurfaceView {
         }
 
         private void cleanUp() {
-            if (mDrawer != null && mProgramId >= 0) {
-                mDrawer.release(mProgramId);
-                mProgramId = -1;
+            if (mDrawer != null) {
+                mDrawer.release();
             }
+
+            for (GLDrawer2D filter: filterPreviews) {
+                filter.release();
+            }
+
+            filterPreviews.clear();
 
             if (mSTexture != null) {
                 mSTexture.release();
@@ -425,6 +534,8 @@ public final class CameraGLView extends GLSurfaceView {
 
             Log.i(TAG, String.format("updateViewport view: (%d,%d) view_aspect: %f,video: (%1.0f,%1.0f)",
                     view_width, view_height, view_aspect, video_width, video_height));
+
+            mDrawer.setRect(0, 0, view_width, view_height);
 
             switch (parent.mScaleType) {
                 case ScaleType.SCALE_STRETCH_FIT:
@@ -492,17 +603,67 @@ public final class CameraGLView extends GLSurfaceView {
                     } else {
                         scale_y = 1 / video_aspect;
                     }
-                    Log.v(TAG, "scale square: " + scale_x + " " + scale_y);
+                    Log.v(TAG, "scale square: " + scale_x + " " + scale_y + " (x,y) view_x : " + view_x + " view_y : " + view_y);
 
                     GLES20.glViewport(view_x, view_y, newPreviewSize, newPreviewSize);
                     GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 
+                    mDrawer.setRect(view_x, view_y, newPreviewSize, newPreviewSize);
                     Matrix.scaleM(mMvpMatrix, 0, scale_x, scale_y, 1.0f);
                     break;
                 }
             }
 
             if (mDrawer != null) mDrawer.setMatrix(mMvpMatrix, 0);
+
+            if (filterPreviewEnabled) {
+                updateFiltersUI(parent);
+            }
+        }
+
+        private void updateFiltersUI(CameraGLView parent) {
+            final double video_width = parent.mVideoWidth;
+            final double video_height = parent.mVideoHeight;
+
+            if (video_width == 0 || video_height == 0) {
+                Log.e(TAG, "updateFiltersUI: " + video_width + " videoheight: " + video_height);
+                return;
+            }
+
+            final double scale_x = filterPreviewSize / video_width;
+            final double scale_y = filterPreviewSize / video_height;
+            final double scale = Math.max(scale_x, scale_y);
+
+            final double width = scale * video_width;
+            final double height = scale * video_height;
+
+            int startX = filterStartX;
+            int startY = filterStartY;
+
+            for (GLDrawer2D drawer: filterPreviews) {
+                drawer.setRect(startX, startY, filterPreviewSize, filterPreviewSize);
+
+                Matrix.setIdentityM(mMvpMatrix, 0);
+                Matrix.scaleM(mMvpMatrix, 0, (float) (width / filterPreviewSize),
+                        (float) (height / filterPreviewSize), 1.0f);
+                drawer.setMatrix(mMvpMatrix, 0);
+
+                Log.v(TAG, "updateFiltersUI: scale: " + scale_x + " " + scale_y + " x,y: X:" + startX + " Y:" + startY + " size: " + filterPreviewSize);
+
+                startX = startX + filterPreviewSize + margin;
+
+                if (screenWidth < (startX + filterPreviewSize + margin)) {
+                    startX = margin;
+                    startY = startY - filterPreviewSize - margin;   //move down
+                }
+            }
+        }
+
+        private void toggleShowFilters() {
+            showFilters = !showFilters;
+            if (!showFilters) {
+                GLES20.glViewport(mDrawer.getStartX(), mDrawer.getStartY(), mDrawer.width(), mDrawer.height());
+            }
         }
 
         /**
@@ -525,8 +686,23 @@ public final class CameraGLView extends GLSurfaceView {
             }
 
             runAll(mRunOnDraw);
-            // draw to preview screen
-            mDrawer.draw(mProgramId, mGLTextureId, mStMatrix);
+
+            if (showFilters) {
+
+                GLES20.glViewport(mDrawer.getStartX(), mDrawer.getStartY(), mDrawer.width(), mDrawer.height());
+                mDrawer.draw(mGLTextureId, mStMatrix);
+
+                for (GLDrawer2D drawer: filterPreviews) {
+                    GLES20.glViewport(drawer.getStartX(), drawer.getStartY(), filterPreviewSize, filterPreviewSize);
+                    drawer.draw(mGLTextureId, mStMatrix);
+                }
+
+                return;
+            } else {
+                // draw to preview screen
+                mDrawer.draw(mGLTextureId, mStMatrix);
+            }
+
             flip = !flip;
             if (flip) {  // ~30fps
                 synchronized (this) {
