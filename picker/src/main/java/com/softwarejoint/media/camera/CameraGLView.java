@@ -74,7 +74,7 @@ public final class CameraGLView extends GLSurfaceView {
     protected boolean mHasSurface;
     protected CameraHandler mCameraHandler = null;
     protected int mVideoWidth, mVideoHeight;
-    protected int mRotation;
+    protected volatile int mRotation;
 
     protected boolean isFlashAvailable = false;
     protected boolean isFrontCameraAvailable = false;
@@ -235,12 +235,12 @@ public final class CameraGLView extends GLSurfaceView {
         }
     }
 
-    public void setVideoSize() {
-        setVideoSize(Constants.PREFERRED_PREVIEW_WIDTH, Constants.PREFERRED_PREVIEW_HEIGHT);
+    public void setCameraPreviewSize() {
+        setCameraPreviewSize(Constants.PREFERRED_PREVIEW_WIDTH, Constants.PREFERRED_PREVIEW_HEIGHT);
     }
 
     @SuppressWarnings("SuspiciousNameCombination")
-    public void setVideoSize(final int width, final int height) {
+    public void setCameraPreviewSize(final int width, final int height) {
         if ((mRotation % 180) == 0) {
             mVideoWidth = width;
             mVideoHeight = height;
@@ -249,7 +249,8 @@ public final class CameraGLView extends GLSurfaceView {
             mVideoHeight = width;
         }
 
-        Log.d(TAG, "setVideoSize: width: " + width + " height: " + height);
+        Log.d(TAG, "setCameraPreviewSize: width: " + width + " height: " + height);
+        queueEvent(mRenderer::updateFiltersUI);
         queueEvent(mRenderer::updateViewport);
     }
 
@@ -276,7 +277,8 @@ public final class CameraGLView extends GLSurfaceView {
         }
         mCameraHandler = null;
         mHasSurface = false;
-        mRenderer.onSurfaceDestroyed();
+        queueEvent(mRenderer::onSurfaceDestroyed);
+
         super.surfaceDestroyed(holder);
     }
 
@@ -471,6 +473,7 @@ public final class CameraGLView extends GLSurfaceView {
                 return;
             }
 
+            updateFiltersUI();
             updateViewport();
 
             final CameraGLView parent = mWeakParent.get();
@@ -484,15 +487,6 @@ public final class CameraGLView extends GLSurfaceView {
          */
         public void onSurfaceDestroyed() {
             Log.d(TAG, "onSurfaceDestroyed:");
-            GLSurfaceView parent = mWeakParent.get();
-            if (parent != null) {
-                parent.queueEvent(this::cleanUp);
-            } else {
-                cleanUp();
-            }
-        }
-
-        private void cleanUp() {
             if (mDrawer != null) {
                 mDrawer.release();
             }
@@ -614,14 +608,15 @@ public final class CameraGLView extends GLSurfaceView {
                 }
             }
 
-            if (mDrawer != null) mDrawer.setMatrix(mMvpMatrix, 0);
-
-            if (filterPreviewEnabled) {
-                updateFiltersUI(parent);
+            if (mDrawer != null) {
+                mDrawer.setMatrix(mMvpMatrix, 0);
             }
         }
 
-        private void updateFiltersUI(CameraGLView parent) {
+        private void updateFiltersUI() {
+            final CameraGLView parent = mWeakParent.get();
+            if (parent == null) return;
+
             final double video_width = parent.mVideoWidth;
             final double video_height = parent.mVideoHeight;
 
@@ -644,8 +639,11 @@ public final class CameraGLView extends GLSurfaceView {
                 drawer.setRect(startX, startY, filterPreviewSize, filterPreviewSize);
 
                 Matrix.setIdentityM(mMvpMatrix, 0);
-                Matrix.scaleM(mMvpMatrix, 0, (float) (width / filterPreviewSize),
-                        (float) (height / filterPreviewSize), 1.0f);
+                Matrix.scaleM(mMvpMatrix, 0,
+                        (float) (width / filterPreviewSize),
+                        (float) (height / filterPreviewSize),
+                        1.0f);
+
                 drawer.setMatrix(mMvpMatrix, 0);
 
                 Log.v(TAG, "updateFiltersUI: scale: " + scale_x + " " + scale_y + " x,y: X:" + startX + " Y:" + startY + " size: " + filterPreviewSize);
@@ -662,7 +660,7 @@ public final class CameraGLView extends GLSurfaceView {
         private void toggleShowFilters() {
             showFilters = !showFilters;
             if (!showFilters) {
-                GLES20.glViewport(mDrawer.getStartX(), mDrawer.getStartY(), mDrawer.width(), mDrawer.height());
+                updateViewport();
             }
         }
 
@@ -697,18 +695,17 @@ public final class CameraGLView extends GLSurfaceView {
                     drawer.draw(mGLTextureId, mStMatrix);
                 }
 
-                return;
             } else {
                 // draw to preview screen
                 mDrawer.draw(mGLTextureId, mStMatrix);
-            }
 
-            flip = !flip;
-            if (flip) {  // ~30fps
-                synchronized (this) {
-                    if (mVideoEncoder != null) {
-                        // notify to capturing thread that the camera frame is available.
-                        mVideoEncoder.frameAvailableSoon(mStMatrix, mMvpMatrix);
+                flip = !flip;
+                if (flip) {  // ~30fps
+                    synchronized (this) {
+                        if (mVideoEncoder != null) {
+                            // notify to capturing thread that the camera frame is available.
+                            mVideoEncoder.frameAvailableSoon(mStMatrix, mMvpMatrix);
+                        }
                     }
                 }
             }

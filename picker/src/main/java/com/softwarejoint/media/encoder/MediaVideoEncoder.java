@@ -101,7 +101,7 @@ public class MediaVideoEncoder extends MediaEncoder {
                 if (type.equalsIgnoreCase(mimeType)) {
                     Log.d(TAG, "codec:" + codecInfo.getName() + ",MIME=" + type);
 
-                    final int format = selectColorFormat(codecInfo, mimeType);
+                    final int format = setVideoFormat(codecInfo, mimeType);
 
                     if (format > 0) {
                         return codecInfo;
@@ -118,8 +118,8 @@ public class MediaVideoEncoder extends MediaEncoder {
      *
      * @return 0 if no colorFormat is matched
      */
-    protected static int selectColorFormat(final MediaCodecInfo codecInfo, final String mimeType) {
-        Log.d(TAG, "selectColorFormat: ");
+    protected static int setVideoFormat(final MediaCodecInfo codecInfo, final String mimeType) {
+        Log.d(TAG, "setVideoFormat: ");
 
         final MediaCodecInfo.CodecCapabilities caps;
 
@@ -165,24 +165,24 @@ public class MediaVideoEncoder extends MediaEncoder {
         return false;
     }
 
-    public boolean frameAvailableSoon(final float[] tex_matrix) {
-        if (super.frameAvailableSoon()) {
-            mRenderHandler.draw(tex_matrix);
-            return true;
-        }
+//    public boolean frameAvailableSoon(final float[] tex_matrix) {
+//        if (super.frameAvailableSoon()) {
+//            mRenderHandler.draw(tex_matrix);
+//            return true;
+//        }
+//
+//        return false;
+//    }
 
-        return false;
-    }
-
-    @Override
-    public boolean frameAvailableSoon() {
-        if (super.frameAvailableSoon()) {
-            mRenderHandler.draw(null);
-            return true;
-        }
-
-        return false;
-    }
+//    @Override
+//    public boolean frameAvailableSoon() {
+//        if (super.frameAvailableSoon()) {
+//            mRenderHandler.draw(null);
+//            return true;
+//        }
+//
+//        return false;
+//    }
 
     @Override
     protected void prepare() throws IOException {

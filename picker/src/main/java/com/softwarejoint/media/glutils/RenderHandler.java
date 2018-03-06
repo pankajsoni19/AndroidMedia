@@ -101,27 +101,27 @@ public final class RenderHandler implements Runnable {
         }
     }
 
-    public final void draw() {
-        draw(mTexId, mMatrix, null);
-    }
+//    public final void draw() {
+//        draw(mTexId, mMatrix, null);
+//    }
+//
+//    public final void draw(final int tex_id) {
+//        draw(tex_id, mMatrix, null);
+//    }
 
-    public final void draw(final int tex_id) {
-        draw(tex_id, mMatrix, null);
-    }
-
-    public final void draw(final float[] tex_matrix) {
-        draw(mTexId, tex_matrix, null);
-    }
+//    public final void draw(final float[] tex_matrix) {
+//        draw(mTexId, tex_matrix, null);
+//    }
 
     public final void draw(final float[] tex_matrix, final float[] mvp_matrix) {
         draw(mTexId, tex_matrix, mvp_matrix);
     }
 
-    public final void draw(final int tex_id, final float[] tex_matrix) {
-        draw(tex_id, tex_matrix, null);
-    }
+//    public final void draw(final int tex_id, final float[] tex_matrix) {
+//        draw(tex_id, tex_matrix, null);
+//    }
 
-    public final void draw(final int tex_id, final float[] tex_matrix, final float[] mvp_matrix) {
+    private void draw(final int tex_id, final float[] tex_matrix, final float[] mvp_matrix) {
         synchronized (mSync) {
             if (mRequestRelease) return;
             mTexId = tex_id;
@@ -140,7 +140,7 @@ public final class RenderHandler implements Runnable {
             mRequestDraw++;
             mSync.notifyAll();
 /*			try {
-				mSync.wait();
+                mSync.wait();
 			} catch (final InterruptedException e) {
 			} */
         }
@@ -200,7 +200,7 @@ public final class RenderHandler implements Runnable {
                     mInputSurface.makeCurrent();
                     //TODO: remove yellow mark
                     GLES20.glClearColor(0.00f, 0.00f, 0.00f, 1.0f);
-					GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+                    GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
                     mDrawer.setMatrix(mMatrix, 16);
                     //
                     mDrawer.draw(mTexId, mMatrix);

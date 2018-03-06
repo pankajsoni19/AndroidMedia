@@ -304,7 +304,7 @@ public final class CameraThread extends Thread {
 
             // adjust view size with keeping the aspect ration of camera preview.
             // here is not a UI thread and we should request parent view to execute.
-            parent.post(() -> parent.setVideoSize(previewSize.width, previewSize.height));
+            parent.post(() -> parent.setCameraPreviewSize(previewSize.width, previewSize.height));
 
             final SurfaceTexture st = parent.getSurfaceTexture();
             //noinspection ConstantConditions

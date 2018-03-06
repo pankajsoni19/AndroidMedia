@@ -6,6 +6,7 @@ package com.softwarejoint.media.utils;
  */
 public class Constants {
 
+    //Assuming landscape orientation
     public static final int PREFERRED_PREVIEW_WIDTH = 640;
     public static final int PREFERRED_PREVIEW_HEIGHT = 480;
 }
