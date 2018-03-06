@@ -40,4 +40,5 @@ dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'com.android.support:appcompat-v7:27.1.0'
     implementation project(':picker')
+    compile 'org.jetbrains:annotations:15.0'
 }

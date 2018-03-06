@@ -54,6 +54,10 @@ public class ImageLoader extends AsyncTask<String, Void, Bitmap> {
         return id == null ? mediaPath : String.valueOf(id);
     }
 
+    /**
+     * Loads blank thumbnail if the file is corrupt.
+     * @param imageView
+     */
     public void loadInto(ImageView imageView) {
         final String key = getKey();
 
