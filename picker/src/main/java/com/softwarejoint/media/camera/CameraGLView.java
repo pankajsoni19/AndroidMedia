@@ -334,7 +334,7 @@ public final class CameraGLView extends GLSurfaceView {
         private MediaVideoEncoder mVideoEncoder;
         private volatile boolean requestUpdateTex = false;
         private boolean flip = true;
-        //private int mProgramId;
+
         private volatile boolean showFilters = false;
         private List<GLDrawer2D> filterPreviews = new ArrayList<>();
         private int screenHeight, screenWidth;
@@ -403,7 +403,10 @@ public final class CameraGLView extends GLSurfaceView {
             });
         }
 
-        public void createFilterPreviews() {
+        public void createFilters() {
+            mDrawer.init();
+            mDrawer.setMatrix(mMvpMatrix, 0);
+
             if (!filterPreviewEnabled) return;
             Log.d(TAG, "createFilterPreviews");
             addFilter(new GLPosterizeFilter());
@@ -460,9 +463,7 @@ public final class CameraGLView extends GLSurfaceView {
                 parent.mHasSurface = true;
             }
 
-            mDrawer.init();
-            mDrawer.setMatrix(mMvpMatrix, 0);
-            createFilterPreviews();
+            createFilters();
         }
 
         @Override

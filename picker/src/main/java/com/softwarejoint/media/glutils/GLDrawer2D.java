@@ -150,7 +150,7 @@ public class GLDrawer2D {
      * @param vss source of vertex shader
      * @param fss source of fragment shader
      */
-    public static int loadShader(final String vss, final String fss) {
+    private static int loadShader(final String vss, final String fss) {
         Log.d(TAG, "loadShader:");
 
         int vs = GLES20.glCreateShader(GLES20.GL_VERTEX_SHADER);
@@ -189,7 +189,7 @@ public class GLDrawer2D {
         return mGLProgId;
     }
 
-    protected void onInit(int programId) {
+    private void onInit(int programId) {
         GLES20.glUseProgram(programId);
         mGLAttribPosition = GLES20.glGetAttribLocation(programId, "position");
         mGLAttribTextureCoordinate = GLES20.glGetAttribLocation(programId, "inputTextureCoordinate");
@@ -211,20 +211,6 @@ public class GLDrawer2D {
     public void release() {
         if (mGLProgId >= 0) GLES20.glDeleteProgram(mGLProgId);
         mGLProgId = -1;
-    }
-
-    /**
-     * terminating, this should be called in GL context
-     */
-    public void release(int programId) {
-        if (programId >= 0) {
-            GLES20.glDeleteProgram(programId);
-        }
-    }
-
-    @Deprecated
-    public int getProgram() {
-        return mGLProgId;
     }
 
     /**
