@@ -10,6 +10,7 @@ public class GLPosterizeFilter extends GLDrawer2D {
 
     public static final String POSTERIZE_FRAGMENT_SHADER = "" +
             "#extension GL_OES_EGL_image_external : require\n" +
+            "precision mediump float;\n" +
             "varying highp vec2 textureCoordinate;\n" +
             "\n" +
             "uniform samplerExternalOES inputImageTexture;\n" +
