@@ -11,6 +11,7 @@ public class GLArtFilter extends GLDrawer2D {
     public static final String ART_FRAGMENT_SHADER = "" +
             "#extension GL_OES_EGL_image_external : require\n" +
             "\n" +
+            "precision mediump float;\n" +
             "varying highp vec2 textureCoordinate;\n" +
             "uniform samplerExternalOES inputImageTexture;\n" +
             "\n" +

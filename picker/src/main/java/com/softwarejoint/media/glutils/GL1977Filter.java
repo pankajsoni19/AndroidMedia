@@ -10,6 +10,7 @@ public class GL1977Filter extends GLDrawer2D {
 
     public static final String FRAGMENT_1977_SHADER = "" +
             "#extension GL_OES_EGL_image_external : require\n" +
+            "precision mediump float;\n" +
             "varying highp vec2 textureCoordinate;\n" +
             "uniform samplerExternalOES inputImageTexture;\n" +
             "\n" +
