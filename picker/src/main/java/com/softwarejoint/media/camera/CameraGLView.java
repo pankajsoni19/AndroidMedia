@@ -660,7 +660,7 @@ public final class CameraGLView extends GLSurfaceView {
         private void toggleShowFilters() {
             showFilters = !showFilters;
             if (!showFilters) {
-                updateViewport();
+                runOnDraw(this::updateViewport);
             }
         }
 
