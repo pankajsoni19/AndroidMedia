@@ -323,8 +323,8 @@ public class CameraFragment extends Fragment implements OnClickListener {
                 playSound(MediaActionSound.SHUTTER_CLICK);
                 takePicture();
             } else if (mMuxer == null) {
-                startRecording();
                 playSound(MediaActionSound.START_VIDEO_RECORDING);
+                startRecording();
             } else {
                 stopRecording();
                 playSound(MediaActionSound.STOP_VIDEO_RECORDING);
