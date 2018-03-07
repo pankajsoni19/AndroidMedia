@@ -46,7 +46,7 @@ public class MediaVideoEncoder extends MediaEncoder {
     private static final int DEFAULT_FRAME_RATE = 25;
     private static final int DEFAULT_IFRAME_INTERVAL = 10;
 
-    private static final float BPP = 0.25f;
+    private static final float BPP = 0.25f; //bytes per pixel
     /**
      * color formats that we can use in this class
      */
@@ -156,9 +156,13 @@ public class MediaVideoEncoder extends MediaEncoder {
         return false;
     }
 
-    public boolean frameAvailableSoon(final float[] tex_matrix, final float[] mvp_matrix) {
+    public void setMatrix(final float[] mvp_matrix) {
+        mRenderHandler.setMatrix(mvp_matrix);
+    }
+
+    public boolean frameAvailableSoon(final float[] stMatrix) {
         if (super.frameAvailableSoon()) {
-            mRenderHandler.draw(tex_matrix, mvp_matrix);
+            mRenderHandler.draw(stMatrix);
             return true;
         }
 
@@ -228,7 +232,7 @@ public class MediaVideoEncoder extends MediaEncoder {
     }
 
     public void setEglContext(final EGLContext shared_context, final int tex_id) {
-        mRenderHandler.setEglContext(shared_context, tex_id, mSurface, true);
+        mRenderHandler.setEglContext(shared_context, tex_id, mSurface);
     }
 
     @Override
@@ -239,6 +243,7 @@ public class MediaVideoEncoder extends MediaEncoder {
             mSurface.release();
             mSurface = null;
         }
+
         if (mRenderHandler != null) {
             mRenderHandler.release();
             mRenderHandler = null;

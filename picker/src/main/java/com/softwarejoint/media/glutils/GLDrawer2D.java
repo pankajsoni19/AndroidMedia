@@ -31,15 +31,12 @@ import android.util.Log;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
-import java.util.LinkedList;
 
 /**
  * Helper class to draw to whole view using specific texture and texture matrix
  */
 @SuppressWarnings("WeakerAccess")
 public class GLDrawer2D {
-
-    public static final int NO_TEXTURE = -1;
 
     public static final String NO_FILTER_VERTEX_SHADER = "" +
             "uniform mat4 uMVPMatrix;\n" +
@@ -71,7 +68,6 @@ public class GLDrawer2D {
     private static final int VERTEX_SZ = VERTEX_NUM * 2;
 
     private final float[] mMvpMatrix = new float[16];
-    private final LinkedList<Runnable> mRunOnDraw = new LinkedList<>();
 
     int mGLAttribPosition;
     int mGLAttribTextureCoordinate;
@@ -79,7 +75,7 @@ public class GLDrawer2D {
     int muTexMatrixLoc;
     private FloatBuffer pVertex;
     private FloatBuffer pTexCoord;
-    private int mGLProgId;
+    private int mGLProgId = -1;
     private String mVertexShader;
     private String mFragmentShader;
     private Rect rect = new Rect();
@@ -189,6 +185,10 @@ public class GLDrawer2D {
         return mGLProgId;
     }
 
+    public GLDrawer2D createCopy() {
+        return new GLDrawer2D(mVertexShader, mFragmentShader);
+    }
+
     private void onInit(int programId) {
         GLES20.glUseProgram(programId);
         mGLAttribPosition = GLES20.glGetAttribLocation(programId, "position");
@@ -221,6 +221,10 @@ public class GLDrawer2D {
      *                  array and needs at least 16 of float)
      */
     public void draw(final int texId, final float[] texMatrix) {
+        draw(mGLProgId, texId, texMatrix);
+    }
+
+    public void draw(int mGLProgId, final int texId, final float[] texMatrix) {
         GLES20.glUseProgram(mGLProgId);
         if (texMatrix != null) GLES20.glUniformMatrix4fv(muTexMatrixLoc, 1, false, texMatrix, 0);
         GLES20.glUniformMatrix4fv(muMVPMatrixLoc, 1, false, mMvpMatrix, 0);

@@ -112,6 +112,8 @@ public final class CameraGLView extends GLSurfaceView {
     }
 
     public void onRecordingStart() {
+        queueEvent(mRenderer::onRecordingStart);
+
         if (mCameraHandler != null) {
             mCameraHandler.onRecordingStart();
         }
@@ -705,11 +707,15 @@ public final class CameraGLView extends GLSurfaceView {
                     synchronized (this) {
                         if (mVideoEncoder != null) {
                             // notify to capturing thread that the camera frame is available.
-                            mVideoEncoder.frameAvailableSoon(mStMatrix, mMvpMatrix);
+                            mVideoEncoder.frameAvailableSoon(mStMatrix);
                         }
                     }
                 }
             }
+        }
+
+        public void onRecordingStart() {
+            runOnDraw(() -> mVideoEncoder.setMatrix(mMvpMatrix));
         }
 
         @Override
@@ -720,11 +726,4 @@ public final class CameraGLView extends GLSurfaceView {
             //				parent.requestRender();
         }
     }
-
-    /**
-     * Handler class for asynchronous camera operation
-     */
-
-
-
 }

@@ -45,7 +45,7 @@ public final class RenderHandler implements Runnable {
     private Object mSurface;
     private int mTexId = -1;
 
-    private float[] mMatrix = new float[32];
+    private float[] mStMatrix = new float[16];
 
     private boolean mRequestSetEglContext;
     private boolean mRequestRelease;
@@ -55,10 +55,10 @@ public final class RenderHandler implements Runnable {
     private EGLBase mEgl;
     private EGLBase.EglSurface mInputSurface;
     private GLDrawer2D mDrawer;
-    //private int mProgramId;
 
-    public RenderHandler(GLDrawer2D drawer) {
-        mDrawer = drawer;
+    private RenderHandler(GLDrawer2D drawer) {
+        mDrawer = drawer.createCopy();
+        Log.d(TAG, "RenderHandler: param: " + drawer.toString() + " var: " + mDrawer.toString());
     }
 
     public static RenderHandler createHandler(final String name, GLDrawer2D drawer) {
@@ -76,7 +76,7 @@ public final class RenderHandler implements Runnable {
     }
 
     public final void setEglContext(final EGLContext shared_context, final int tex_id,
-                                    final Object surface, final boolean isRecordable) {
+                                    final Object surface) {
         Log.d(TAG, "setEglContext:");
 
         if (!(surface instanceof Surface) && !(surface instanceof SurfaceTexture)
@@ -89,10 +89,9 @@ public final class RenderHandler implements Runnable {
             mShared_context = shared_context;
             mTexId = tex_id;
             mSurface = surface;
-            mIsRecordable = isRecordable;
+            mIsRecordable = true;
             mRequestSetEglContext = true;
-            Matrix.setIdentityM(mMatrix, 0);
-            Matrix.setIdentityM(mMatrix, 16);
+            Matrix.setIdentityM(mStMatrix, 0);
             mSync.notifyAll();
             try {
                 mSync.wait();
@@ -101,51 +100,29 @@ public final class RenderHandler implements Runnable {
         }
     }
 
-//    public final void draw() {
-//        draw(mTexId, mMatrix, null);
-//    }
-//
-//    public final void draw(final int tex_id) {
-//        draw(tex_id, mMatrix, null);
-//    }
-
-//    public final void draw(final float[] tex_matrix) {
-//        draw(mTexId, tex_matrix, null);
-//    }
-
-    public final void draw(final float[] tex_matrix, final float[] mvp_matrix) {
-        draw(mTexId, tex_matrix, mvp_matrix);
+    public final void setMatrix(final float[] mvp_matrix) {
+        Log.d(TAG, "setMatrix");
+        synchronized (mSync) {
+            mDrawer.setMatrix(mvp_matrix, 0);
+        }
     }
 
-//    public final void draw(final int tex_id, final float[] tex_matrix) {
-//        draw(tex_id, tex_matrix, null);
-//    }
-
-    private void draw(final int tex_id, final float[] tex_matrix, final float[] mvp_matrix) {
+    public final void draw(final float[] tex_matrix) {
         synchronized (mSync) {
             if (mRequestRelease) return;
-            mTexId = tex_id;
-            if ((tex_matrix != null) && (tex_matrix.length >= 16)) {
-                System.arraycopy(tex_matrix, 0, mMatrix, 0, 16);
-            } else {
-                Matrix.setIdentityM(mMatrix, 0);
-            }
 
-            if ((mvp_matrix != null) && (mvp_matrix.length >= 16)) {
-                System.arraycopy(mvp_matrix, 0, mMatrix, 16, 16);
+            if ((tex_matrix != null) && (tex_matrix.length >= 16)) {
+                System.arraycopy(tex_matrix, 0, mStMatrix, 0, 16);
             } else {
-                Matrix.setIdentityM(mMatrix, 16);
+                Matrix.setIdentityM(mStMatrix, 0);
             }
 
             mRequestDraw++;
             mSync.notifyAll();
-/*			try {
-                mSync.wait();
-			} catch (final InterruptedException e) {
-			} */
         }
     }
 
+    @SuppressWarnings("unused")
     public boolean isValid() {
         synchronized (mSync) {
             return !(mSurface instanceof Surface) || ((Surface) mSurface).isValid();
@@ -199,11 +176,11 @@ public final class RenderHandler implements Runnable {
                 if ((mEgl != null) && mTexId >= 0) {
                     mInputSurface.makeCurrent();
                     //TODO: remove yellow mark
-                    GLES20.glClearColor(0.00f, 0.00f, 0.00f, 1.0f);
-                    GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-                    mDrawer.setMatrix(mMatrix, 16);
+                    //GLES20.glClearColor(0.00f, 0.00f, 0.00f, 1.0f);
+                    //GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+                    //mDrawer.setMatrix(mMatrix, 16);
                     //
-                    mDrawer.draw(mTexId, mMatrix);
+                    mDrawer.draw(mTexId, mStMatrix);
                     mInputSurface.swap();
                 }
             } else {
