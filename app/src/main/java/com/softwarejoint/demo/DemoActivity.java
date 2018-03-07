@@ -79,7 +79,7 @@ public class DemoActivity extends BaseActivity implements View.OnClickListener {
                 .setMediaType(MediaType.IMAGE)
                 .canChangeScaleType(Boolean.valueOf("false"))
                 .withGallery(Boolean.valueOf("true"))
-                .withCameraType(ScaleType.SCALE_CROP_CENTER)
+                .withCameraType(ScaleType.SCALE_SQUARE)
                 .withFlash(Boolean.valueOf("true"))
                 .withMaxSelection(Integer.parseInt("2"))
                 .withFilters(Boolean.valueOf("true"))

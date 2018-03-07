@@ -25,8 +25,13 @@ package com.softwarejoint.media.camera;
 import android.content.ContentResolver;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Rect;
+import android.media.MediaActionSound;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
+import android.opengl.GLException;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.MediaStore;
@@ -50,18 +55,26 @@ import com.softwarejoint.media.encoder.MediaAudioEncoder;
 import com.softwarejoint.media.encoder.MediaEncoder;
 import com.softwarejoint.media.encoder.MediaMuxerWrapper;
 import com.softwarejoint.media.encoder.MediaVideoEncoder;
+import com.softwarejoint.media.enums.MediaType;
 import com.softwarejoint.media.enums.ScaleType;
 import com.softwarejoint.media.fileio.FileHandler;
 import com.softwarejoint.media.fileio.FilePathUtil;
+import com.softwarejoint.media.glutils.GLDrawer2D;
 import com.softwarejoint.media.picker.MediaPickerOpts;
 import com.softwarejoint.media.utils.CameraHelper;
 import com.softwarejoint.media.utils.TimeParseUtils;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import javax.microedition.khronos.egl.EGL10;
+import javax.microedition.khronos.egl.EGLContext;
+import javax.microedition.khronos.opengles.GL10;
 
 import static android.app.Activity.RESULT_OK;
 
@@ -69,7 +82,7 @@ public class CameraFragment extends Fragment implements OnClickListener {
 
     public final String TAG = "CameraFragment";
 
-    private static final int REQUEST_TAKE_GALLERY_VIDEO = 1002;
+    private static final int REQUEST_GET_CONTENT = 1001;
 
     private static final int DEF_VID_SIZE = 480;
 
@@ -111,6 +124,7 @@ public class CameraFragment extends Fragment implements OnClickListener {
      */
     private MediaMuxerWrapper mMuxer;
     private MediaPickerOpts opts;
+    private MediaActionSound mediaActionSound;
 
     /**
      * callback methods from encoder
@@ -177,7 +191,7 @@ public class CameraFragment extends Fragment implements OnClickListener {
 
     @SuppressWarnings("ConstantConditions")
     private void handleIntent() {
-        mCameraView.init(opts.scaleType);
+        mCameraView.init(opts.scaleType, opts.mediaType);
         updateScaleUI();
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
@@ -238,6 +252,7 @@ public class CameraFragment extends Fragment implements OnClickListener {
         }
 
         mCameraView.setCameraSwitcher(mCameraSwitcher);
+        mCameraView.setFrag(this);
     }
 
     @Override
@@ -246,6 +261,12 @@ public class CameraFragment extends Fragment implements OnClickListener {
         stopRecording();
         mCameraView.onPause();
         cancelTimer();
+
+        if (mediaActionSound != null) {
+            mediaActionSound.release();
+            mediaActionSound = null;
+        }
+
         super.onPause();
     }
 
@@ -261,12 +282,12 @@ public class CameraFragment extends Fragment implements OnClickListener {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (resultCode != RESULT_OK || requestCode != REQUEST_TAKE_GALLERY_VIDEO || data.getData() == null) {
+        if (resultCode != RESULT_OK || requestCode != REQUEST_GET_CONTENT || data.getData() == null) {
             return;
         }
 
         Uri fileUri = data.getData();
-        String filePath = FilePathUtil.getRealPath(getContext(), fileUri);
+        String filePath = FilePathUtil.getRealPath(getContext(), fileUri, opts.mediaType);
 
         if (filePath == null) {
             return;
@@ -298,10 +319,15 @@ public class CameraFragment extends Fragment implements OnClickListener {
         } else if (id == R.id.iv_switch_camera) {
             mCameraView.toggleCamera();
         } else if (id == R.id.record_button) {
-            if (mMuxer == null) {
+            if (opts.mediaType == MediaType.IMAGE) {
+                playSound(MediaActionSound.SHUTTER_CLICK);
+                takePicture();
+            } else if (mMuxer == null) {
                 startRecording();
+                playSound(MediaActionSound.START_VIDEO_RECORDING);
             } else {
                 stopRecording();
+                playSound(MediaActionSound.STOP_VIDEO_RECORDING);
             }
         } else if (id == R.id.txt_done) {
             onClickDone();
@@ -311,17 +337,14 @@ public class CameraFragment extends Fragment implements OnClickListener {
         }
     }
 
-    private void toggleShowFilters() {
+    public void toggleShowFilters() {
         if (mCameraView.toggleShowFilters()) {
-
             iv_gallery.setVisibility(View.GONE);
             txt_gallery.setVisibility(View.GONE);
             recyclerView.setVisibility(View.GONE);
             mRecordButton.setVisibility(View.INVISIBLE);
             mRecordButton.setOnClickListener(null);
-
         } else {
-
             mRecordButton.setVisibility(View.VISIBLE);
             mRecordButton.setOnClickListener(this);
 
@@ -376,25 +399,125 @@ public class CameraFragment extends Fragment implements OnClickListener {
         }
     }
 
-//    private void toggleShowFilters() {
-//        if (filterPreviewDialog == null) {
-//            filterPreviewDialog = new FilterPreviewDialogFragment();
-//            filterPreviewDialog.setTargetFragment(this, REQUEST_CODE_FILTER);
-//        }
-//
-//        //noinspection ConstantConditions
-//        filterPreviewDialog.show(getFragmentManager(), filterPreviewDialog.TAG);
-//    }
-
     private void openGallery() {
         Intent intent = new Intent();
-        intent.setType("video/*");
         intent.setAction(Intent.ACTION_GET_CONTENT);
-        startActivityForResult(Intent.createChooser(intent, "Select Video"), REQUEST_TAKE_GALLERY_VIDEO);
+
+        if (opts.mediaType == MediaType.IMAGE) {
+            intent.setType("image/*");
+            intent = Intent.createChooser(intent, "Select Image");
+        } else {
+            intent.setType("video/*");
+            intent = Intent.createChooser(intent, "Select Video");
+        }
+
+        startActivityForResult(intent, REQUEST_GET_CONTENT);
     }
 
+    private void takePicture() {
+        mRecordButton.setVisibility(View.INVISIBLE);
+        mRecordButton.setOnClickListener(null);
+        mCameraView.queueEvent(() -> {
+            final String imagePath = createBitmapFromGLSurface();
+            uiThreadHandler.post(() -> onPictureTaken(imagePath));
+        });
+    }
+
+    private String createBitmapFromGLSurface() {
+        EGL10 egl = (EGL10) EGLContext.getEGL();
+        GL10 gl = (GL10)egl.eglGetCurrentContext().getGL();
+
+        GLDrawer2D drawer = mCameraView.getDrawer();
+
+        int x = drawer.getStartX();
+        int y = drawer.getStartY();
+        int w = drawer.width();
+        int h = drawer.height();
+
+        int bitmapBuffer[] = new int[w * h];
+        int bitmapSource[] = new int[w * h];
+
+        IntBuffer intBuffer = IntBuffer.wrap(bitmapBuffer);
+        intBuffer.position(0);
+
+        try {
+            gl.glReadPixels(x, y, w, h, GL10.GL_RGBA, GL10.GL_UNSIGNED_BYTE, intBuffer);
+            int offset1, offset2;
+            for (int i = 0; i < h; i++) {
+                offset1 = i * w;
+                offset2 = (h - i - 1) * w;
+                for (int j = 0; j < w; j++) {
+                    int texturePixel = bitmapBuffer[offset1 + j];
+                    int blue = (texturePixel >> 16) & 0xff;
+                    int red = (texturePixel << 16) & 0x00ff0000;
+                    int pixel = (texturePixel & 0xff00ff00) | red | blue;
+                    bitmapSource[offset2 + j] = pixel;
+                }
+            }
+        } catch (GLException ex) {
+            Log.e(TAG, "createBitmapFromGLSurface: matrix translate", ex);
+            return null;
+        }
+
+        File tempFile = FileHandler.getTempFile(opts.mediaDir, opts.mediaType);
+
+        try {
+            FileOutputStream fileOutputStream = new FileOutputStream(tempFile);
+            Bitmap bitmap = Bitmap.createBitmap(bitmapSource, w, h, Bitmap.Config.ARGB_8888);
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, fileOutputStream);
+            fileOutputStream.flush();
+            fileOutputStream.close();
+        } catch (Exception ex) {
+            Log.e(TAG, "createBitmapFromGLSurface: fileCopy: ", ex);
+            //noinspection ResultOfMethodCallIgnored
+            tempFile.delete();
+            return null;
+        }
+
+        return tempFile.exists() ? tempFile.getPath(): null;
+    }
+
+    private void onPictureTaken(String imagePath) {
+        if (imagePath == null || !FileHandler.exists(imagePath)) {
+            onMediaSelectionUpdated();
+            return;
+        }
+
+        if (galleryAdapter != null) {
+            galleryAdapter.addSelected(imagePath);
+        } else if (selectedAdapter != null) {
+            selectedAdapter.addSelected(imagePath);
+        }
+
+        MediaScannerConnection.MediaScannerConnectionClient callBack = null;
+
+        if (onMediaSelectionUpdated()) {
+            onClickDone();
+        } else {
+            mRecordButton.setVisibility(View.VISIBLE);
+            mRecordButton.setOnClickListener(this);
+            callBack = new MediaScannerConnection.MediaScannerConnectionClient() {
+                @Override
+                public void onMediaScannerConnected() {
+
+                }
+
+                @Override
+                public void onScanCompleted(String path, Uri uri) {
+                    uiThreadHandler.post(() -> refreshAdapters());
+                }
+            };
+        }
+
+        //noinspection ConstantConditions
+        MediaScannerConnection.scanFile(getContext().getApplicationContext(), new String[]{
+                imagePath
+        }, new String[]{
+                "image/jpg"
+        }, callBack);
+    }
     /**
-     * start resorcing
+     * start recording
      * This is a sample project and call this on UI thread to avoid being complicated
      * but basically this should be called on private thread because prepareing
      * of encoder is heavy work
@@ -403,7 +526,7 @@ public class CameraFragment extends Fragment implements OnClickListener {
         Log.d(TAG, "startRecording:");
 
         try {
-            File mediaPath = FileHandler.getTempFile(opts.mediaDir);
+            File mediaPath = FileHandler.getTempFile(opts.mediaDir, opts.mediaType);
 
             mMuxer = new MediaMuxerWrapper(mediaPath.getPath());  // if you record audio only, ".m4a" is also OK.
 
@@ -419,6 +542,7 @@ public class CameraFragment extends Fragment implements OnClickListener {
             }
 
             Log.d(TAG, "output: width: " + outputVideoWidth + " height: " + outputVideoHeight);
+
             // for video capturing
             new MediaVideoEncoder(mMuxer, mMediaEncoderListener, outputVideoWidth,
                     outputVideoHeight, mCameraView.getDrawer());
@@ -557,16 +681,33 @@ public class CameraFragment extends Fragment implements OnClickListener {
     public void loadGalleryAdapter() {
         txt_gallery.setVisibility(View.VISIBLE);
 
-        String[] projection = {
-                MediaStore.Video.Media._ID,
-                MediaStore.MediaColumns.DATA,
-                MediaStore.Video.Thumbnails.DATA
-        };
+        String[] projection;
+        final String orderBy;
+        Uri contentURI;
 
-        final String orderBy = MediaStore.Images.Media.DATE_TAKEN;
+        if (opts.mediaType == MediaType.VIDEO) {
+            projection = new String[]{
+                    MediaStore.Video.Media._ID,
+                    MediaStore.MediaColumns.DATA,
+            };
+
+            orderBy = MediaStore.Video.Media.DATE_TAKEN;
+            contentURI = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
+
+        } else {
+            projection = new String[]{
+                    MediaStore.Images.Media._ID,
+                    MediaStore.MediaColumns.DATA,
+            };
+
+            orderBy = MediaStore.Images.Media.DATE_TAKEN;
+            contentURI = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+        }
+
         //noinspection ConstantConditions
         ContentResolver contentResolver = getContext().getContentResolver();
-        Cursor cursor = contentResolver.query(MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+
+        Cursor cursor = contentResolver.query(contentURI,
                 projection, null, null, orderBy + " DESC");
 
         if (cursor != null && cursor.moveToFirst()) {
@@ -578,7 +719,7 @@ public class CameraFragment extends Fragment implements OnClickListener {
             }
 
             if (galleryAdapter == null) {
-                galleryAdapter = new GalleryAdapter(cursor, opts.maxSelection, this);
+                galleryAdapter = new GalleryAdapter(cursor, opts.maxSelection, opts.mediaType, this);
             } else {
                 galleryAdapter.changeCursor(cursor);
             }
@@ -636,5 +777,13 @@ public class CameraFragment extends Fragment implements OnClickListener {
         //noinspection ConstantConditions
         activity.setResult(RESULT_OK, resultIntent);
         activity.supportFinishAfterTransition();
+    }
+
+    private void playSound(int soundId) {
+        if (mediaActionSound == null) {
+            mediaActionSound = new MediaActionSound();
+        }
+
+        mediaActionSound.play(soundId);
     }
 }

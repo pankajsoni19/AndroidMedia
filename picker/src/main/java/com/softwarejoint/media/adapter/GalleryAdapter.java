@@ -1,7 +1,6 @@
 package com.softwarejoint.media.adapter;
 
 import android.database.Cursor;
-import android.os.Handler;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.util.Log;
@@ -11,6 +10,7 @@ import android.view.ViewGroup;
 
 import com.softwarejoint.media.R;
 import com.softwarejoint.media.camera.CameraFragment;
+import com.softwarejoint.media.enums.MediaType;
 import com.softwarejoint.media.fileio.ImageLoader;
 
 import java.util.ArrayList;
@@ -30,15 +30,18 @@ public class GalleryAdapter extends CursorRecyclerAdapter<ViewHolder> {
     private int colDataIndex = 1;
     private final int maxSelection;
     private final CameraFragment cameraFragment;
+    private @MediaType int mediaType;
 
     private List<String> selected = new ArrayList<>();
 
-    public GalleryAdapter(Cursor cursor, int count, CameraFragment fragment) {
+    public GalleryAdapter(Cursor cursor, int maxSelection, @MediaType int mediaType, CameraFragment fragment) {
         super(cursor);
         colIdIndex = cursor.getColumnIndexOrThrow(MediaStore.Video.Media._ID);
         colDataIndex = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA);
-        maxSelection = count;
         cameraFragment = fragment;
+
+        this.maxSelection = maxSelection;
+        this.mediaType = mediaType;
     }
 
     public void addSelected(String filePath) {
@@ -75,7 +78,7 @@ public class GalleryAdapter extends CursorRecyclerAdapter<ViewHolder> {
 
         Log.d(TAG, "mediaPath: " + mediaPath);
 
-        ImageLoader.with(itemId).loadInto(holder.iv_image);
+        ImageLoader.load(itemId).withMediaHint(mediaType).into(holder.iv_image);
 
         GalleryClickListener clickListener = new GalleryClickListener(mediaPath, holder);
 

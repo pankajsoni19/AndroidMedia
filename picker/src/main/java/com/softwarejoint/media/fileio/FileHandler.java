@@ -6,6 +6,8 @@ import android.os.Environment;
 import android.support.annotation.StringRes;
 import android.util.Log;
 
+import com.softwarejoint.media.enums.MediaType;
+
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -26,21 +28,24 @@ public class FileHandler {
         return stringId == 0 ? applicationInfo.nonLocalizedLabel.toString() : context.getString(stringId);
     }
 
-    public static File getTempFile(Context context) {
+    public static File getTempFile(Context context, @MediaType int mediaType) {
         final String appName = getApplicationName(context);
-        return getTempFile(appName);
+        return getTempFile(appName, mediaType);
     }
 
-    public static File getTempFile(String albumName) {
-        File dir = getPublicAlbumStorageDir(albumName);
-        final String filename = "VID_" + getDateTimeString() + ".mp4";
-        return new File(dir, filename);
+    public static File getTempFile(String albumName, @MediaType int mediaType) {
+        File dir = getPublicAlbumStorageDir(albumName, mediaType);
+        if (mediaType == MediaType.VIDEO) {
+            return new File(dir, "VID_" + getDateTimeString() + ".mp4");
+        } else {
+            return new File(dir, "IMG_" + getDateTimeString() + ".jpg");
+        }
     }
 
-    private static File getPublicAlbumStorageDir(String albumName) {
-        // Get the directory for the user's public pictures directory.
-        File file = new File(Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_MOVIES), albumName);
+    private static File getPublicAlbumStorageDir(String albumName, @MediaType int mediaType) {
+        String type = mediaType == MediaType.VIDEO ? Environment.DIRECTORY_MOVIES : Environment.DIRECTORY_PICTURES;
+
+        File file = new File(Environment.getExternalStoragePublicDirectory(type), albumName);
         //noinspection ResultOfMethodCallIgnored
         if (!file.exists() && !file.mkdirs()) {
             Log.e(TAG, "Directory not created");

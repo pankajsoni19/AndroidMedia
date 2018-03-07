@@ -15,6 +15,6 @@ import static com.softwarejoint.media.enums.MediaType.VIDEO;
 @Retention(RetentionPolicy.CLASS)
 @IntDef({VIDEO, IMAGE})
 public @interface MediaType {
-    int VIDEO = 0;
-    int IMAGE = 1;
+    int VIDEO = 1;
+    int IMAGE = 2;
 }

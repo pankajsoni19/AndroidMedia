@@ -40,6 +40,7 @@ import android.view.View;
 import android.widget.ImageView;
 
 import com.softwarejoint.media.encoder.MediaVideoEncoder;
+import com.softwarejoint.media.enums.MediaType;
 import com.softwarejoint.media.enums.ScaleType;
 import com.softwarejoint.media.glutils.GL1977Filter;
 import com.softwarejoint.media.glutils.GLArtFilter;
@@ -82,10 +83,12 @@ public final class CameraGLView extends GLSurfaceView {
     protected ImageView flashImageView, cameraSwitcher;
 
     protected @ScaleType int mScaleType = ScaleType.SCALE_SQUARE;
+    protected @MediaType int mMediaType = MediaType.IMAGE;
+
     protected volatile int cameraId = CAMERA_FACING_BACK;
     private boolean filtersPreviewEnabled;
+    private WeakReference<CameraFragment> fragRef;
 
-    private GLDrawer2D mDrawer = new GLDrawer2D();
 
     public CameraGLView(final Context context) {
         this(context, null, 0);
@@ -97,7 +100,7 @@ public final class CameraGLView extends GLSurfaceView {
 
     public CameraGLView(final Context context, final AttributeSet attrs, final int defStyle) {
         super(context, attrs);
-        mRenderer = new CameraSurfaceRenderer(this, mDrawer);
+        mRenderer = new CameraSurfaceRenderer(this);
         setEGLContextClientVersion(2);
         setRenderer(mRenderer);
 /*		// the frequency of refreshing of camera preview is at most 15 fps
@@ -144,6 +147,10 @@ public final class CameraGLView extends GLSurfaceView {
         }
     }
 
+    public void setFrag(CameraFragment frag) {
+        fragRef = new WeakReference<>(frag);
+    }
+
     public void toggleFlash() {
         if (mCameraHandler != null) {
             mCameraHandler.toggleFlash();
@@ -167,7 +174,7 @@ public final class CameraGLView extends GLSurfaceView {
     }
 
     public GLDrawer2D getDrawer() {
-        return mDrawer;
+        return mRenderer.getDrawer();
     }
 
     @Override
@@ -222,8 +229,9 @@ public final class CameraGLView extends GLSurfaceView {
         startPreview(getWidth(), getHeight());
     }
 
-    public void init(@ScaleType final int type) {
-        mScaleType = type;
+    public void init(@ScaleType final int scaleType, @MediaType int mediaType) {
+        mScaleType = scaleType;
+        mMediaType = mediaType;
     }
 
     public @ScaleType int getScaleType() {
@@ -341,11 +349,11 @@ public final class CameraGLView extends GLSurfaceView {
         private int margin;
         private boolean filterPreviewEnabled = true;
 
-        public CameraSurfaceRenderer(final CameraGLView parent, GLDrawer2D drawer) {
+        public CameraSurfaceRenderer(final CameraGLView parent) {
             Log.d(TAG, "CameraSurfaceRenderer:");
             mWeakParent = new WeakReference<>(parent);
             Matrix.setIdentityM(mMvpMatrix, 0);
-            mDrawer = drawer;
+            mDrawer = new GLDrawer2D();
 
             DisplayMetrics displayMetrics = Resources.getSystem().getDisplayMetrics();
 
@@ -381,7 +389,15 @@ public final class CameraGLView extends GLSurfaceView {
                 Rect viewRect = new Rect(openGLRect.left, filterTop, openGLRect.left + filterPreviewSize, filterTop + filterPreviewSize);
                 if (viewRect.contains(x, y)) {
                     onFilterSelected(filter);
+                    return;
                 }
+            }
+
+            CameraGLView parent = mWeakParent.get();
+            if (parent == null) { return; }
+            CameraFragment fragment = parent.fragRef.get();
+            if (fragment != null) {
+                parent.post(fragment::toggleShowFilters);
             }
         }
 
@@ -720,6 +736,10 @@ public final class CameraGLView extends GLSurfaceView {
             //			final CameraGLView parent = mWeakParent.get();
             //			if (parent != null)
             //				parent.requestRender();
+        }
+
+        public GLDrawer2D getDrawer() {
+            return mDrawer;
         }
     }
 }

@@ -1,6 +1,5 @@
 package com.softwarejoint.media.adapter;
 
-import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -10,6 +9,7 @@ import android.view.ViewGroup;
 
 import com.softwarejoint.media.R;
 import com.softwarejoint.media.camera.CameraFragment;
+import com.softwarejoint.media.enums.MediaType;
 import com.softwarejoint.media.fileio.ImageLoader;
 
 import java.util.ArrayList;
@@ -24,11 +24,11 @@ public class SelectedAdapter extends RecyclerView.Adapter<ViewHolder> {
     private static final String TAG = "SelectedAdapter";
 
     private List<String> selected = new ArrayList<>();
-    private int maxSelection;
+    private @MediaType int mediaType;
     private CameraFragment cameraFragment;
 
-    public SelectedAdapter(int selection, CameraFragment fragment) {
-        maxSelection = selection;
+    public SelectedAdapter(@MediaType int mediaType, CameraFragment fragment) {
+        this.mediaType = mediaType;
         cameraFragment = fragment;
     }
 
@@ -72,7 +72,7 @@ public class SelectedAdapter extends RecyclerView.Adapter<ViewHolder> {
         final String mediaPath = getItem(position);
         Log.d(TAG, "mediaPath: " + mediaPath);
 
-        ImageLoader.with(mediaPath).loadInto(holder.iv_image);
+        ImageLoader.load(mediaPath).withMediaHint(mediaType).into(holder.iv_image);
 
         ClickListener clickListener = new ClickListener(mediaPath);
 

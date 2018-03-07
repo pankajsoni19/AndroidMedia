@@ -8,6 +8,7 @@ import android.view.View;
 
 import com.softwarejoint.media.R;
 import com.softwarejoint.media.enums.FlashMode;
+import com.softwarejoint.media.enums.MediaType;
 import com.softwarejoint.media.utils.CameraHelper;
 
 import java.io.IOException;
@@ -252,25 +253,27 @@ public final class CameraThread extends Thread {
                 params.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
             }
 
-            // let's try fastest frame rate. You will get near 60fps, but your device become hot.
-            final List<int[]> supportedFpsRange = params.getSupportedPreviewFpsRange();
+            if (parent.mMediaType == MediaType.VIDEO) {
+                // let's try fastest frame rate. You will get near 60fps, but your device become hot.
+                final List<int[]> supportedFpsRange = params.getSupportedPreviewFpsRange();
 
-            if (supportedFpsRange != null) {
-                final int n = supportedFpsRange.size();
+                if (supportedFpsRange != null) {
+                    final int n = supportedFpsRange.size();
 
-                for (int i = 0; i < n; i++) {
-                    int range[] = supportedFpsRange.get(i);
+                    for (int i = 0; i < n; i++) {
+                        int range[] = supportedFpsRange.get(i);
 
-                    Log.d(TAG, String.format("supportedFpsRange(%d)=(%d,%d)", i, range[0], range[1]));
+                        Log.d(TAG, String.format("supportedFpsRange(%d)=(%d,%d)", i, range[0], range[1]));
 
-                    if (range[1] >= MAX_FRAME_RATE) {
-                        params.setPreviewFpsRange(range[0], range[1]);
-                        break;
+                        if (range[1] >= MAX_FRAME_RATE) {
+                            params.setPreviewFpsRange(range[0], range[1]);
+                            break;
+                        }
                     }
                 }
-            }
 
-            params.setRecordingHint(true);
+                params.setRecordingHint(true);
+            }
 
             final int width = Math.min(reqWidth, PREFERRED_PREVIEW_WIDTH);
             final int height = Math.min(reqHeight, PREFERRED_PREVIEW_HEIGHT);

@@ -8,11 +8,15 @@ import android.media.MediaMetadataRetriever;
 import android.media.ThumbnailUtils;
 import android.os.AsyncTask;
 import android.provider.MediaStore;
+import android.support.v4.content.MimeTypeFilter;
+import android.webkit.MimeTypeMap;
 import android.widget.ImageView;
 
 import com.softwarejoint.media.R;
+import com.softwarejoint.media.enums.MediaType;
 
 import java.lang.ref.WeakReference;
+import java.util.Locale;
 
 import static android.provider.MediaStore.Video.Thumbnails.MICRO_KIND;
 
@@ -33,6 +37,7 @@ public class ImageLoader extends AsyncTask<String, Void, Bitmap> {
     private String mediaPath;
     private Long id;
     private WeakReference<ImageView> reference;
+    private @MediaType int mediaType;
 
     private ImageLoader(String mediaPath) {
         this.mediaPath = mediaPath;
@@ -42,11 +47,11 @@ public class ImageLoader extends AsyncTask<String, Void, Bitmap> {
         this.id = id;
     }
 
-    public static ImageLoader with(long id) {
+    public static ImageLoader load(long id) {
         return new ImageLoader(id);
     }
 
-    public static ImageLoader with(String mediaPath) {
+    public static ImageLoader load(String mediaPath) {
         return new ImageLoader(mediaPath);
     }
 
@@ -54,11 +59,15 @@ public class ImageLoader extends AsyncTask<String, Void, Bitmap> {
         return id == null ? mediaPath : String.valueOf(id);
     }
 
+    public ImageLoader withMediaHint(@MediaType int mediaType) {
+        this.mediaType = mediaType;
+        return this;
+    }
     /**
      * Loads blank thumbnail if the file is corrupt.
      * @param imageView
      */
-    public void loadInto(ImageView imageView) {
+    public void into(ImageView imageView) {
         final String key = getKey();
 
         if (key.equals(imageView.getTag(R.id.image_loader_key))
@@ -100,14 +109,45 @@ public class ImageLoader extends AsyncTask<String, Void, Bitmap> {
             options.outWidth = 96;
             options.inSampleSize = calculateInSampleSize(options, imgSize, imgSize);
 
-            bitmap = MediaStore.Video.Thumbnails.getThumbnail(crThumb, id, MICRO_KIND, options);
+            if (mediaType == MediaType.VIDEO) {
+                bitmap = MediaStore.Video.Thumbnails.getThumbnail(crThumb, id, MICRO_KIND, options);
+            } else {
+                bitmap = MediaStore.Images.Thumbnails.getThumbnail(crThumb, id, MICRO_KIND, options);
+            }
         } else if (mediaPath != null) {
-            bitmap = ThumbnailUtils.createVideoThumbnail(mediaPath, MICRO_KIND);
+
+            if (mediaType == MediaType.VIDEO) {
+                bitmap = ThumbnailUtils.createVideoThumbnail(mediaPath, MICRO_KIND);
+            } else {
+                bitmap = loadBitmapFromFile();
+            }
         }
 
         MemoryCache.getInstance().put(getKey(), bitmap);
 
         return bitmap;
+    }
+
+    private Bitmap loadBitmapFromFile() {
+        ImageView imageView = reference.get();
+        if (imageView == null) { return null; }
+
+        int imgHeight = imageView.getHeight();
+        int imgWidth = imageView.getWidth();
+
+        imgHeight =  imgHeight > 0 ? imgHeight : imageSize;
+        imgWidth =  imgWidth > 0 ? imgWidth : imageSize;
+
+        final int imgSize = Math.min(imgHeight, imgWidth);
+
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+
+        BitmapFactory.decodeFile(mediaPath, options);
+        options.inSampleSize = calculateInSampleSize(options, imgSize, imgSize);
+        options.inJustDecodeBounds = false;
+
+        return BitmapFactory.decodeFile(mediaPath, options);
     }
 
     @Override
