@@ -30,6 +30,8 @@ public final class CameraThread extends Thread {
     private static final String TAG = "CameraThread";
 
     private final Object mReadyFence = new Object();
+    private static final int MAX_FRAME_RATE = 30000;
+
     private final WeakReference<CameraGLView> mWeakParent;
     private CameraHandler mHandler;
     private CameraZoom cameraZoom;
@@ -254,17 +256,18 @@ public final class CameraThread extends Thread {
             final List<int[]> supportedFpsRange = params.getSupportedPreviewFpsRange();
 
             if (supportedFpsRange != null) {
-                //TODO: get 30fps rate
                 final int n = supportedFpsRange.size();
 
                 for (int i = 0; i < n; i++) {
                     int range[] = supportedFpsRange.get(i);
-                    Log.d(TAG, String.format("supportedFpsRange(%d)=(%d,%d)", i, range[0], range[1]));
-                }
 
-                final int[] max_fps = supportedFpsRange.get(supportedFpsRange.size() - 1);
-                Log.d(TAG, String.format("fps: %d-%d", max_fps[0], max_fps[1]));
-                params.setPreviewFpsRange(max_fps[0], max_fps[1]);
+                    Log.d(TAG, String.format("supportedFpsRange(%d)=(%d,%d)", i, range[0], range[1]));
+
+                    if (range[1] >= MAX_FRAME_RATE) {
+                        params.setPreviewFpsRange(range[0], range[1]);
+                        break;
+                    }
+                }
             }
 
             params.setRecordingHint(true);
