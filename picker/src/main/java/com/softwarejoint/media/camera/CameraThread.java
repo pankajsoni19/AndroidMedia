@@ -271,6 +271,7 @@ public final class CameraThread extends Thread {
             }
 
             params.setRecordingHint(true);
+
             final int width = Math.min(reqWidth, PREFERRED_PREVIEW_WIDTH);
             final int height = Math.min(reqHeight, PREFERRED_PREVIEW_HEIGHT);
 

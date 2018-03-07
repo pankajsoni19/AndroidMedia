@@ -177,8 +177,7 @@ public class CameraFragment extends Fragment implements OnClickListener {
 
     @SuppressWarnings("ConstantConditions")
     private void handleIntent() {
-        mCameraView.setScaleType(opts.scaleType);
-        mCameraView.setCameraPreviewSize();
+        mCameraView.init(opts.scaleType);
         updateScaleUI();
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());

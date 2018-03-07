@@ -95,7 +95,7 @@ public class DemoActivity extends BaseActivity implements View.OnClickListener {
                 startVideoPicker();
                 break;
             case R.id.image:
-                //startImagePicker();
+                startImagePicker();
                 break;
         }
     }

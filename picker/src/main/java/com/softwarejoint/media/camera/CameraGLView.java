@@ -222,12 +222,12 @@ public final class CameraGLView extends GLSurfaceView {
         startPreview(getWidth(), getHeight());
     }
 
-    public @ScaleType int getScaleType() {
-        return mScaleType;
+    public void init(@ScaleType final int type) {
+        mScaleType = type;
     }
 
-    public void updateScaleType() {
-        queueEvent(mRenderer::updateViewport);
+    public @ScaleType int getScaleType() {
+        return mScaleType;
     }
 
     public void setScaleType(@ScaleType final int type) {
@@ -235,10 +235,6 @@ public final class CameraGLView extends GLSurfaceView {
             mScaleType = type;
             queueEvent(mRenderer::updateViewport);
         }
-    }
-
-    public void setCameraPreviewSize() {
-        setCameraPreviewSize(Constants.PREFERRED_PREVIEW_WIDTH, Constants.PREFERRED_PREVIEW_HEIGHT);
     }
 
     @SuppressWarnings("SuspiciousNameCombination")
@@ -365,11 +361,12 @@ public final class CameraGLView extends GLSurfaceView {
         }
 
         private void setFilterPreviewEnabled(boolean enabled) {
-            if (enabled) {
+            if (!enabled) {
                 for (GLDrawer2D drawer: filterPreviews) {
                     drawer.release();
-                    filterPreviews.clear();
                 }
+
+                filterPreviews.clear();
             }
         }
 
@@ -397,11 +394,8 @@ public final class CameraGLView extends GLSurfaceView {
 
                 mDrawer = filter;
 
-                CameraGLView parent = mWeakParent.get();
-
-                if (parent != null) {
-                    parent.updateScaleType();
-                }
+                updateFiltersUI();
+                updateViewport();
             });
         }
 
@@ -410,7 +404,9 @@ public final class CameraGLView extends GLSurfaceView {
             mDrawer.setMatrix(mMvpMatrix, 0);
 
             if (!filterPreviewEnabled) return;
+
             Log.d(TAG, "createFilterPreviews");
+
             addFilter(new GLPosterizeFilter());
             addFilter(new GLGrayscaleFilter());
             addFilter(new GLArtFilter());
