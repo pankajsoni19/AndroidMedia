@@ -14,6 +14,7 @@ import android.widget.ImageView;
 
 import com.softwarejoint.media.R;
 import com.softwarejoint.media.enums.MediaType;
+import com.softwarejoint.media.utils.BitmapUtils;
 
 import java.lang.ref.WeakReference;
 import java.util.Locale;
@@ -107,7 +108,7 @@ public class ImageLoader extends AsyncTask<String, Void, Bitmap> {
             BitmapFactory.Options options = new BitmapFactory.Options();
             options.outHeight = 96;
             options.outWidth = 96;
-            options.inSampleSize = calculateInSampleSize(options, imgSize, imgSize);
+            options.inSampleSize = BitmapUtils.calculateInSampleSize(options, imgSize, imgSize);
 
             if (mediaType == MediaType.VIDEO) {
                 bitmap = MediaStore.Video.Thumbnails.getThumbnail(crThumb, id, MICRO_KIND, options);
@@ -144,7 +145,7 @@ public class ImageLoader extends AsyncTask<String, Void, Bitmap> {
         options.inJustDecodeBounds = true;
 
         BitmapFactory.decodeFile(mediaPath, options);
-        options.inSampleSize = calculateInSampleSize(options, imgSize, imgSize);
+        options.inSampleSize = BitmapUtils.calculateInSampleSize(options, imgSize, imgSize);
         options.inJustDecodeBounds = false;
 
         return BitmapFactory.decodeFile(mediaPath, options);
@@ -161,27 +162,5 @@ public class ImageLoader extends AsyncTask<String, Void, Bitmap> {
         if (key.equals(imageView.getTag(R.id.image_loader_key))) {
             imageView.setImageBitmap(bitmap);
         }
-    }
-
-    private static int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
-        // Raw height and width of image
-        final int height = options.outHeight;
-        final int width = options.outWidth;
-        int inSampleSize = 1;
-
-        if (height > reqHeight || width > reqWidth) {
-
-            final int halfHeight = height / 2;
-            final int halfWidth = width / 2;
-
-            // Calculate the largest inSampleSize value that is a power of 2 and keeps both
-            // height and width larger than the requested height and width.
-            while ((halfHeight / inSampleSize) >= reqHeight
-                    && (halfWidth / inSampleSize) >= reqWidth) {
-                inSampleSize *= 2;
-            }
-        }
-
-        return inSampleSize;
     }
 }

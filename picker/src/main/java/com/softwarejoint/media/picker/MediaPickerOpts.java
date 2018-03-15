@@ -9,7 +9,6 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.app.Fragment;
 
-import com.softwarejoint.media.camera.PickerActivity;
 import com.softwarejoint.media.enums.MediaType;
 import com.softwarejoint.media.enums.ScaleType;
 import com.softwarejoint.media.fileio.FileHandler;
@@ -27,29 +26,33 @@ public class MediaPickerOpts implements Parcelable {
     public static final String INTENT_RES = "com.softwarejoint.media.result";
 
     public final @MediaType int mediaType;
-    public final @ScaleType int scaleType;
+    public @ScaleType int scaleType;
     public final boolean galleryEnabled;
     public final boolean flashEnabled;
     public final boolean filtersEnabled;
-    public final boolean scaleTypeChangeable;
+    public final boolean cropEnabled;
 
-    public final boolean filterPreviewEnabled;
+    public final boolean scaleTypeChangeable;
 
     public final int maxSelection;
     public final String mediaDir;
 
     public MediaPickerOpts(int mediaType, int scaleType, boolean galleryEnabled, boolean flashEnabled,
-                           boolean filtersEnabled, boolean filterPreviewEnabled,
+                           boolean filtersEnabled, boolean cropEnabled,
                            boolean scaleTypeChangeable, int maxSelection, String mediaDir) {
         this.mediaType = mediaType;
         this.scaleType = scaleType;
         this.galleryEnabled = galleryEnabled;
         this.flashEnabled = flashEnabled;
         this.filtersEnabled = filtersEnabled;
-        this.filterPreviewEnabled = filterPreviewEnabled;
+        this.cropEnabled = cropEnabled;
         this.scaleTypeChangeable = scaleTypeChangeable;
         this.maxSelection = maxSelection;
         this.mediaDir = mediaDir;
+    }
+
+    public boolean showFilters() {
+        return filtersEnabled && (mediaType == MediaType.VIDEO || !cropEnabled);
     }
 
     protected MediaPickerOpts(Parcel in) {
@@ -58,8 +61,8 @@ public class MediaPickerOpts implements Parcelable {
         galleryEnabled = in.readByte() != 0;
         flashEnabled = in.readByte() != 0;
         filtersEnabled = in.readByte() != 0;
+        cropEnabled = in.readByte() != 0;
         scaleTypeChangeable = in.readByte() != 0;
-        filterPreviewEnabled = in.readByte() != 0;
         maxSelection = in.readInt();
         mediaDir = in.readString();
     }
@@ -76,12 +79,6 @@ public class MediaPickerOpts implements Parcelable {
         }
     };
 
-    public static @Nullable
-    Result onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode != REQUEST_CODE || resultCode != Activity.RESULT_OK) return null;
-        return new Result(data.getStringArrayListExtra(INTENT_RES));
-    }
-
     @Override
     public int describeContents() {
         return 0;
@@ -94,16 +91,21 @@ public class MediaPickerOpts implements Parcelable {
         dest.writeByte((byte) (galleryEnabled ? 1 : 0));
         dest.writeByte((byte) (flashEnabled ? 1 : 0));
         dest.writeByte((byte) (filtersEnabled ? 1 : 0));
+        dest.writeByte((byte) (cropEnabled ? 1 : 0));
         dest.writeByte((byte) (scaleTypeChangeable ? 1 : 0));
-        dest.writeByte((byte) (filterPreviewEnabled ? 1 : 0));
         dest.writeInt(maxSelection);
         dest.writeString(mediaDir);
+    }
+
+    public static @Nullable Result onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode != REQUEST_CODE || resultCode != Activity.RESULT_OK) return null;
+        return new Result(data.getStringArrayListExtra(INTENT_RES));
     }
 
     @SuppressWarnings("unused")
     public static final class Builder {
 
-        private static final int MAX_SELECTION = 1;
+        private static final int DEF_MAX_SELECTION = 1;
 
         private @MediaType int mediaType = MediaType.VIDEO;
         private @ScaleType int scaleType = ScaleType.SCALE_CROP_CENTER;
@@ -112,9 +114,9 @@ public class MediaPickerOpts implements Parcelable {
         private boolean flashEnabled = true;
         private boolean filtersEnabled = true;
         private boolean scaleTypeChangeable = true;
-        private boolean filterPreviewEnabled = true;
+        private boolean cropEnabled = false;
 
-        private int maxSelection = MAX_SELECTION;
+        private int maxSelection = DEF_MAX_SELECTION;
         private String mediaDir;
 
         public void startActivity(Activity activity) {
@@ -124,7 +126,7 @@ public class MediaPickerOpts implements Parcelable {
 
             MediaPickerOpts opts =
                     new MediaPickerOpts(mediaType, scaleType, galleryEnabled, flashEnabled,
-                            filtersEnabled, filterPreviewEnabled, scaleTypeChangeable, maxSelection, mediaDir);
+                            filtersEnabled, cropEnabled, scaleTypeChangeable, maxSelection, mediaDir);
 
             Intent newIntent = new Intent(activity, PickerActivity.class);
             newIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -174,13 +176,20 @@ public class MediaPickerOpts implements Parcelable {
             return this;
         }
 
-        public Builder withFilterPreviewEnabled(boolean enabled) {
-            filterPreviewEnabled = enabled;
+        public Builder withCropEnabled(boolean enabled) {
+            cropEnabled = enabled;
+
+            if (cropEnabled && mediaType == MediaType.IMAGE) {
+                maxSelection = DEF_MAX_SELECTION;
+            }
+
             return this;
         }
 
         public Builder withMaxSelection(int count) {
-            maxSelection = count;
+            if (mediaType != MediaType.IMAGE || !cropEnabled) {
+                maxSelection = count;
+            }
             return this;
         }
     }

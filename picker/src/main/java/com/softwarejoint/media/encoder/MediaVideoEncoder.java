@@ -35,6 +35,8 @@ import com.softwarejoint.media.glutils.RenderHandler;
 
 import java.io.IOException;
 
+import static android.media.MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface;
+
 @SuppressWarnings("WeakerAccess")
 public class MediaVideoEncoder extends MediaEncoder {
 
@@ -47,19 +49,6 @@ public class MediaVideoEncoder extends MediaEncoder {
     private static final int DEFAULT_IFRAME_INTERVAL = 10;
 
     private static final float BPP = 0.25f; //bytes per pixel
-    /**
-     * color formats that we can use in this class
-     */
-    protected static int[] recognizedFormats;
-
-    static {
-        recognizedFormats = new int[]{
-                //        	MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Planar,
-                //        	MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420SemiPlanar,
-                //        	MediaCodecInfo.CodecCapabilities.COLOR_QCOM_FormatYUV420SemiPlanar,
-                MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface,
-        };
-    }
 
     private final int mWidth;
     private final int mHeight;
@@ -130,30 +119,15 @@ public class MediaVideoEncoder extends MediaEncoder {
             Thread.currentThread().setPriority(Thread.NORM_PRIORITY);
         }
 
-        int colorFormat;
         for (int i = 0; i < caps.colorFormats.length; i++) {
-            colorFormat = caps.colorFormats[i];
-            if (isRecognizedVideoFormat(colorFormat)) {
+            final int colorFormat = caps.colorFormats[i];
+            if (colorFormat == COLOR_FormatSurface) {
                 return colorFormat;
             }
         }
 
         Log.e(TAG, "couldn't find a good color format for " + codecInfo.getName() + " / " + mimeType);
         return 0;
-    }
-
-    private static boolean isRecognizedVideoFormat(final int colorFormat) {
-        Log.d(TAG, "isRecognizedViewoFormat:colorFormat=" + colorFormat);
-
-        if (recognizedFormats == null || recognizedFormats.length == 0) {
-            return false;
-        }
-
-        for (int format: recognizedFormats) {
-            if (colorFormat == format) return true;
-        }
-
-        return false;
     }
 
     public void setMatrix(final float[] mvp_matrix) {
@@ -168,25 +142,6 @@ public class MediaVideoEncoder extends MediaEncoder {
 
         return false;
     }
-
-//    public boolean frameAvailableSoon(final float[] tex_matrix) {
-//        if (super.frameAvailableSoon()) {
-//            mRenderHandler.draw(tex_matrix);
-//            return true;
-//        }
-//
-//        return false;
-//    }
-
-//    @Override
-//    public boolean frameAvailableSoon() {
-//        if (super.frameAvailableSoon()) {
-//            mRenderHandler.draw(null);
-//            return true;
-//        }
-//
-//        return false;
-//    }
 
     @Override
     protected void prepare() throws IOException {
@@ -206,7 +161,7 @@ public class MediaVideoEncoder extends MediaEncoder {
 
         final MediaFormat format = MediaFormat.createVideoFormat(MIME_TYPE, mWidth, mHeight);
         format.setInteger(MediaFormat.KEY_COLOR_FORMAT,
-                MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);  // API >= 18
+                COLOR_FormatSurface);  // API >= 18
         format.setInteger(MediaFormat.KEY_BIT_RATE, calcBitRate());
         format.setInteger(MediaFormat.KEY_FRAME_RATE, DEFAULT_FRAME_RATE);
         format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, DEFAULT_IFRAME_INTERVAL);

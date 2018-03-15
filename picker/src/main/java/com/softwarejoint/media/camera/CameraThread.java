@@ -30,8 +30,9 @@ public final class CameraThread extends Thread {
 
     private static final String TAG = "CameraThread";
 
+    private static final int MIN_FRAME_RATE = 15000;
+
     private final Object mReadyFence = new Object();
-    private static final int MAX_FRAME_RATE = 30000;
 
     private final WeakReference<CameraGLView> mWeakParent;
     private CameraHandler mHandler;
@@ -254,7 +255,6 @@ public final class CameraThread extends Thread {
             }
 
             if (parent.mMediaType == MediaType.VIDEO) {
-                // let's try fastest frame rate. You will get near 60fps, but your device become hot.
                 final List<int[]> supportedFpsRange = params.getSupportedPreviewFpsRange();
 
                 if (supportedFpsRange != null) {
@@ -265,7 +265,7 @@ public final class CameraThread extends Thread {
 
                         Log.d(TAG, String.format("supportedFpsRange(%d)=(%d,%d)", i, range[0], range[1]));
 
-                        if (range[1] >= MAX_FRAME_RATE) {
+                        if (range[0] >= MIN_FRAME_RATE) {
                             params.setPreviewFpsRange(range[0], range[1]);
                             break;
                         }

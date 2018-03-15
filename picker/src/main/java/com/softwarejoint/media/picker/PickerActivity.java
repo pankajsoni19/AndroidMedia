@@ -1,4 +1,4 @@
-package com.softwarejoint.media.camera;
+package com.softwarejoint.media.picker;
 
 import android.os.Bundle;
 import android.os.Handler;
@@ -7,12 +7,17 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
+import android.support.v7.app.AppCompatDelegate;
 import android.view.Gravity;
 import android.view.Window;
 
 import com.softwarejoint.media.R;
 import com.softwarejoint.media.anim.BaseActivity;
+import com.softwarejoint.media.camera.CameraFragment;
+import com.softwarejoint.media.enums.ImageEffectType;
+import com.softwarejoint.media.enums.MediaType;
 import com.softwarejoint.media.fileio.MemoryCache;
+import com.softwarejoint.media.image.ImageEffectFragment;
 import com.softwarejoint.media.permission.PermissionCallBack;
 import com.softwarejoint.media.permission.PermissionManager;
 import com.softwarejoint.media.permission.PermissionRequest;
@@ -26,6 +31,7 @@ public class PickerActivity extends BaseActivity implements PermissionCallBack, 
 
     private Handler uiThreadHandler;
     private MemoryCache memoryCache;
+    private MediaPickerOpts opts;
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -39,14 +45,22 @@ public class PickerActivity extends BaseActivity implements PermissionCallBack, 
         uiThreadHandler = new Handler();
 
         memoryCache = MemoryCache.getInstance();
-        PermissionManager.videoPermission(this, this);
+        opts = getIntent().getParcelableExtra(MediaPickerOpts.INTENT_OPTS);
+
+        if (opts.mediaType == MediaType.IMAGE) {
+            PermissionManager.photoPermission(this, this);
+        } else {
+            PermissionManager.videoPermission(this, this);
+        }
+
+        AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
     }
 
     private void launchCameraFragment() {
         FragmentManager manager = getSupportFragmentManager();
 
         if (manager.getBackStackEntryCount() == 0) {
-            MediaPickerOpts opts = getIntent().getParcelableExtra(MediaPickerOpts.INTENT_OPTS);
+
             if (opts == null) {
                 uiThreadHandler.postDelayed(this::supportFinishAfterTransition, 500L);
                 return;
@@ -60,13 +74,32 @@ public class PickerActivity extends BaseActivity implements PermissionCallBack, 
         }
     }
 
+    private void launchEffectFragment() {
+        FragmentManager manager = getSupportFragmentManager();
+
+        if (manager.getBackStackEntryCount() == 0) {
+            MediaPickerOpts opts = getIntent().getParcelableExtra(MediaPickerOpts.INTENT_OPTS);
+            if (opts == null) {
+                uiThreadHandler.postDelayed(this::supportFinishAfterTransition, 500L);
+                return;
+            }
+
+            // /storage/emulated/0/WhatsApp/Media/WhatsApp Images/IMG-20180312-WA0001.jpg
+            ImageEffectFragment fragment = ImageEffectFragment.newInstance(opts, "/storage/emulated/0/WhatsApp/Media/WhatsApp Images/IMG-20180312-WA0001.jpg");
+            FragmentTransaction transaction = manager.beginTransaction();
+            transaction.replace(R.id.container, fragment, fragment.TAG);
+            transaction.addToBackStack(fragment.TAG);
+            transaction.commit();
+        }
+    }
+
     @Override
     public void onBackPressed() {
         List<Fragment> fragments = getSupportFragmentManager().getFragments();
         if (fragments.size() > 0) {
             Fragment topFrag = fragments.get(fragments.size() - 1);
-            if (!topFrag.isRemoving() && topFrag instanceof CameraFragment) {
-                if (((CameraFragment) topFrag).onBackPressed()) return;
+            if (!topFrag.isRemoving() && topFrag instanceof PickerFragment) {
+                if (((PickerFragment) topFrag).onBackPressed()) return;
             }
         }
 
@@ -101,11 +134,10 @@ public class PickerActivity extends BaseActivity implements PermissionCallBack, 
 
     @Override
     public void onAccessPermission(boolean permissionGranted, int permission) {
-        if (!permissionGranted || permission != PermissionRequest.REQUEST_CODE_VIDEO) {
-            return;
+        if (permissionGranted) {
+            //uiThreadHandler.postDelayed(this::launchCameraFragment, 500L);
+            uiThreadHandler.postDelayed(this::launchEffectFragment, 500L);
         }
-
-        uiThreadHandler.postDelayed(this::launchCameraFragment, 500L);
     }
 
     @Override

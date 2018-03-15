@@ -1,33 +1,10 @@
 package com.softwarejoint.media.camera;
-/*
- * AudioVideoRecordingSample
- * Sample project to cature audio and video from internal mic/camera and save as MPEG4 file.
- *
- * Copyright (c) 2014-2015 saki t_saki@serenegiant.com
- *
- * File name: CameraFragment.java
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
- * All files in the folder are under this Apache License, Version 2.0.
-*/
 
+import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Rect;
 import android.media.MediaActionSound;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
@@ -38,6 +15,8 @@ import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -60,7 +39,9 @@ import com.softwarejoint.media.enums.ScaleType;
 import com.softwarejoint.media.fileio.FileHandler;
 import com.softwarejoint.media.fileio.FilePathUtil;
 import com.softwarejoint.media.glutils.GLDrawer2D;
+import com.softwarejoint.media.image.ImageEffectFragment;
 import com.softwarejoint.media.picker.MediaPickerOpts;
+import com.softwarejoint.media.picker.PickerFragment;
 import com.softwarejoint.media.utils.CameraHelper;
 import com.softwarejoint.media.utils.TimeParseUtils;
 
@@ -78,7 +59,7 @@ import javax.microedition.khronos.opengles.GL10;
 
 import static android.app.Activity.RESULT_OK;
 
-public class CameraFragment extends Fragment implements OnClickListener {
+public class CameraFragment extends PickerFragment implements OnClickListener {
 
     public final String TAG = "CameraFragment";
 
@@ -106,8 +87,9 @@ public class CameraFragment extends Fragment implements OnClickListener {
     private SelectedAdapter selectedAdapter;
 
     private ImageView iv_back;
-    private View txt_gallery, iv_filter;
-    private View iv_gallery;
+    private ImageView iv_filter;
+    private View txt_gallery;
+    private ImageView iv_gallery;
     private ImageView iv_vid_crop;
     private TextView txtVideoDur;
     private View txt_done;
@@ -150,16 +132,17 @@ public class CameraFragment extends Fragment implements OnClickListener {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setHasOptionsMenu(true);
-        //noinspection ConstantConditions
-        opts = getArguments().getParcelable(MediaPickerOpts.INTENT_OPTS);
+        if (opts == null) {
+            //noinspection ConstantConditions
+            opts = getArguments().getParcelable(MediaPickerOpts.INTENT_OPTS);
+        }
         uiThreadHandler = new Handler();
     }
 
     @Override
     public View onCreateView(@NonNull final LayoutInflater inflater, final ViewGroup container,
                              final Bundle savedInstanceState) {
-        final View rootView = inflater.inflate(R.layout.fragment_main, container, false);
+        final View rootView = inflater.inflate(R.layout.fragment_capture, container, false);
 
         mCameraView = rootView.findViewById(R.id.cameraView);
         iv_flash = rootView.findViewById(R.id.iv_flash);
@@ -208,6 +191,13 @@ public class CameraFragment extends Fragment implements OnClickListener {
         if (opts.galleryEnabled) {
             loadGalleryAdapter();
             iv_gallery.setOnClickListener(this);
+
+            if (opts.mediaType == MediaType.IMAGE) {
+                iv_gallery.setImageResource(R.drawable.photo_library_white);
+            } else {
+                iv_gallery.setImageResource(R.drawable.video_library_white);
+            }
+
         } else {
             iv_gallery.setVisibility(View.INVISIBLE);
             txt_gallery.setVisibility(View.INVISIBLE);
@@ -221,14 +211,21 @@ public class CameraFragment extends Fragment implements OnClickListener {
             iv_flash.setOnClickListener(null);
         }
 
-        if (opts.filtersEnabled) {
+        if (opts.showFilters()) {
+            if (opts.mediaType == MediaType.IMAGE) {
+                iv_filter.setImageResource(R.drawable.photo_filter);
+            } else {
+                iv_filter.setImageResource(R.drawable.movie_filter);
+            }
+
+            iv_filter.setVisibility(View.VISIBLE);
             iv_filter.setOnClickListener(this);
         } else {
             iv_filter.setVisibility(View.INVISIBLE);
             iv_filter.setOnClickListener(null);
         }
 
-        mCameraView.setPreviewEnabled(opts.filterPreviewEnabled);
+        mCameraView.setPreviewEnabled(opts.showFilters());
     }
 
     public boolean onBackPressed() {
@@ -333,6 +330,7 @@ public class CameraFragment extends Fragment implements OnClickListener {
             onClickDone();
         } else if (id == R.id.iv_back) {
             //noinspection ConstantConditions
+            getActivity().setResult(Activity.RESULT_CANCELED);
             getActivity().supportFinishAfterTransition();
         }
     }
@@ -395,7 +393,7 @@ public class CameraFragment extends Fragment implements OnClickListener {
         if (mCameraView.getScaleType() == ScaleType.SCALE_SQUARE) {
             iv_vid_crop.setImageResource(R.drawable.crop_square);
         } else {
-            iv_vid_crop.setImageResource(R.drawable.crop_free);
+            iv_vid_crop.setImageResource(R.drawable.crop_portrait);
         }
     }
 
@@ -425,7 +423,7 @@ public class CameraFragment extends Fragment implements OnClickListener {
 
     private String createBitmapFromGLSurface() {
         EGL10 egl = (EGL10) EGLContext.getEGL();
-        GL10 gl = (GL10)egl.eglGetCurrentContext().getGL();
+        GL10 gl = (GL10) egl.eglGetCurrentContext().getGL();
 
         GLDrawer2D drawer = mCameraView.getDrawer();
 
@@ -474,7 +472,7 @@ public class CameraFragment extends Fragment implements OnClickListener {
             return null;
         }
 
-        return tempFile.exists() ? tempFile.getPath(): null;
+        return tempFile.exists() ? tempFile.getPath() : null;
     }
 
     private void onPictureTaken(String imagePath) {
@@ -516,6 +514,7 @@ public class CameraFragment extends Fragment implements OnClickListener {
                 "image/jpg"
         }, callBack);
     }
+
     /**
      * start recording
      * This is a sample project and call this on UI thread to avoid being complicated
@@ -616,7 +615,7 @@ public class CameraFragment extends Fragment implements OnClickListener {
         if (onMediaSelectionUpdated()) {
             onClickDone();
         } else {
-            if (opts.filtersEnabled) {
+            if (opts.showFilters()) {
                 iv_filter.setVisibility(View.VISIBLE);
             } else {
                 iv_filter.setVisibility(View.INVISIBLE);
@@ -762,21 +761,32 @@ public class CameraFragment extends Fragment implements OnClickListener {
         return false;
     }
 
+    @SuppressWarnings("ConstantConditions")
     private void onClickDone() {
         ArrayList<String> items = new ArrayList<>();
 
         if (galleryAdapter != null) {
             galleryAdapter.fill(items);
+
         } else if (selectedAdapter != null) {
             selectedAdapter.fill(items);
         }
 
-        Intent resultIntent = new Intent();
-        resultIntent.putExtra(MediaPickerOpts.INTENT_RES, items);
-        FragmentActivity activity = getActivity();
-        //noinspection ConstantConditions
-        activity.setResult(RESULT_OK, resultIntent);
-        activity.supportFinishAfterTransition();
+        if (opts.mediaType == MediaType.IMAGE && opts.cropEnabled) {
+            ImageEffectFragment fragment = ImageEffectFragment.newInstance(opts, items.get(0));
+            FragmentManager manager = getFragmentManager();
+            FragmentTransaction transaction = manager.beginTransaction();
+            transaction.replace(R.id.container, fragment, fragment.TAG);
+            transaction.addToBackStack(fragment.TAG);
+            transaction.commit();
+
+        } else {
+            Intent resultIntent = new Intent();
+            resultIntent.putExtra(MediaPickerOpts.INTENT_RES, items);
+            FragmentActivity activity = getActivity();
+            activity.setResult(RESULT_OK, resultIntent);
+            activity.supportFinishAfterTransition();
+        }
     }
 
     private void playSound(int soundId) {

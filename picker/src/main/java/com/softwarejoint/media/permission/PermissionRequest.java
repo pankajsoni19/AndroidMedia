@@ -9,7 +9,11 @@ package com.softwarejoint.media.permission;
 
 import android.support.annotation.IntDef;
 
-@IntDef({PermissionRequest.REQUEST_CODE_VIDEO})
+import static com.softwarejoint.media.permission.PermissionRequest.REQUEST_CODE_PHOTO;
+import static com.softwarejoint.media.permission.PermissionRequest.REQUEST_CODE_VIDEO;
+
+@IntDef({REQUEST_CODE_PHOTO, REQUEST_CODE_VIDEO})
 public @interface PermissionRequest {
+    int REQUEST_CODE_PHOTO = 103;
     int REQUEST_CODE_VIDEO = 104;
 }

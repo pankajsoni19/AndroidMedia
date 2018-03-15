@@ -41,7 +41,7 @@ public class AnimationHelper {
         return context.getResources().getInteger(android.R.integer.config_mediumAnimTime);
     }
 
-    private static long getShortDuration(Context context) {
+    public static long getShortDuration(Context context) {
         return context.getResources().getInteger(android.R.integer.config_shortAnimTime);
     }
 

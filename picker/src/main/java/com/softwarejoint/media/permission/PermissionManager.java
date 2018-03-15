@@ -16,12 +16,22 @@ import java.util.ArrayList;
 
 public class PermissionManager {
 
+    public static void photoPermission(Activity activity, PermissionCallBack permissionCallBack) {
+        requestPermission(activity, permissionCallBack, PermissionRequest.REQUEST_CODE_PHOTO);
+    }
+
     public static void videoPermission(Activity activity, PermissionCallBack permissionCallBack) {
         requestPermission(activity, permissionCallBack, PermissionRequest.REQUEST_CODE_VIDEO);
     }
 
     private static String[] getPermissionsForFeature(@PermissionRequest int requestCode) {
         switch (requestCode) {
+            case PermissionRequest.REQUEST_CODE_PHOTO:
+                return new String[]{
+                        Manifest.permission.CAMERA,
+                        Manifest.permission.READ_EXTERNAL_STORAGE,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                };
             case PermissionRequest.REQUEST_CODE_VIDEO:
                 return new String[]{
                         Manifest.permission.CAMERA,

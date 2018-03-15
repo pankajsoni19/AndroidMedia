@@ -30,7 +30,6 @@ import android.opengl.EGL14;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
-import android.support.v7.app.AppCompatDelegate;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -49,7 +48,6 @@ import com.softwarejoint.media.glutils.GLDrawer2D;
 import com.softwarejoint.media.glutils.GLGrayscaleFilter;
 import com.softwarejoint.media.glutils.GLPosterizeFilter;
 import com.softwarejoint.media.utils.CameraHelper;
-import com.softwarejoint.media.utils.Constants;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -82,11 +80,13 @@ public final class CameraGLView extends GLSurfaceView {
 
     protected ImageView flashImageView, cameraSwitcher;
 
-    protected @ScaleType int mScaleType = ScaleType.SCALE_SQUARE;
-    protected @MediaType int mMediaType = MediaType.IMAGE;
+    protected @ScaleType
+    int mScaleType = ScaleType.SCALE_SQUARE;
+    protected @MediaType
+    int mMediaType = MediaType.IMAGE;
 
     protected volatile int cameraId = CAMERA_FACING_BACK;
-    private boolean filtersPreviewEnabled;
+    //private boolean filtersPreviewEnabled;
     private WeakReference<CameraFragment> fragRef;
 
 
@@ -107,7 +107,6 @@ public final class CameraGLView extends GLSurfaceView {
     // and RENDERMODE_WHEN_DIRTY is better to reduce power consumption
 		setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY); */
 
-        AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
         isFlashAvailable = CameraHelper.isFlashAvailable(context);
         isFrontCameraAvailable = CameraHelper.isFrontCameraAvailable(context);
 
@@ -179,7 +178,7 @@ public final class CameraGLView extends GLSurfaceView {
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent event) {
-        if (!filtersPreviewEnabled) return super.dispatchTouchEvent(event);
+        if (!mRenderer.showFilters) return super.dispatchTouchEvent(event);
 
         Log.d(TAG, "dispatchTouchEvent");
 
@@ -234,7 +233,8 @@ public final class CameraGLView extends GLSurfaceView {
         mMediaType = mediaType;
     }
 
-    public @ScaleType int getScaleType() {
+    public @ScaleType
+    int getScaleType() {
         return mScaleType;
     }
 
@@ -315,7 +315,6 @@ public final class CameraGLView extends GLSurfaceView {
     }
 
     public void setPreviewEnabled(boolean enabled) {
-        filtersPreviewEnabled = enabled;
         queueEvent(() -> mRenderer.setFilterPreviewEnabled(enabled));
     }
 
@@ -342,15 +341,16 @@ public final class CameraGLView extends GLSurfaceView {
         private boolean flip = true;
 
         private volatile boolean showFilters = false;
+        private volatile boolean filterPreviewEnabled = true;
+
         private List<GLDrawer2D> filterPreviews = new ArrayList<>();
         private int screenHeight, screenWidth;
         private int filterPreviewSize;
         private int filterStartX, filterStartY;
         private int margin;
-        private boolean filterPreviewEnabled = true;
 
         public CameraSurfaceRenderer(final CameraGLView parent) {
-            Log.d(TAG, "CameraSurfaceRenderer:");
+            Log.d(TAG, "BitmapSurfaceRenderer:");
             mWeakParent = new WeakReference<>(parent);
             Matrix.setIdentityM(mMvpMatrix, 0);
             mDrawer = new GLDrawer2D();
@@ -362,7 +362,7 @@ public final class CameraGLView extends GLSurfaceView {
 
             filterPreviewSize = (int) (FILTERED_PREVIEW_SIZE * displayMetrics.density);
 
-            margin = (screenWidth - (filterPreviewSize * FILTER_PREVIEWS_PER_ROW))/(FILTER_PREVIEWS_PER_ROW + 1);
+            margin = (screenWidth - (filterPreviewSize * FILTER_PREVIEWS_PER_ROW)) / (FILTER_PREVIEWS_PER_ROW + 1);
 
             filterStartX = margin;
             filterStartY = (int) (0.50 * screenHeight);
@@ -370,7 +370,7 @@ public final class CameraGLView extends GLSurfaceView {
 
         private void setFilterPreviewEnabled(boolean enabled) {
             if (!enabled) {
-                for (GLDrawer2D drawer: filterPreviews) {
+                for (GLDrawer2D drawer : filterPreviews) {
                     drawer.release();
                 }
 
@@ -382,7 +382,7 @@ public final class CameraGLView extends GLSurfaceView {
             Rect rect = new Rect();
             Log.d(TAG, "onTouched: rect: " + rect);
 
-            for (GLDrawer2D filter: filterPreviews) {
+            for (GLDrawer2D filter : filterPreviews) {
                 Rect openGLRect = filter.getRect();
                 final int filterTop = (screenHeight - openGLRect.top - filterPreviewSize);
 
@@ -394,21 +394,20 @@ public final class CameraGLView extends GLSurfaceView {
             }
 
             CameraGLView parent = mWeakParent.get();
-            if (parent == null) { return; }
+            if (parent == null || parent.fragRef.get() == null) return;
             CameraFragment fragment = parent.fragRef.get();
-            if (fragment != null) {
-                parent.post(fragment::toggleShowFilters);
-            }
+            parent.post(fragment::toggleShowFilters);
         }
 
         private void onFilterSelected(GLDrawer2D filter) {
             Log.d(TAG, "onFilterSelected : " + filter.getClass().getSimpleName());
 
             runOnDraw(() -> {
-                filterPreviews.add(0, mDrawer);
-                filterPreviews.remove(filter);
+                mDrawer.release();
+                mDrawer = filter.createCopy();
 
-                mDrawer = filter;
+                mDrawer.init();
+                mDrawer.setMatrix(mMvpMatrix, 0);
 
                 updateFiltersUI();
                 updateViewport();
@@ -423,6 +422,7 @@ public final class CameraGLView extends GLSurfaceView {
 
             Log.d(TAG, "createFilterPreviews");
 
+            addFilter(mDrawer.createCopy());
             addFilter(new GLPosterizeFilter());
             addFilter(new GLGrayscaleFilter());
             addFilter(new GLArtFilter());
@@ -506,7 +506,7 @@ public final class CameraGLView extends GLSurfaceView {
                 mDrawer.release();
             }
 
-            for (GLDrawer2D filter: filterPreviews) {
+            for (GLDrawer2D filter : filterPreviews) {
                 filter.release();
             }
 
@@ -650,7 +650,7 @@ public final class CameraGLView extends GLSurfaceView {
             int startX = filterStartX;
             int startY = filterStartY;
 
-            for (GLDrawer2D drawer: filterPreviews) {
+            for (GLDrawer2D drawer : filterPreviews) {
                 drawer.setRect(startX, startY, filterPreviewSize, filterPreviewSize);
 
                 Matrix.setIdentityM(mMvpMatrix, 0);
@@ -705,7 +705,7 @@ public final class CameraGLView extends GLSurfaceView {
                 GLES20.glViewport(mDrawer.getStartX(), mDrawer.getStartY(), mDrawer.width(), mDrawer.height());
                 mDrawer.draw(mGLTextureId, mStMatrix);
 
-                for (GLDrawer2D drawer: filterPreviews) {
+                for (GLDrawer2D drawer : filterPreviews) {
                     GLES20.glViewport(drawer.getStartX(), drawer.getStartY(), filterPreviewSize, filterPreviewSize);
                     drawer.draw(mGLTextureId, mStMatrix);
                 }
@@ -715,7 +715,7 @@ public final class CameraGLView extends GLSurfaceView {
                 mDrawer.draw(mGLTextureId, mStMatrix);
 
                 flip = !flip;
-                if (flip) {  // ~30fps
+                if (flip) {  // ~15fps
                     synchronized (this) {
                         if (mVideoEncoder != null) {
                             // notify to capturing thread that the camera frame is available.

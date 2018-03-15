@@ -30,7 +30,7 @@
         android:theme="@style/AppTheme">
 
         <activity
-            android:name=".camera.PickerActivity"
+            android:name=".picker.PickerActivity"
             android:exported="true"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="stateAlwaysHidden">

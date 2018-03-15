@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#181D21"
+    android:background="@color/frag_blue_bg"
     tools:context=".camera.CameraFragment">
 
     <com.softwarejoint.media.camera.CameraGLView
@@ -17,11 +17,13 @@
 
     <android.support.v7.widget.AppCompatImageView
         android:id="@+id/iv_back"
-        android:layout_width="64dp"
+        android:layout_width="48dp"
         android:layout_height="40dp"
         android:padding="8dp"
+        android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginTop="8dp"
+        android:scaleType="fitStart"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/arrow_back_white" />
@@ -49,6 +51,17 @@
         app:srcCompat="@drawable/flash_auto_white" />
 
     <android.support.v7.widget.AppCompatImageView
+        android:id="@+id/iv_vid_crop"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginEnd="8dp"
+        android:padding="6dp"
+        android:layout_marginTop="8dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/iv_flash"
+        app:srcCompat="@drawable/crop_portrait" />
+
+    <android.support.v7.widget.AppCompatImageView
         android:id="@+id/iv_filter"
         android:layout_width="40dp"
         android:layout_height="40dp"
@@ -56,19 +69,8 @@
         android:layout_marginEnd="8dp"
         android:padding="6dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/iv_flash"
-        app:srcCompat="@drawable/movie_filter_white_24dp" />
-
-    <android.support.v7.widget.AppCompatImageView
-        android:id="@+id/iv_vid_crop"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_marginEnd="8dp"
-        android:padding="8dp"
-        android:layout_marginTop="8dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/iv_filter"
-        app:srcCompat="@drawable/crop_free" />
+        app:layout_constraintTop_toBottomOf="@id/iv_vid_crop"
+        app:srcCompat="@drawable/movie_filter" />
 
     <TextView
         android:id="@+id/video_dur"
@@ -136,12 +138,11 @@
         android:layout_marginBottom="36dp"
         android:text="@string/done"
         android:textColor="@android:color/white"
-        android:textSize="16sp"
+        android:textSize="18sp"
         android:gravity="center"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.50"
         app:layout_constraintStart_toEndOf="@+id/record_button" />
 
 </android.support.constraint.ConstraintLayout>

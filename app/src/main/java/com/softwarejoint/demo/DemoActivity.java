@@ -77,12 +77,13 @@ public class DemoActivity extends BaseActivity implements View.OnClickListener {
     private void startImagePicker() {
         new MediaPickerOpts.Builder()
                 .setMediaType(MediaType.IMAGE)
-                .canChangeScaleType(Boolean.valueOf("false"))
+                .canChangeScaleType(Boolean.valueOf("true"))
                 .withGallery(Boolean.valueOf("true"))
                 .withCameraType(ScaleType.SCALE_SQUARE)
                 .withFlash(Boolean.valueOf("true"))
-                .withMaxSelection(Integer.parseInt("2"))
+                .withMaxSelection(Integer.parseInt("1"))
                 .withFilters(Boolean.valueOf("true"))
+                .withCropEnabled(Boolean.valueOf("true"))
                 .startActivity(this);
     }
 

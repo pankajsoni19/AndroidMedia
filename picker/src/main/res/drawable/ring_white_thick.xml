@@ -6,16 +6,7 @@
                 android:width="256dp"
                 android:height="256dp" />
             <solid android:color="@android:color/transparent" />
-            <stroke
-                android:width="8dp"
-                android:color="@android:color/white" />
+            <stroke android:color="@android:color/white" android:width="24dp"/>
         </shape>
     </item>
-
-    <item
-        android:bottom="48dp"
-        android:left="48dp"
-        android:right="48dp"
-        android:top="48dp"
-        android:drawable="@drawable/done_white"/>
 </layer-list>
