@@ -1,6 +1,7 @@
 package com.softwarejoint.media.image;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.PixelFormat;
@@ -10,13 +11,16 @@ import android.media.effect.EffectFactory;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLUtils;
+import android.opengl.Matrix;
 import android.util.AttributeSet;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 
 import com.softwarejoint.media.enums.ImageEffectType;
 import com.softwarejoint.media.glutils.GLDrawer2D;
+import com.softwarejoint.media.multitouch.MultiTouchListener;
 import com.softwarejoint.media.picker.MediaPickerOpts;
 import com.softwarejoint.media.utils.BitmapUtils;
 
@@ -61,6 +65,21 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
 
     private String origImagePath;
 
+    private MultiTouchListener touchListener;
+    private final float[] mMVPMatrix = new float[16];
+    private final float[] mProjectionMatrix = new float[16];
+    private final float[] mViewMatrix = new float[16];
+
+    private float scale = 1.0f;
+    private float factorX = 0f;
+    private float factorY = 0f;
+    private float rotation = 0;
+    private float pivotX = 0;
+    private float pivotY = 0;
+    private final float heightPixels;
+    private final float widthPixels;
+    private final float translationFactor;
+
     public EffectGLView(final Context context) {
         this(context, null, 0);
     }
@@ -72,7 +91,7 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
     public EffectGLView(final Context context, final AttributeSet attrs, final int defStyle) {
         super(context, attrs);
 
-        setZOrderOnTop(true);
+        //setZOrderOnTop(true);
         setEGLContextClientVersion(2);
         setEGLConfigChooser(8,8,8,8,16,0);
         getHolder().setFormat(PixelFormat.RGBA_8888);
@@ -80,7 +99,108 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
         setRenderer(this);
         setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
 
+        touchListener = new MultiTouchListener();
+        touchListener.setIsRotateEnabled(true);
+        touchListener.setIsTranslationXEnabled(true);
+        touchListener.setIsTranslateEnabled(true);
+        touchListener.setIsScaleEnabled(true);
+
+        setOnTouchListener(touchListener);
+
         Arrays.fill(mTextures, 0);
+
+        Matrix.setLookAtM(mViewMatrix, 0, 0, 0, -3, 0f, 0f, 0f, 0f, 1.0f, 0.0f);
+
+        DisplayMetrics displayMetrics = Resources.getSystem().getDisplayMetrics();
+
+        widthPixels = displayMetrics.widthPixels;
+        heightPixels = displayMetrics.heightPixels;
+        translationFactor = displayMetrics.density;
+    }
+
+    @Override
+    public void setPivotX(float pivot) {
+        Log.d(TAG, "pivotX: " + pivot);
+        pivotY = pivot;
+    }
+
+    @Override
+    public float getPivotX() {
+        return pivotX;
+    }
+
+    @Override
+    public void setPivotY(float pivot) {
+        Log.d(TAG, "pivotY: " + pivot);
+        pivotX = pivot;
+    }
+
+    @Override
+    public float getPivotY() {
+        return pivotY;
+    }
+
+    @Override
+    public void setTranslationX(float translation) {
+        factorX = (translation / widthPixels) * translationFactor;
+        Log.d(TAG, "setTranslationX: " + translation + " factorX: " + factorX);
+        //buildTransform();
+    }
+
+    @Override
+    public float getTranslationX() {
+        return (widthPixels * factorX)/ translationFactor;
+    }
+
+    @Override
+    public void setTranslationY(float translation) {
+        factorY = -1*(translation / heightPixels) * translationFactor;
+        Log.d(TAG, "setTranslationY: " + translation + " factorY: " + factorY);
+        buildTransform();
+    }
+
+    @Override
+    public float getTranslationY() {
+        return (heightPixels * factorY)/ translationFactor;
+    }
+
+    @Override
+    public void setScaleX(float scaleX) {
+        if (scale == scaleX) return;
+
+        Log.d(TAG, "setScaleX: " + scale);
+        scale = scaleX;
+        buildTransform();
+    }
+
+    @Override
+    public void setScaleY(float scaleY) {
+        //no-op
+    }
+
+    @Override
+    public void setRotation(float angle) {
+        if (rotation == angle) return;
+
+        rotation = angle;
+        Log.d(TAG, "rotation: " + rotation);
+        buildTransform();
+    }
+
+    @Override
+    public float getRotation() {
+        return rotation;
+    }
+
+    private void buildTransform() {
+        Log.d(TAG, "translateX: factorX: " + factorX + " facY: " + factorY);
+
+        Matrix.translateM(mMVPMatrix, 0, factorX, factorY, 0);
+        //Matrix.setRotateM(mMVPMatrix, 0, rotation, 0, 0, -1.0f);
+        //Matrix.scaleM(mMVPMatrix, 0, scale, scale, 0);
+
+        mTexRenderer.setMatrix(mMVPMatrix);
+        requestRender();
     }
 
     public void init(String imagePath, MediaPickerOpts opts) {
@@ -183,8 +303,8 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
 
         mTexRenderer.init();
 
+        gl.glLoadIdentity();
         GLES20.glClearColor(0,0,0,0);
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 
         mHasSurface = true;
         queueEvent(this::loadImage);
@@ -197,6 +317,13 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
         if (mTexRenderer != null) {
             mTexRenderer.updateViewSize(width, height);
         }
+
+        float ratio = (float) width / height;
+
+        Matrix.frustumM(mProjectionMatrix, 0, -ratio, ratio, -1, 1, 3, 7);
+        Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
+
+        buildTransform();
 
         queueEvent(this::loadImage);
     }
@@ -266,6 +393,8 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
         if (!imageLoaded) return;
 
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+
+
 
         runAll(mRunOnDraw);
 

@@ -19,12 +19,9 @@ import android.opengl.GLES20;
 import android.opengl.Matrix;
 import android.util.Log;
 
-import org.w3c.dom.Text;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
-import java.util.Arrays;
 
 public class TextureRenderer {
 
@@ -34,6 +31,7 @@ public class TextureRenderer {
     private int mTexSamplerHandle;
     private int mTexCoordHandle;
     private int mPosCoordHandle;
+    private int mMVPMatrixHandle;
 
     private FloatBuffer mTexVertices;
     private FloatBuffer mPosVertices;
@@ -44,12 +42,15 @@ public class TextureRenderer {
     private int mTexWidth;
     private int mTexHeight;
 
+    private final float[] mMVPMatrix = new float[16];
+
     private static final String VERTEX_SHADER =
-            "attribute vec4 a_position;\n" +
+            "uniform mat4 uMVPMatrix;\n" +
+                    "attribute vec4 a_position;\n" +
                     "attribute vec2 a_texcoord;\n" +
                     "varying vec2 v_texcoord;\n" +
                     "void main() {\n" +
-                    "  gl_Position = a_position;\n" +
+                    "  gl_Position = uMVPMatrix * a_position;\n" +
                     "  v_texcoord = a_texcoord;\n" +
                     "}\n";
 
@@ -82,6 +83,8 @@ public class TextureRenderer {
                 POS_VERTICES.length * FLOAT_SIZE_BYTES)
                 .order(ByteOrder.nativeOrder()).asFloatBuffer();
         mPosVertices.put(POS_VERTICES).position(0);
+
+        Matrix.setIdentityM(mMVPMatrix, 0);
     }
 
     void init() {
@@ -92,6 +95,7 @@ public class TextureRenderer {
         mTexSamplerHandle = GLES20.glGetUniformLocation(mProgram, "tex_sampler");
         mTexCoordHandle = GLES20.glGetAttribLocation(mProgram, "a_texcoord");
         mPosCoordHandle = GLES20.glGetAttribLocation(mProgram, "a_position");
+        mMVPMatrixHandle = GLES20.glGetUniformLocation(mProgram, "uMVPMatrix");
     }
 
     public void tearDown() {
@@ -109,6 +113,12 @@ public class TextureRenderer {
         mViewWidth = viewWidth;
         mViewHeight = viewHeight;
         computeOutputVertices();
+
+        GLES20.glViewport(0, 0, mViewWidth, mViewHeight);
+    }
+
+    void setMatrix(float[] mvpMatrix) {
+        System.arraycopy(mvpMatrix, 0, mMVPMatrix, 0, mMVPMatrix.length);
     }
 
     void renderTexture(int texId) {
@@ -120,7 +130,7 @@ public class TextureRenderer {
         GLToolbox.checkGlError("glUseProgram");
 
         // Set viewport
-        GLES20.glViewport(0, 0, mViewWidth, mViewHeight);
+
         GLToolbox.checkGlError("glViewport");
 
         // Set the vertex attributes
@@ -141,18 +151,21 @@ public class TextureRenderer {
         GLToolbox.checkGlError("glBindTexture");
         GLES20.glUniform1i(mTexSamplerHandle, 0);
 
+        GLES20.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, mMVPMatrix, 0);
+
         // Draw
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
         GLES20.glUseProgram(0);
     }
+
 
     private void computeOutputVertices() {
         if (mPosVertices == null || mTexWidth == 0 || mTexHeight == 0 || mViewWidth == 0 || mViewHeight == 0) {
             return;
         }
 
-        float imgAspectRatio = mTexWidth / (float)mTexHeight;
-        float viewAspectRatio = mViewWidth / (float)mViewHeight;
+        float imgAspectRatio = mTexWidth / (float) mTexHeight;
+        float viewAspectRatio = mViewWidth / (float) mViewHeight;
         float relativeAspectRatio = viewAspectRatio / imgAspectRatio;
         float x0, y0, x1, y1;
 
@@ -168,7 +181,7 @@ public class TextureRenderer {
             y1 = relativeAspectRatio;
         }
 
-        float[] coords = new float[] { x0, y0, x1, y0, x0, y1, x1, y1 };
+        float[] coords = new float[]{x0, y0, x1, y0, x0, y1, x1, y1};
 
         Log.d(TAG, "mTexWidth: " + mTexWidth + " mTexHeight: " + mTexHeight + " ratio: " + imgAspectRatio);
 
@@ -176,7 +189,7 @@ public class TextureRenderer {
 
         Log.d(TAG, "relativeAspectRatio: " + relativeAspectRatio);
 
-        for (float coord: coords) {
+        for (float coord : coords) {
             Log.d(TAG, "computeOutputVertices: " + coord);
         }
 
