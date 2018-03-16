@@ -36,8 +36,8 @@ public class TextureRenderer {
     private FloatBuffer mTexVertices;
     private FloatBuffer mPosVertices;
 
-    private int mViewWidth;
-    private int mViewHeight;
+    public int mViewWidth;
+    public int mViewHeight;
 
     private int mTexWidth;
     private int mTexHeight;
@@ -90,6 +90,7 @@ public class TextureRenderer {
     void init() {
         // Create program
         mProgram = GLToolbox.createProgram(VERTEX_SHADER, FRAGMENT_SHADER);
+        Log.d(TAG, "init: " + mProgram);
 
         // Bind attributes and uniforms
         mTexSamplerHandle = GLES20.glGetUniformLocation(mProgram, "tex_sampler");
@@ -98,7 +99,7 @@ public class TextureRenderer {
         mMVPMatrixHandle = GLES20.glGetUniformLocation(mProgram, "uMVPMatrix");
     }
 
-    public void tearDown() {
+    public void release() {
         if (mProgram >= 0) GLES20.glDeleteProgram(mProgram);
         mProgram = -1;
     }
@@ -113,8 +114,6 @@ public class TextureRenderer {
         mViewWidth = viewWidth;
         mViewHeight = viewHeight;
         computeOutputVertices();
-
-        GLES20.glViewport(0, 0, mViewWidth, mViewHeight);
     }
 
     void setMatrix(float[] mvpMatrix) {
@@ -128,13 +127,6 @@ public class TextureRenderer {
         // Use our shader program
         GLES20.glUseProgram(mProgram);
         GLToolbox.checkGlError("glUseProgram");
-
-        GLES20.glClearColor(0,0,0,0);
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-
-        // Set viewport
-
-        GLToolbox.checkGlError("glViewport");
 
         // Set the vertex attributes
         GLES20.glVertexAttribPointer(mTexCoordHandle, 2, GLES20.GL_FLOAT, false,
@@ -161,7 +153,7 @@ public class TextureRenderer {
         GLES20.glUseProgram(0);
     }
 
-    private void computeOutputVertices() {
+    public void computeOutputVertices() {
         if (mPosVertices == null || mTexWidth == 0 || mTexHeight == 0 || mViewWidth == 0 || mViewHeight == 0) {
             return;
         }

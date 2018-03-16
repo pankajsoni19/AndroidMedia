@@ -33,36 +33,50 @@ import java.util.Queue;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
+import static com.softwarejoint.media.enums.ImageEffectType.EFFECT_BLACKWHITE;
+import static com.softwarejoint.media.enums.ImageEffectType.EFFECT_DOCUMENTARY;
+import static com.softwarejoint.media.enums.ImageEffectType.EFFECT_GRAYSCALE;
+import static com.softwarejoint.media.enums.ImageEffectType.EFFECT_LOMOISH;
+import static com.softwarejoint.media.enums.ImageEffectType.EFFECT_NEGATIVE;
+import static com.softwarejoint.media.enums.ImageEffectType.EFFECT_POSTERIZE;
+import static com.softwarejoint.media.enums.ImageEffectType.EFFECT_SEPIA;
+import static com.softwarejoint.media.enums.ImageEffectType.EFFECT_VIGNETTE;
+import static com.softwarejoint.media.enums.ImageEffectType.NONE;
+
 @SuppressWarnings("WeakerAccess")
 public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.Renderer {
 
     private static final String TAG = "EffectGLView";
 
-    private static final String[] EFFECTS = {
-            EffectFactory.EFFECT_BLACKWHITE
+    private static String[] EFFECTS = {
+            //NONE, EFFECT_SEPIA,
+            EFFECT_GRAYSCALE,
+            //EFFECT_POSTERIZE, EFFECT_NEGATIVE, EFFECT_BLACKWHITE, EFFECT_LOMOISH, EFFECT_DOCUMENTARY, EFFECT_VIGNETTE
     };
+
+    private static final int FILTERED_PREVIEW_SIZE = 96;
+    private static final int FILTER_PREVIEWS_PER_ROW = 3;
 
     private boolean mHasSurface;
 
     private boolean mInitialised;
     private boolean filtersEnabled;
-    private boolean effectPreviewsVisible;
+    private volatile boolean filtersPreviewEnabled;
     //private boolean imageLoaded = false;
 
-    private int[] mTextures = new int[EFFECTS.length + 1];
+    private int[] mTextures = new int[2];
     private EffectContext mEffectContext;
-    private Effect mEffect;
     private TextureRenderer mTexRenderer = new TextureRenderer();
     private int mImageWidth;
     private int mImageHeight;
     private Bitmap origBitmap;
 
-    private List<Effect> effects = new ArrayList<>();
+    private List<EffectRenderer> effects = new ArrayList<>();
 
     private final Queue<Runnable> mRunOnDraw = new LinkedList<>();
 
     private @ImageEffectType
-    volatile int mCurrentEffect = ImageEffectType.NONE;
+    volatile String mCurrentEffect = ImageEffectType.NONE;
 
     private String origImagePath;
 
@@ -77,8 +91,9 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
     private float factorY = 0f;
     private float pivotX = 0;
     private float pivotY = 0;
-    private final float heightPixels;
-    private final float widthPixels;
+
+    private final int heightPixels;
+    private final int widthPixels;
     private final float translationFactor;
 
     public EffectGLView(final Context context) {
@@ -183,13 +198,15 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
 
     private void buildTransform() {
         if (!mInitialised || !mHasSurface) return;
+        buildMainTransform();
+        mTexRenderer.setMatrix(mMVPMatrix);
+        requestRender();
+    }
 
+    private void buildMainTransform() {
         Matrix.setRotateM(mMVPMatrix, 0, rotation, 0, 0, -1.0f);
         Matrix.scaleM(mMVPMatrix, 0, scale, scale, 0);
         Matrix.translateM(mMVPMatrix, 0, -factorX * translationFactor/widthPixels, factorY * translationFactor/heightPixels, 0);
-
-        mTexRenderer.setMatrix(mMVPMatrix);
-        requestRender();
     }
 
     public void init(String imagePath, MediaPickerOpts opts) {
@@ -202,7 +219,7 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent event) {
-        if (!effectPreviewsVisible) return super.dispatchTouchEvent(event);
+        if (!filtersPreviewEnabled) return super.dispatchTouchEvent(event);
 
         Log.d(TAG, "dispatchTouchEvent");
 
@@ -243,30 +260,43 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
 
                 Matrix.frustumM(mProjectionMatrix, 0, -ratio, ratio, -1, 1, 3, 7);
                 Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
+                Matrix.setRotateM(mMVPMatrix, 0, rotation, 0, 0, -1.0f);
 
                 GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, origBitmap, 0);
 
                 mTexRenderer.setMatrix(mMVPMatrix);
+
+                GLES20.glViewport(0, 0, width, height);
+
+                createEffects();
             }
 
             mInitialised = true;
         }
     }
 
-    public void toggleEffectPreviews(boolean enabled) {
-        effectPreviewsVisible = enabled;
+    public void toggleEffectPreviews() {
+        runOnDraw(() -> {
+            filtersPreviewEnabled = !filtersPreviewEnabled;
+            if (!filtersPreviewEnabled) {
+                GLES20.glViewport(0, 0, getWidth(), getHeight());
+            }
+        });
     }
 
     private void init() {
         if (!mHasSurface) {
             mEffectContext = EffectContext.createWithCurrentGlContext();
 
-            GLES20.glGenTextures(mTextures.length, mTextures, 0);
+            GLES20.glGenTextures(2, mTextures, 0);
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTextures[0]);
 
             GLToolbox.initTexParams();
 
             mTexRenderer.init();
+
+            GLES20.glClearColor(0,0,0,0);
+            GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
         }
 
         mHasSurface = true;
@@ -304,15 +334,11 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
 
     private void onSurfaceDestroyed() {
         if (mTexRenderer != null) {
-            mTexRenderer.tearDown();
+            mTexRenderer.release();
         }
 
-        if (mEffect != null) {
-            mEffect.release();
-        }
-
-        for (Effect effect : effects) {
-            effect.release();
+        for (EffectRenderer renderer : effects) {
+            if (renderer != null) renderer.release();
         }
 
         for (int mTexture : mTextures) {
@@ -328,20 +354,11 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
         mEffectContext = null;
     }
 
-    public void onEffectSelected(@ImageEffectType int effectType) {
+    public void onEffectSelected(@ImageEffectType String effectType) {
         runOnDraw(() -> {
-            if (mEffect != null) {
-                mEffect.release();
-            }
-
-            mEffect = null;
-
             mCurrentEffect = effectType;
-
-            mEffect = createEffect();
-
-            if (mCurrentEffect != ImageEffectType.NONE) {
-                applyEffect();
+            if (!ImageEffectType.NONE.equals(mCurrentEffect)) {
+                //makeEffectCurrent(effects.get(effectType));
             }
         });
     }
@@ -366,37 +383,69 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
     public void onDrawFrame(GL10 gl) {
         if (!mHasSurface) return;
 
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+
         runAll(mRunOnDraw);
 
-        if (mCurrentEffect == ImageEffectType.NONE) {
-            // if no effect is chosen, just render the original bitmap
-            mTexRenderer.renderTexture(mTextures[0]);
+        int texId = ImageEffectType.NONE.equals(mCurrentEffect)  ? 0 : 1;
+
+        if (filtersPreviewEnabled) {
+            mTexRenderer.renderTexture(mTextures[texId]);
+
+            for (EffectRenderer renderer: effects) {
+
+
+                Log.d(TAG, "renderer: " + renderer.name() + " startX: " + renderer.startX
+                        + " startY: " + renderer.startY
+                        + " width: " + renderer.mViewWidth
+                        + " height: " + renderer.mViewHeight);
+
+                renderer.computeOutputVertices();
+                renderer.makeEffectCurrent(mTextures[0], renderer.mViewWidth, renderer.mViewHeight, mTextures[1]);
+
+                GLES20.glViewport(renderer.startX, renderer.startY, renderer.mViewWidth, renderer.mViewHeight);
+                GLToolbox.checkGlError("glViewport");
+
+                renderer.renderTexture();
+            }
+            GLES20.glViewport(0, 0, mTexRenderer.mViewWidth, mTexRenderer.mViewHeight);
         } else {
-            // render the result of applyEffect()
-            mTexRenderer.renderTexture(mTextures[1]);
+            mTexRenderer.renderTexture(mTextures[texId]);
         }
     }
 
-    private Effect createEffect() {
+    private void createEffects() {
+        DisplayMetrics displayMetrics = Resources.getSystem().getDisplayMetrics();
+        int screenWidth = displayMetrics.widthPixels;
+
+        int filterPreviewSize = (int) (FILTERED_PREVIEW_SIZE * displayMetrics.density);
+
+        int margin = (screenWidth - (filterPreviewSize * FILTER_PREVIEWS_PER_ROW)) / (FILTER_PREVIEWS_PER_ROW + 1);
+
+        int startX = margin;
+        int startY = (int) (0.50 * displayMetrics.heightPixels);
+
         EffectFactory effectFactory = mEffectContext.getFactory();
 
-        Effect effect = null;
+        int i = 0;
 
-        switch (mCurrentEffect) {
-            case ImageEffectType.NONE:
-                break;
-            case ImageEffectType.BLACK_WHITE:
-                effect = effectFactory.createEffect(EffectFactory.EFFECT_BLACKWHITE);
-                effect.setParameter("black", .1f);
-                effect.setParameter("white", .7f);
-                break;
+        for (@ImageEffectType String effectType: EFFECTS) {
+            EffectRenderer renderer = new EffectRenderer(effectFactory, effectType);
+            renderer.updateTextureSize(mImageWidth, mImageHeight);
+            renderer.updateViewSize(filterPreviewSize, filterPreviewSize);
+            renderer.setStartXY(startX, startY);
+
+            if (i % FILTER_PREVIEWS_PER_ROW == 0) {
+                startX = margin;
+                startY = startY + margin;
+            } else {
+                startX = startX + margin;
+            }
+
+            i++;
+
+            Log.d(TAG, "createEffects: " + effectType + " startX: " + startX + " startY: " + startY);
+            effects.add(renderer);
         }
-
-        return effect;
-    }
-
-    private void applyEffect() {
-        Log.d(TAG, "applyEffect: mCurrentEffect: " + mCurrentEffect);
-        mEffect.apply(mTextures[0], mImageWidth, mImageHeight, mTextures[mCurrentEffect + 1]);
     }
 }
