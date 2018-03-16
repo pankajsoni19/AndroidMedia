@@ -10,6 +10,7 @@ import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 
 import com.softwarejoint.media.enums.MediaType;
+import com.softwarejoint.media.picker.MediaPickerOpts;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -18,18 +19,18 @@ import java.io.OutputStream;
 
 public class FilePathUtil {
 
-    public static String getRealPath(Context context, Uri fileUri, @MediaType int mediaType) {
+    public static String getRealPath(Context context, Uri fileUri, MediaPickerOpts opts) {
         String realPath = FilePathUtil.getRealPathFromURI_API19(context, fileUri);
 
         if (realPath != null) {
             return realPath;
         }
 
-        return FilePathUtil.copyUriToTempFile(context, fileUri, mediaType);
+        return FilePathUtil.copyUriToTempFile(context, fileUri, opts);
     }
 
-    private static String copyUriToTempFile(Context context, Uri fileUri, @MediaType int mediaType) {
-        File tempFile = FileHandler.getTempFile(context, mediaType);
+    private static String copyUriToTempFile(Context context, Uri fileUri, MediaPickerOpts opts) {
+        File tempFile = FileHandler.getTempFile(opts);
 
         try {
             InputStream inputStream = context.getContentResolver().openInputStream(fileUri);

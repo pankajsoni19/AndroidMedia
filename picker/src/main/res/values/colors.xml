@@ -2,4 +2,5 @@
 <resources>
     <color name="yellow">#FFFF00</color>
     <color name="frag_blue_bg">#181D21</color>
+    <color name="sketch_color">#FFFFFF</color>
 </resources>

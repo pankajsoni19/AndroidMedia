@@ -42,6 +42,7 @@ import com.softwarejoint.media.glutils.GLDrawer2D;
 import com.softwarejoint.media.image.ImageEffectFragment;
 import com.softwarejoint.media.picker.MediaPickerOpts;
 import com.softwarejoint.media.picker.PickerFragment;
+import com.softwarejoint.media.utils.BitmapUtils;
 import com.softwarejoint.media.utils.CameraHelper;
 import com.softwarejoint.media.utils.TimeParseUtils;
 
@@ -284,7 +285,7 @@ public class CameraFragment extends PickerFragment implements OnClickListener {
         }
 
         Uri fileUri = data.getData();
-        String filePath = FilePathUtil.getRealPath(getContext(), fileUri, opts.mediaType);
+        String filePath = FilePathUtil.getRealPath(getContext(), fileUri, opts);
 
         if (filePath == null) {
             return;
@@ -416,63 +417,10 @@ public class CameraFragment extends PickerFragment implements OnClickListener {
         mRecordButton.setVisibility(View.INVISIBLE);
         mRecordButton.setOnClickListener(null);
         mCameraView.queueEvent(() -> {
-            final String imagePath = createBitmapFromGLSurface();
+            GLDrawer2D drawer = mCameraView.getDrawer();
+            final String imagePath = BitmapUtils.saveBitmapFromGLSurface(drawer, opts);
             uiThreadHandler.post(() -> onPictureTaken(imagePath));
         });
-    }
-
-    private String createBitmapFromGLSurface() {
-        EGL10 egl = (EGL10) EGLContext.getEGL();
-        GL10 gl = (GL10) egl.eglGetCurrentContext().getGL();
-
-        GLDrawer2D drawer = mCameraView.getDrawer();
-
-        int x = drawer.getStartX();
-        int y = drawer.getStartY();
-        int w = drawer.width();
-        int h = drawer.height();
-
-        int bitmapBuffer[] = new int[w * h];
-        int bitmapSource[] = new int[w * h];
-
-        IntBuffer intBuffer = IntBuffer.wrap(bitmapBuffer);
-        intBuffer.position(0);
-
-        try {
-            gl.glReadPixels(x, y, w, h, GL10.GL_RGBA, GL10.GL_UNSIGNED_BYTE, intBuffer);
-            int offset1, offset2;
-            for (int i = 0; i < h; i++) {
-                offset1 = i * w;
-                offset2 = (h - i - 1) * w;
-                for (int j = 0; j < w; j++) {
-                    int texturePixel = bitmapBuffer[offset1 + j];
-                    int blue = (texturePixel >> 16) & 0xff;
-                    int red = (texturePixel << 16) & 0x00ff0000;
-                    int pixel = (texturePixel & 0xff00ff00) | red | blue;
-                    bitmapSource[offset2 + j] = pixel;
-                }
-            }
-        } catch (GLException ex) {
-            Log.e(TAG, "createBitmapFromGLSurface: matrix translate", ex);
-            return null;
-        }
-
-        File tempFile = FileHandler.getTempFile(opts.mediaDir, opts.mediaType);
-
-        try {
-            FileOutputStream fileOutputStream = new FileOutputStream(tempFile);
-            Bitmap bitmap = Bitmap.createBitmap(bitmapSource, w, h, Bitmap.Config.ARGB_8888);
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, fileOutputStream);
-            fileOutputStream.flush();
-            fileOutputStream.close();
-        } catch (Exception ex) {
-            Log.e(TAG, "createBitmapFromGLSurface: fileCopy: ", ex);
-            //noinspection ResultOfMethodCallIgnored
-            tempFile.delete();
-            return null;
-        }
-
-        return tempFile.exists() ? tempFile.getPath() : null;
     }
 
     private void onPictureTaken(String imagePath) {
@@ -525,7 +473,7 @@ public class CameraFragment extends PickerFragment implements OnClickListener {
         Log.d(TAG, "startRecording:");
 
         try {
-            File mediaPath = FileHandler.getTempFile(opts.mediaDir, opts.mediaType);
+            File mediaPath = FileHandler.getTempFile(opts);
 
             mMuxer = new MediaMuxerWrapper(mediaPath.getPath());  // if you record audio only, ".m4a" is also OK.
 
@@ -779,10 +727,9 @@ public class CameraFragment extends PickerFragment implements OnClickListener {
             transaction.replace(R.id.container, fragment, fragment.TAG);
             transaction.addToBackStack(fragment.TAG);
             transaction.commit();
-
         } else {
             Intent resultIntent = new Intent();
-            resultIntent.putExtra(MediaPickerOpts.INTENT_RES, items);
+            resultIntent.putStringArrayListExtra(MediaPickerOpts.INTENT_RES, items);
             FragmentActivity activity = getActivity();
             activity.setResult(RESULT_OK, resultIntent);
             activity.supportFinishAfterTransition();

@@ -44,9 +44,10 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
 
     private boolean mHasSurface;
 
+    private boolean mInitialised;
     private boolean filtersEnabled;
     private boolean effectPreviewsVisible;
-    private boolean imageLoaded = false;
+    //private boolean imageLoaded = false;
 
     private int[] mTextures = new int[EFFECTS.length + 1];
     private EffectContext mEffectContext;
@@ -181,7 +182,7 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
     }
 
     private void buildTransform() {
-        //Log.d(TAG, "buildTransform: factorX: " + factorX + " facY: " + factorY + " scale: " + scale + " rotation: " + rotation);
+        if (!mInitialised || !mHasSurface) return;
 
         Matrix.setRotateM(mMVPMatrix, 0, rotation, 0, 0, -1.0f);
         Matrix.scaleM(mMVPMatrix, 0, scale, scale, 0);
@@ -194,7 +195,9 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
     public void init(String imagePath, MediaPickerOpts opts) {
         origImagePath = imagePath;
         filtersEnabled = opts.filtersEnabled;
-        Log.d(TAG, "init: path: " + imagePath + " filter: " + filtersEnabled);
+        if (mHasSurface && getWidth() > 0 && getHeight() > 0) {
+            runOnDraw(this::loadImage);
+        }
     }
 
     @Override
@@ -218,106 +221,82 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
     }
 
     private void loadImage() {
-        Log.d(TAG, "loadImage: mHasSurface: " + mHasSurface);
-        Log.d(TAG, "loadImage: imageLoaded: " + imageLoaded);
-        Log.d(TAG, "loadImage: imagePath: " + origImagePath);
-        Log.d(TAG, "loadImage: width: " + getWidth());
-        Log.d(TAG, "loadImage: height: " + getHeight());
-
-        if (!mHasSurface || origImagePath == null || getWidth() == 0 || getHeight() == 0) {
-            return;
-        }
+        Log.d(TAG, "loadImage: mHasSurface: " + mHasSurface + " origImagePath: " + origImagePath);
+        final int width = getWidth();
+        final int height = getHeight();
 
         if (origBitmap == null) {
-            final int imgSize = Math.min(getWidth(), getHeight());
-            // Load input bitmap
-            loadBitmap(origImagePath, imgSize);
+            final int imgSize = Math.min(width, height);
+            origBitmap = BitmapUtils.decodeBitmapFromFile(origImagePath, imgSize);
+        }
 
-            if (origBitmap != null) {
-                mImageWidth = origBitmap.getWidth();
-                mImageHeight = origBitmap.getHeight();
+        if (origBitmap != null && mHasSurface) {
+            mImageWidth = origBitmap.getWidth();
+            mImageHeight = origBitmap.getHeight();
+
+            if (!mInitialised) {
+
+                mTexRenderer.updateViewSize(width, height);
                 mTexRenderer.updateTextureSize(mImageWidth, mImageHeight);
+
+                float ratio = (float) width / height;
+
+                Matrix.frustumM(mProjectionMatrix, 0, -ratio, ratio, -1, 1, 3, 7);
+                Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
 
                 GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, origBitmap, 0);
 
-                imageLoaded = true;
+                mTexRenderer.setMatrix(mMVPMatrix);
             }
+
+            mInitialised = true;
         }
-
-        if (imageLoaded) {
-            requestRender();
-        }
-    }
-
-    private void loadBitmap(String imagePath, int imgSize) {
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inJustDecodeBounds = true;
-        BitmapFactory.decodeFile(imagePath, options);
-        options.inSampleSize = BitmapUtils.calculateInSampleSize(options, imgSize, imgSize);
-        options.inJustDecodeBounds = false;
-        origBitmap = BitmapFactory.decodeFile(imagePath, options);
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        loadImage();
-    }
-
-    @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        Log.d(TAG, "onMeasure: width: " + widthMeasureSpec + " height: " + heightMeasureSpec);
-
-        int width = getWidth();
-        int height = getHeight();
-        int size = Math.min(width, height);
-        setMeasuredDimension(size, size);
     }
 
     public void toggleEffectPreviews(boolean enabled) {
         effectPreviewsVisible = enabled;
     }
 
-    @Override
-    public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-        Log.d(TAG, "onSurfaceCreated: widht: " + getWidth() + " height: " + getHeight());
+    private void init() {
+        if (!mHasSurface) {
+            mEffectContext = EffectContext.createWithCurrentGlContext();
 
-        mEffectContext = EffectContext.createWithCurrentGlContext();
+            GLES20.glGenTextures(mTextures.length, mTextures, 0);
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTextures[0]);
 
-        GLES20.glGenTextures(mTextures.length, mTextures, 0);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTextures[0]);
+            GLToolbox.initTexParams();
 
-        GLToolbox.initTexParams();
-
-        mTexRenderer.init();
-
-        gl.glLoadIdentity();
-        GLES20.glClearColor(0,0,0,0);
+            mTexRenderer.init();
+        }
 
         mHasSurface = true;
-        queueEvent(this::loadImage);
+    }
+    @Override
+    public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+        Log.d(TAG, "onSurfaceCreated: width: " + getWidth() + " height: " + getHeight());
+        init();
+
+        if (getWidth() > 0 && getHeight() > 0) {
+            runOnDraw(this::loadImage);
+        }
     }
 
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         Log.d(TAG, "onSurfaceChanged: width: " + width + " height: " + height);
 
-        if (mTexRenderer != null) {
-            mTexRenderer.updateViewSize(width, height);
+        init();
+
+        if (getWidth() > 0 && getHeight() > 0) {
+            runOnDraw(this::loadImage);
         }
-
-        float ratio = (float) width / height;
-
-        Matrix.frustumM(mProjectionMatrix, 0, -ratio, ratio, -1, 1, 3, 7);
-        Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
-
-        queueEvent(this::loadImage);
     }
 
     @Override
     public void surfaceDestroyed(final SurfaceHolder holder) {
         Log.d(TAG, "surfaceDestroyed:");
         mHasSurface = false;
+        mInitialised = false;
         queueEvent(this::onSurfaceDestroyed);
         super.surfaceDestroyed(holder);
     }
@@ -340,6 +319,12 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
                 GLDrawer2D.deleteTex(mTexture);
             }
         }
+
+        if (mEffectContext != null) {
+            mEffectContext.release();
+        }
+
+        mEffectContext = null;
     }
 
     public void onEffectSelected(@ImageEffectType int effectType) {
@@ -364,6 +349,8 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
         synchronized (mRunOnDraw) {
             mRunOnDraw.add(runnable);
         }
+
+        requestRender();
     }
 
     private void runAll(Queue<Runnable> queue) {
@@ -376,9 +363,7 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
 
     @Override
     public void onDrawFrame(GL10 gl) {
-        if (!imageLoaded) return;
-
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+        if (!mHasSurface) return;
 
         runAll(mRunOnDraw);
 

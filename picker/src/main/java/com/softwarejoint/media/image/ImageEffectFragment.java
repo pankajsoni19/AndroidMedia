@@ -2,10 +2,19 @@ package com.softwarejoint.media.image;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
+import android.media.MediaScannerConnection;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -19,6 +28,7 @@ import com.softwarejoint.media.anim.AnimationHelper;
 import com.softwarejoint.media.enums.CropType;
 import com.softwarejoint.media.picker.MediaPickerOpts;
 import com.softwarejoint.media.picker.PickerFragment;
+import com.softwarejoint.media.utils.BitmapUtils;
 
 /**
  * Created by Pankaj Soni <pankajsoni@softwarejoint.com> on 15/03/18.
@@ -49,6 +59,8 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
 
     private View iv_filter;
 
+    private View iv_done;
+
     private Handler uiThreadHandler;
 
     private @CropType
@@ -74,7 +86,7 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
         final View rootView = inflater.inflate(R.layout.fragment_effect, container, false);
 
         rootView.findViewById(R.id.iv_back).setOnClickListener(this);
-        rootView.findViewById(R.id.iv_done).setOnClickListener(this);
+        iv_done = rootView.findViewById(R.id.iv_done);
 
         effectView = rootView.findViewById(R.id.effectView);
 
@@ -107,6 +119,10 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
 
         effectView.init(originalImagePath, opts);
 
+        iv_done.setOnClickListener(this);
+
+        onCropSelected(cropType);
+
         return rootView;
     }
 
@@ -118,6 +134,8 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
 
     private void onClickDone() {
         Log.d(TAG, "onClickDone");
+        iv_done.setOnClickListener(null);
+        effectView.queueEvent(this::applyEffects);
     }
 
     @Override
@@ -146,6 +164,10 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
 
     private void onCropSelected(@CropType int type) {
         cropType = type;
+
+        iv_crop_mask.setVisibility(View.GONE);
+        pathCropView.setVisibility(View.GONE);
+
         switch (cropType) {
             case CropType.NONE:
                 iv_crop_mask.setVisibility(View.GONE);
@@ -163,7 +185,6 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
                 iv_crop_mask.setVisibility(View.VISIBLE);
                 break;
             case CropType.PATH:
-                iv_crop_mask.setVisibility(View.GONE);
                 pathCropView.setVisibility(View.VISIBLE);
                 break;
         }
@@ -174,6 +195,8 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
     }
 
     private void toggleCrop() {
+        if (pathCropView.getVisibility() == View.VISIBLE && pathCropView.clear()) return;
+
         final long duration = AnimationHelper.getShortDuration(iv_crop.getContext());
 
         iv_crop.setOnClickListener(null);
@@ -242,5 +265,110 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
                         }
                     }).start();
         }
+    }
+
+    @SuppressLint("SwitchIntDef")
+    @SuppressWarnings("ConstantConditions")
+    private void applyEffects() {
+        Bitmap original = BitmapUtils.createBitmapFromGLSurface(0, 0, effectView.getWidth(), effectView.getHeight());
+        if (original == null) return;
+
+        String mediaPath;
+
+        if (!isCropVisible() || cropType == CropType.NONE) {
+            mediaPath = BitmapUtils.saveBitmap(original, opts);
+            original.recycle();
+        } else if (cropType != CropType.PATH) {
+            @DrawableRes int resId;
+
+            switch (cropType) {
+                case CropType.STAR:
+                    resId = R.drawable.star_crop;
+                    break;
+                case CropType.FLOWER:
+                    resId = R.drawable.flower_crop;
+                    break;
+                case CropType.CIRCLE:
+                default:
+                    resId = R.drawable.circle_crop;
+                    break;
+            }
+
+            Bitmap mask = BitmapUtils.decodeResource(getResources(), resId, original);
+
+            Bitmap result = Bitmap.createBitmap(mask.getWidth(), mask.getHeight(), Bitmap.Config.ARGB_8888);
+
+            Canvas mCanvas = new Canvas(result);
+            Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+
+            paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_IN));
+            mCanvas.drawBitmap(original, 0, 0, null);
+            mCanvas.drawBitmap(mask, 0, 0, paint);
+            paint.setXfermode(null);
+
+            mediaPath = BitmapUtils.saveBitmap(result, opts);
+
+            original.recycle();
+            mask.recycle();
+            result.recycle();
+
+        } else if (!pathCropView.pathValidForCrop()) {
+            mediaPath = BitmapUtils.saveBitmap(original, opts);
+            original.recycle();
+        } else {
+            pathCropView.completePath();
+            pathCropView.postDelayed(() -> cropByPath(original), 200L);
+
+            mediaPath = null;
+        }
+
+        if (mediaPath == null) return;
+
+        uiThreadHandler.post(() -> scanMedia(mediaPath));
+    }
+
+    private void cropByPath(Bitmap original) {
+        Bitmap result = Bitmap.createBitmap(pathCropView.getWidth(), pathCropView.getHeight(), Bitmap.Config.ARGB_8888);
+
+        final Path path = pathCropView.getPath();
+
+        Canvas canvas = new Canvas(result);
+        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        paint.setColor(0XFF000000);
+
+        canvas.drawPath(path, paint);
+
+        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
+        canvas.drawBitmap(original, 0, 0, paint);
+        paint.setXfermode(null);
+
+        String mediaPath = BitmapUtils.saveBitmap(result, opts);
+
+        result.recycle();
+        original.recycle();
+
+        if (mediaPath != null) {
+            scanMedia(mediaPath);
+        }
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    private void scanMedia(String mediaPath) {
+        Log.d(TAG, "mediaPath: " + mediaPath);
+
+        MediaScannerConnection.scanFile(getContext().getApplicationContext(), new String[]{
+                mediaPath
+        }, new String[]{
+                "image/png"
+        }, null);
+
+//        ArrayList<String> items = new ArrayList<>();
+//        items.add(mediaPath);
+//
+//        Intent resultIntent = new Intent();
+//        resultIntent.putStringArrayListExtra(MediaPickerOpts.INTENT_RES, items);
+//        FragmentActivity activity = getActivity();
+//        activity.setResult(RESULT_OK, resultIntent);
+//        activity.supportFinishAfterTransition();
     }
 }

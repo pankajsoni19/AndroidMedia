@@ -7,6 +7,7 @@ import android.support.annotation.StringRes;
 import android.util.Log;
 
 import com.softwarejoint.media.enums.MediaType;
+import com.softwarejoint.media.picker.MediaPickerOpts;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -27,16 +28,18 @@ public class FileHandler {
         @StringRes int stringId = applicationInfo.labelRes;
         return stringId == 0 ? applicationInfo.nonLocalizedLabel.toString() : context.getString(stringId);
     }
+//
+//    public static File getTempFile(Context context, MediaPickerOpts opts) {
+//        final String appName = getApplicationName(context);
+//        return getTempFile(appName, opts);
+//    }
 
-    public static File getTempFile(Context context, @MediaType int mediaType) {
-        final String appName = getApplicationName(context);
-        return getTempFile(appName, mediaType);
-    }
-
-    public static File getTempFile(String albumName, @MediaType int mediaType) {
-        File dir = getPublicAlbumStorageDir(albumName, mediaType);
-        if (mediaType == MediaType.VIDEO) {
+    public static File getTempFile(MediaPickerOpts opts) {
+        File dir = getPublicAlbumStorageDir(opts.mediaDir, opts.mediaType);
+        if (opts.mediaType == MediaType.VIDEO) {
             return new File(dir, "VID_" + getDateTimeString() + ".mp4");
+        } else if (opts.cropEnabled) {
+            return new File(dir, "IMG_" + getDateTimeString() + ".png");
         } else {
             return new File(dir, "IMG_" + getDateTimeString() + ".jpg");
         }
