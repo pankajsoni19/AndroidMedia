@@ -4,9 +4,11 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.res.ColorStateList;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PorterDuff;
@@ -14,9 +16,13 @@ import android.graphics.PorterDuffXfermode;
 import android.media.MediaScannerConnection;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.annotation.ColorInt;
+import android.support.annotation.ColorRes;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.widget.ImageViewCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -53,7 +59,7 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
     private MediaPickerOpts opts;
 
     private EffectGLView effectView;
-    private ImageView iv_crop, iv_crop_circle, iv_crop_star, iv_crop_flower, iv_crop_hand;
+    private ImageView iv_crop, iv_crop_circle, iv_crop_star, iv_crop_flower, iv_crop_path;
     private ImageView iv_crop_mask;
     private PathCropView pathCropView;
 
@@ -94,7 +100,7 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
         iv_crop_circle = rootView.findViewById(R.id.iv_crop_circle);
         iv_crop_star = rootView.findViewById(R.id.iv_crop_star);
         iv_crop_flower = rootView.findViewById(R.id.iv_crop_flower);
-        iv_crop_hand = rootView.findViewById(R.id.iv_crop_hand);
+        iv_crop_path = rootView.findViewById(R.id.iv_crop_hand);
 
         iv_crop_mask = rootView.findViewById(R.id.iv_crop_mask);
         pathCropView = rootView.findViewById(R.id.pathCropView);
@@ -106,7 +112,7 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
             iv_crop_circle.setOnClickListener(this);
             iv_crop_star.setOnClickListener(this);
             iv_crop_flower.setOnClickListener(this);
-            iv_crop_hand.setOnClickListener(this);
+            iv_crop_path.setOnClickListener(this);
         } else {
             iv_crop.setVisibility(View.GONE);
         }
@@ -162,8 +168,65 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
         }
     }
 
+    @SuppressLint("SwitchIntDef")
+    private void animateOutCropOption() {
+        float scale = 1.0f;
+
+        switch (cropType) {
+            case CropType.CIRCLE:
+                animateOption(iv_crop_circle, scale);
+                break;
+            case CropType.STAR:
+                animateOption(iv_crop_star, scale);
+                break;
+            case CropType.FLOWER:
+                animateOption(iv_crop_flower, scale);
+                break;
+            case CropType.PATH:
+                animateOption(iv_crop_path, scale);
+                break;
+        }
+    }
+
+    @SuppressLint("SwitchIntDef")
+    private void animateInCropOption() {
+        float scale = 1.2f;
+
+        switch (cropType) {
+            case CropType.CIRCLE:
+                animateOption(iv_crop_circle, scale);
+                break;
+            case CropType.STAR:
+                animateOption(iv_crop_star, scale);
+                break;
+            case CropType.FLOWER:
+                animateOption(iv_crop_flower, scale);
+                break;
+            case CropType.PATH:
+                animateOption(iv_crop_path, scale);
+                break;
+        }
+    }
+
+    private void animateOption(ImageView view, float scale) {
+        if (view.getScaleX() == scale) return;
+        view.animate().scaleX(scale).scaleY(scale)
+                .setDuration(200L)
+                .setListener(null)
+                .start();
+        @ColorRes int colorRes = (scale > 1.0f) ? R.color.holo_purple : android.R.color.white;
+        @ColorInt int colorInt = ContextCompat.getColor(view.getContext(), colorRes);
+        ImageViewCompat.setImageTintList(view, ColorStateList.valueOf(colorInt));
+    }
+
     private void onCropSelected(@CropType int type) {
-        cropType = type;
+        animateOutCropOption();
+
+        if (cropType == type) {
+            cropType = CropType.NONE;
+        } else {
+            cropType = type;
+        }
 
         iv_crop_mask.setVisibility(View.GONE);
         pathCropView.setVisibility(View.GONE);
@@ -187,6 +250,10 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
             case CropType.PATH:
                 pathCropView.setVisibility(View.VISIBLE);
                 break;
+        }
+
+        if (cropType != CropType.NONE) {
+            animateInCropOption();
         }
     }
 
@@ -216,7 +283,7 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
             iv_crop_flower.animate().translationX(translationX * 3)
                     .alpha(0).setDuration(duration * 3).start();
 
-            iv_crop_hand.animate().translationX(translationX * 4)
+            iv_crop_path.animate().translationX(translationX * 4)
                     .alpha(0).setDuration(duration * 4)
                     .setListener(new AnimatorListenerAdapter() {
 
@@ -230,7 +297,7 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
                             iv_crop_circle.setVisibility(View.GONE);
                             iv_crop_star.setVisibility(View.GONE);
                             iv_crop_flower.setVisibility(View.GONE);
-                            iv_crop_hand.setVisibility(View.GONE);
+                            iv_crop_path.setVisibility(View.GONE);
                             iv_crop.setOnClickListener(ImageEffectFragment.this);
                         }
                     }).start();
@@ -238,7 +305,7 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
             iv_crop_circle.setVisibility(View.VISIBLE);
             iv_crop_star.setVisibility(View.VISIBLE);
             iv_crop_flower.setVisibility(View.VISIBLE);
-            iv_crop_hand.setVisibility(View.VISIBLE);
+            iv_crop_path.setVisibility(View.VISIBLE);
 
             iv_crop_circle.animate().translationX(0)
                     .alpha(1).setDuration(duration).start();
@@ -249,19 +316,24 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
             iv_crop_flower.animate().translationX(0)
                     .alpha(1).setDuration(duration * 3).start();
 
-            iv_crop_hand.animate().translationX(0)
+            iv_crop_path.animate().translationX(0)
                     .alpha(1).setDuration(duration * 4)
                     .setListener(new AnimatorListenerAdapter() {
 
                         @Override
                         public void onAnimationStart(Animator animation) {
-                            onCropSelected(cropType);
                             iv_crop.setImageResource(R.drawable.clear_white);
                         }
 
                         @Override
                         public void onAnimationEnd(Animator animation) {
                             iv_crop.setOnClickListener(ImageEffectFragment.this);
+
+                            if (cropType == CropType.PATH) {
+                                pathCropView.setVisibility(View.VISIBLE);
+                            } else if (cropType != CropType.NONE) {
+                                iv_crop_mask.setVisibility(View.VISIBLE);
+                            }
                         }
                     }).start();
         }
