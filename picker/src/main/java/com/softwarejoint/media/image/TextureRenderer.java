@@ -90,7 +90,7 @@ public class TextureRenderer {
     void init() {
         // Create program
         mProgram = GLToolbox.createProgram(VERTEX_SHADER, FRAGMENT_SHADER);
-        Log.d(TAG, "init: " + mProgram);
+        Log.d(TAG, "initProgram: " + mProgram);
 
         // Bind attributes and uniforms
         mTexSamplerHandle = GLES20.glGetUniformLocation(mProgram, "tex_sampler");
@@ -177,15 +177,15 @@ public class TextureRenderer {
 
         float[] coords = new float[]{x0, y0, x1, y0, x0, y1, x1, y1};
 
-        Log.d(TAG, "mTexWidth: " + mTexWidth + " mTexHeight: " + mTexHeight + " ratio: " + imgAspectRatio);
-
-        Log.d(TAG, "mViewWidth: " + mViewWidth + " mViewHeight: " + mViewHeight + " ratio: " + viewAspectRatio);
-
-        Log.d(TAG, "relativeAspectRatio: " + relativeAspectRatio);
-
-        for (float coord : coords) {
-            Log.d(TAG, "computeOutputVertices: " + coord);
-        }
+//        Log.d(TAG, "mTexWidth: " + mTexWidth + " mTexHeight: " + mTexHeight + " ratio: " + imgAspectRatio);
+//
+//        Log.d(TAG, "mViewWidth: " + mViewWidth + " mViewHeight: " + mViewHeight + " ratio: " + viewAspectRatio);
+//
+//        Log.d(TAG, "relativeAspectRatio: " + relativeAspectRatio);
+//
+//        for (float coord : coords) {
+//            Log.d(TAG, "computeOutputVertices: " + coord);
+//        }
 
         mPosVertices.put(coords).position(0);
     }

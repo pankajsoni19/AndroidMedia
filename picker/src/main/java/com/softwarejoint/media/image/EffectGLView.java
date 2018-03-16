@@ -3,9 +3,8 @@ package com.softwarejoint.media.image;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.PixelFormat;
-import android.media.effect.Effect;
+import android.graphics.Rect;
 import android.media.effect.EffectContext;
 import android.media.effect.EffectFactory;
 import android.opengl.GLES20;
@@ -49,9 +48,9 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
     private static final String TAG = "EffectGLView";
 
     private static String[] EFFECTS = {
-            //NONE, EFFECT_SEPIA,
+            NONE, EFFECT_SEPIA,
             EFFECT_GRAYSCALE,
-            //EFFECT_POSTERIZE, EFFECT_NEGATIVE, EFFECT_BLACKWHITE, EFFECT_LOMOISH, EFFECT_DOCUMENTARY, EFFECT_VIGNETTE
+            EFFECT_POSTERIZE, EFFECT_NEGATIVE, EFFECT_BLACKWHITE, EFFECT_LOMOISH, EFFECT_DOCUMENTARY, EFFECT_VIGNETTE
     };
 
     private static final int FILTERED_PREVIEW_SIZE = 96;
@@ -62,11 +61,10 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
     private boolean mInitialised;
     private boolean filtersEnabled;
     private volatile boolean filtersPreviewEnabled;
-    //private boolean imageLoaded = false;
 
     private int[] mTextures = new int[2];
     private EffectContext mEffectContext;
-    private TextureRenderer mTexRenderer = new TextureRenderer();
+    private EffectRenderer mEffectRenderer;
     private int mImageWidth;
     private int mImageHeight;
     private Bitmap origBitmap;
@@ -95,6 +93,7 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
     private final int heightPixels;
     private final int widthPixels;
     private final float translationFactor;
+    private final int previewSize;
 
     public EffectGLView(final Context context) {
         this(context, null, 0);
@@ -126,8 +125,10 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
         DisplayMetrics displayMetrics = Resources.getSystem().getDisplayMetrics();
 
         widthPixels = displayMetrics.widthPixels;
-        heightPixels = displayMetrics.heightPixels;
+        heightPixels = Math.min(widthPixels, displayMetrics.heightPixels);
         translationFactor = displayMetrics.density;
+
+        previewSize = (int) (FILTERED_PREVIEW_SIZE * displayMetrics.density);
     }
 
     @Override
@@ -198,8 +199,9 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
 
     private void buildTransform() {
         if (!mInitialised || !mHasSurface) return;
+        Log.d(TAG, "buildTransform");
         buildMainTransform();
-        mTexRenderer.setMatrix(mMVPMatrix);
+        mEffectRenderer.setMatrix(mMVPMatrix);
         requestRender();
     }
 
@@ -212,6 +214,17 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
     public void init(String imagePath, MediaPickerOpts opts) {
         origImagePath = imagePath;
         filtersEnabled = opts.filtersEnabled;
+
+        if (!filtersEnabled) {
+            for (EffectRenderer renderer: effects) {
+                if (!ImageEffectType.NONE.equals(renderer.name())) {
+                    renderer.release();
+                }
+            }
+
+            effects.clear();
+        }
+
         if (mHasSurface && getWidth() > 0 && getHeight() > 0) {
             runOnDraw(this::loadImage);
         }
@@ -228,7 +241,7 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
                 final int x = (int) event.getX();
                 final int y = (int) event.getY();
                 Log.d(TAG, "onTouched: x: " + x + " y: " + y);
-                // queueEvent(() -> mRenderer.onTouched(x, y));
+                queueEvent(() -> onTouched(x, y));
                 break;
             case MotionEvent.ACTION_UP:
                 break;
@@ -238,7 +251,7 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
     }
 
     private void loadImage() {
-        Log.d(TAG, "loadImage: mHasSurface: " + mHasSurface + " origImagePath: " + origImagePath);
+        Log.d(TAG, "loadImage: mHasSurface: " + mHasSurface + " origImagePath: " + origImagePath + " mInitialised: " + mInitialised);
         final int width = getWidth();
         final int height = getHeight();
 
@@ -253,9 +266,6 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
 
             if (!mInitialised) {
 
-                mTexRenderer.updateViewSize(width, height);
-                mTexRenderer.updateTextureSize(mImageWidth, mImageHeight);
-
                 float ratio = (float) width / height;
 
                 Matrix.frustumM(mProjectionMatrix, 0, -ratio, ratio, -1, 1, 3, 7);
@@ -264,24 +274,59 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
 
                 GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, origBitmap, 0);
 
-                mTexRenderer.setMatrix(mMVPMatrix);
-
-                GLES20.glViewport(0, 0, width, height);
-
                 createEffects();
+
+                updateMainEffect();
             }
 
             mInitialised = true;
         }
+
+        if (mInitialised) {
+            requestRender();
+        }
+    }
+
+    private void updateMainEffect() {
+        final int width = getWidth();
+        final int height = getHeight();
+
+        mEffectRenderer.updateViewSize(width, height);
+        mEffectRenderer.updateTextureSize(mImageWidth, mImageHeight);
+        mEffectRenderer.setMatrix(mMVPMatrix);
+
+        if (ImageEffectType.NONE.equals(mCurrentEffect)) {
+            mEffectRenderer.setTextureId(mTextures[0]);
+        }
+
+        GLES20.glViewport(0, 0, width, height);
+        GLToolbox.checkGlError("glViewport");
     }
 
     public void toggleEffectPreviews() {
         runOnDraw(() -> {
             filtersPreviewEnabled = !filtersPreviewEnabled;
             if (!filtersPreviewEnabled) {
-                GLES20.glViewport(0, 0, getWidth(), getHeight());
+                updateMainEffect();
             }
         });
+    }
+
+    private void onTouched(int x, int y) {
+        for (EffectRenderer renderer: effects) {
+            Rect openGLRect = new Rect(renderer.startX, renderer.bottomY - previewSize,
+                    renderer.startX + previewSize, renderer.bottomY);
+
+            Log.d(TAG, "openGL: " + openGLRect);
+
+            if (openGLRect.contains(x, y)) {
+                mCurrentEffect = renderer.name();
+                mEffectRenderer = renderer;
+                break;
+            }
+        }
+
+        toggleEffectPreviews();
     }
 
     private void init() {
@@ -292,8 +337,6 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTextures[0]);
 
             GLToolbox.initTexParams();
-
-            mTexRenderer.init();
 
             GLES20.glClearColor(0,0,0,0);
             GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
@@ -333,13 +376,15 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
     }
 
     private void onSurfaceDestroyed() {
-        if (mTexRenderer != null) {
-            mTexRenderer.release();
+        if (mEffectRenderer != null) {
+            mEffectRenderer.release();
         }
 
         for (EffectRenderer renderer : effects) {
             if (renderer != null) renderer.release();
         }
+
+        effects.clear();
 
         for (int mTexture : mTextures) {
             if (mTexture > 0) {
@@ -352,15 +397,6 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
         }
 
         mEffectContext = null;
-    }
-
-    public void onEffectSelected(@ImageEffectType String effectType) {
-        runOnDraw(() -> {
-            mCurrentEffect = effectType;
-            if (!ImageEffectType.NONE.equals(mCurrentEffect)) {
-                //makeEffectCurrent(effects.get(effectType));
-            }
-        });
     }
 
     protected void runOnDraw(final Runnable runnable) {
@@ -387,65 +423,66 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
 
         runAll(mRunOnDraw);
 
-        int texId = ImageEffectType.NONE.equals(mCurrentEffect)  ? 0 : 1;
-
         if (filtersPreviewEnabled) {
-            mTexRenderer.renderTexture(mTextures[texId]);
+            updateAllEffects();
 
             for (EffectRenderer renderer: effects) {
-
-
-                Log.d(TAG, "renderer: " + renderer.name() + " startX: " + renderer.startX
-                        + " startY: " + renderer.startY
-                        + " width: " + renderer.mViewWidth
-                        + " height: " + renderer.mViewHeight);
-
-                renderer.computeOutputVertices();
                 renderer.makeEffectCurrent(mTextures[0], renderer.mViewWidth, renderer.mViewHeight, mTextures[1]);
 
-                GLES20.glViewport(renderer.startX, renderer.startY, renderer.mViewWidth, renderer.mViewHeight);
+                GLES20.glViewport(renderer.startX, renderer.bottomY, renderer.mViewWidth, renderer.mViewHeight);
                 GLToolbox.checkGlError("glViewport");
 
                 renderer.renderTexture();
             }
-            GLES20.glViewport(0, 0, mTexRenderer.mViewWidth, mTexRenderer.mViewHeight);
         } else {
-            mTexRenderer.renderTexture(mTextures[texId]);
+            mEffectRenderer.renderTexture();
         }
     }
 
     private void createEffects() {
-        DisplayMetrics displayMetrics = Resources.getSystem().getDisplayMetrics();
-        int screenWidth = displayMetrics.widthPixels;
+        if (filtersEnabled) {
+            EffectFactory effectFactory = mEffectContext.getFactory();
 
-        int filterPreviewSize = (int) (FILTERED_PREVIEW_SIZE * displayMetrics.density);
+            for (@ImageEffectType String effectType: EFFECTS) {
 
-        int margin = (screenWidth - (filterPreviewSize * FILTER_PREVIEWS_PER_ROW)) / (FILTER_PREVIEWS_PER_ROW + 1);
+                EffectRenderer renderer = new EffectRenderer(effectFactory, effectType);
 
-        int startX = margin;
-        int startY = (int) (0.50 * displayMetrics.heightPixels);
+                if (mCurrentEffect.equals(effectType)) {
+                    mEffectRenderer = renderer;
+                }
 
-        EffectFactory effectFactory = mEffectContext.getFactory();
-
-        int i = 0;
-
-        for (@ImageEffectType String effectType: EFFECTS) {
-            EffectRenderer renderer = new EffectRenderer(effectFactory, effectType);
-            renderer.updateTextureSize(mImageWidth, mImageHeight);
-            renderer.updateViewSize(filterPreviewSize, filterPreviewSize);
-            renderer.setStartXY(startX, startY);
-
-            if (i % FILTER_PREVIEWS_PER_ROW == 0) {
-                startX = margin;
-                startY = startY + margin;
-            } else {
-                startX = startX + margin;
+                effects.add(renderer);
             }
 
-            i++;
+        } else {
+            mEffectRenderer = new EffectRenderer(null, ImageEffectType.NONE);
+        }
+    }
 
-            Log.d(TAG, "createEffects: " + effectType + " startX: " + startX + " startY: " + startY);
-            effects.add(renderer);
+    private void updateAllEffects() {
+
+        int margin = (widthPixels - (previewSize * FILTER_PREVIEWS_PER_ROW)) / (FILTER_PREVIEWS_PER_ROW + 1);
+
+        int startX = margin;
+        int bottomY = heightPixels - previewSize - margin;
+
+        float[] matrix = new float[16];
+
+        Matrix.setIdentityM(matrix, 0);
+
+        for (EffectRenderer renderer: effects) {
+            renderer.setStartXY(startX, bottomY);
+            renderer.updateTextureSize(mImageWidth, mImageHeight);
+            renderer.updateViewSize(previewSize, previewSize);
+
+            startX = startX + previewSize + margin;
+
+            if (widthPixels < (startX + previewSize + margin)) {
+                startX = margin;
+                bottomY = bottomY - previewSize - margin;   //move down
+            }
+
+            renderer.setMatrix(matrix);
         }
     }
 }

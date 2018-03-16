@@ -1,7 +1,9 @@
 package com.softwarejoint.media.image;
 
+import android.graphics.Rect;
 import android.media.effect.Effect;
 import android.media.effect.EffectFactory;
+import android.support.annotation.Nullable;
 
 import com.softwarejoint.media.enums.ImageEffectType;
 
@@ -14,10 +16,10 @@ class EffectRenderer extends TextureRenderer {
     public final @ImageEffectType String TAG;
     private Effect mEffect;
     public int startX;
-    public int startY;
+    public int bottomY;
     private int texId;
 
-    EffectRenderer(EffectFactory effectFactory, @ImageEffectType String effectType) {
+    EffectRenderer(@Nullable EffectFactory effectFactory, @ImageEffectType String effectType) {
         super();
         TAG = effectType;
 
@@ -34,15 +36,18 @@ class EffectRenderer extends TextureRenderer {
         }
     }
 
+    void setTextureId(int texId) {
+        this.texId = texId;
+    }
+
     void renderTexture() {
         super.renderTexture(texId);
     }
 
     private void initEffect(EffectFactory effectFactory, @ImageEffectType String effectType) {
-
         switch (effectType) {
             case ImageEffectType.NONE:
-                break;
+                return;
             case ImageEffectType.EFFECT_GRAYSCALE:
                 mEffect = effectFactory.createEffect(EffectFactory.EFFECT_GRAYSCALE);
                 break;
@@ -72,9 +77,9 @@ class EffectRenderer extends TextureRenderer {
         }
     }
 
-    void setStartXY(int startX, int startY) {
+    void setStartXY(int startX, int bottomY) {
         this.startX = startX;
-        this.startY = startY;
+        this.bottomY = bottomY;
     }
 
     public void release() {

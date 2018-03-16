@@ -31,7 +31,7 @@ public class MultiTouchListener implements OnTouchListener, GestureDetector.OnGe
     private final ScaleGestureDetector scaleGestureDetector;
 
     private View view;
-    private RectF mCurrentViewport;
+    private RectF mCurrentViewport = new RectF(0, 0, 0, 0);
 
     private float scale = BASE_SCALE;
 
@@ -70,7 +70,8 @@ public class MultiTouchListener implements OnTouchListener, GestureDetector.OnGe
     public boolean onTouch(View v, MotionEvent event) {
         if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
             view = v;
-            mCurrentViewport = new RectF(0, 0, view.getWidth(), view.getHeight());
+            mCurrentViewport.right = view.getWidth();
+            mCurrentViewport.bottom = view.getHeight();
         }
 
         scaleGestureDetector.onTouchEvent(event);
