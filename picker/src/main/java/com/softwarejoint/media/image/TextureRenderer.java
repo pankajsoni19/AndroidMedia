@@ -158,7 +158,6 @@ public class TextureRenderer {
         GLES20.glUseProgram(0);
     }
 
-
     private void computeOutputVertices() {
         if (mPosVertices == null || mTexWidth == 0 || mTexHeight == 0 || mViewWidth == 0 || mViewHeight == 0) {
             return;

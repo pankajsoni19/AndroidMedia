@@ -20,8 +20,12 @@ public class MultiTouchListener implements OnTouchListener, GestureDetector.OnGe
     private static final String TAG = "MultiTouchListener";
 
     private static final float BASE_SCALE = 1.0f;
-    private static final float MIN_SCALE = 0.5f;
-    private static final float MAX_SCALE = 3.0f;
+
+    private static final float MIN_SCALE = BASE_SCALE / 2;
+    private static final float MAX_SCALE = BASE_SCALE * 3;
+
+    private static final float ROTATION_BUFFER = 10.0f;
+    private static final float FLIP_ANGLE = 180.0f;
 
     private final GestureDetectorCompat gestureDetector;
     private final ScaleGestureDetector scaleGestureDetector;
@@ -29,10 +33,11 @@ public class MultiTouchListener implements OnTouchListener, GestureDetector.OnGe
     private View view;
     private RectF mCurrentViewport;
 
+    private float scale = BASE_SCALE;
+
     private float mLastAngle = 0;
     private float translationX = 0;
     private float translationY = 0;
-    private float scale = BASE_SCALE;
 
     private boolean translateEnabled = true;
     private boolean scaleEnabled = true;
@@ -83,6 +88,7 @@ public class MultiTouchListener implements OnTouchListener, GestureDetector.OnGe
 
     @Override
     public boolean onDown(MotionEvent e) {
+        mLastAngle = 0;
         return true;
     }
 
@@ -102,7 +108,7 @@ public class MultiTouchListener implements OnTouchListener, GestureDetector.OnGe
     public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
         if (!translateEnabled) return false;
 
-        float newTransX = translationX + (-distanceX);
+        float newTransX = translationX + distanceX;
         float newTransY = translationY + distanceY;
 
         float newX = mCurrentViewport.left + newTransX;
@@ -146,10 +152,9 @@ public class MultiTouchListener implements OnTouchListener, GestureDetector.OnGe
             float totalScale = scale + scaleFactor - 1.0f;
 
             if (scale != totalScale && totalScale > MIN_SCALE && totalScale < MAX_SCALE) {
-                //Log.d(TAG, "scaleFactor: " + scaleFactor + " totalScale: " + scale);
                 scale = totalScale;
-                view.setScaleX(scaleFactor);
-                view.setScaleY(scaleFactor);
+                view.setScaleX(scale);
+                view.setScaleY(scale);
             }
         }
 
@@ -158,6 +163,7 @@ public class MultiTouchListener implements OnTouchListener, GestureDetector.OnGe
 
     @Override
     public boolean onScaleBegin(ScaleGestureDetector detector) {
+        //mLastScale = BASE_SCALE;
         return scaleEnabled;
     }
 
@@ -172,21 +178,21 @@ public class MultiTouchListener implements OnTouchListener, GestureDetector.OnGe
 
         float deltaRot = degrees - mLastAngle;
 
-        if (mLastAngle == 0 && Math.abs(deltaRot) > 5) {
-            deltaRot = 5;
+        if (mLastAngle == 0 && Math.abs(degrees) >= ROTATION_BUFFER) {
+            deltaRot = Math.copySign(1, degrees);
         }
 
-        if (deltaRot >= 160) {
+        if ((ROTATION_BUFFER + deltaRot) >= FLIP_ANGLE) {
             // Going CCW across the boundary
-            Log.d(TAG, "mLastAngle: " + mLastAngle + " degrees: " + degrees + " deltaRot: " + deltaRot + " rot: " + (180 - deltaRot));
-            view.setRotation(180 - deltaRot);
-        } else if (deltaRot < -160) {
-            // Going CW across the boundary
+            deltaRot = FLIP_ANGLE - deltaRot;
             Log.d(TAG, "mLastAngle: " + mLastAngle + " degrees: " + degrees + " deltaRot: " + deltaRot);
-            view.setRotation(5);
-        } else {
-            view.setRotation(deltaRot);
+        } else if ((-ROTATION_BUFFER + deltaRot) <= -FLIP_ANGLE) {
+            // Going CW across the boundary
+            deltaRot = -FLIP_ANGLE - deltaRot;
+            Log.d(TAG, "mLastAngle: " + mLastAngle + " degrees: " + degrees + " deltaRot: " + deltaRot);
         }
+
+        view.setRotation(deltaRot);
 
         mLastAngle = degrees;
     }

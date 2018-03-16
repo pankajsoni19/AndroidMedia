@@ -70,6 +70,7 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
     private final float[] mProjectionMatrix = new float[16];
     private final float[] mViewMatrix = new float[16];
 
+    private float scale = 1.0f;
     private float rotation = 0f;
     private float factorX = 0f;
     private float factorY = 0f;
@@ -137,28 +138,30 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
 
     @Override
     public void setTranslationX(float translation) {
-        factorX = (translation / widthPixels) * translationFactor;
+        factorX = factorX + translation;
+        buildTransform();
     }
 
     @Override
     public float getTranslationX() {
-        return (widthPixels * factorX) / translationFactor;
+        return factorX;
     }
 
     @Override
     public void setTranslationY(float translation) {
-        factorY = (translation / heightPixels) * translationFactor;
-        buildTransform(factorX, factorY, 1.0f, 0);
+        factorY = factorY + translation;
+        buildTransform();
     }
 
     @Override
     public float getTranslationY() {
-        return (heightPixels * factorY) / translationFactor;
+        return factorY;
     }
 
     @Override
-    public void setScaleX(float scale) {
-        buildTransform(0, 0, scale, 0);
+    public void setScaleX(float totalScale) {
+        scale = totalScale;
+        buildTransform();
     }
 
     @Override
@@ -167,9 +170,9 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
     }
 
     @Override
-    public void setRotation(float deltaRot) {
-        rotation = deltaRot + rotation;
-        buildTransform(0, 0, 1.0f, rotation);
+    public void setRotation(float deltaRotation) {
+        rotation = deltaRotation + rotation;
+        buildTransform();
     }
 
     @Override
@@ -177,20 +180,20 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
         return rotation;
     }
 
-    private void buildTransform(float factorX, float factorY, float scale, float rotation) {
+    private void buildTransform() {
         Log.d(TAG, "buildTransform: factorX: " + factorX + " facY: " + factorY + " scale: " + scale + " rotation: " + rotation);
 
-        if (factorX != 0 || factorY != 0) {
-            Matrix.translateM(mMVPMatrix, 0, factorX, factorY, 0);
-        }
+//        if (factorX != 0 || factorY != 0) {
+//
+//            Matrix.setRotateM(mMVPMatrix, 0, 0, 0, 0, -1.0f);
+//            Matrix.scaleM(mMVPMatrix, 0, 1.0f, 1.0f, 0);
+//        } else {
+//
+//        }
 
-        if (rotation != 0) {
-            Matrix.setRotateM(mMVPMatrix, 0, rotation, 0, 0, -1.0f);
-        }
-
-        if (scale != 1.0f) {
-            Matrix.scaleM(mMVPMatrix, 0, scale, scale, 0);
-        }
+        Matrix.setRotateM(mMVPMatrix, 0, rotation, 0, 0, -1.0f);
+        Matrix.scaleM(mMVPMatrix, 0, scale, scale, 0);
+        Matrix.translateM(mMVPMatrix, 0, -factorX * translationFactor/widthPixels, factorY * translationFactor/heightPixels, 0);
 
         mTexRenderer.setMatrix(mMVPMatrix);
         requestRender();
