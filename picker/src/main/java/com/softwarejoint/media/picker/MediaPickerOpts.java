@@ -34,11 +34,12 @@ public class MediaPickerOpts implements Parcelable {
 
     public final boolean scaleTypeChangeable;
 
+    public final int imgSize;
     public final int maxSelection;
     public final String mediaDir;
 
     public MediaPickerOpts(int mediaType, int scaleType, boolean galleryEnabled, boolean flashEnabled,
-                           boolean filtersEnabled, boolean cropEnabled,
+                           boolean filtersEnabled, boolean cropEnabled, int size,
                            boolean scaleTypeChangeable, int maxSelection, String mediaDir) {
         this.mediaType = mediaType;
         this.scaleType = scaleType;
@@ -47,12 +48,9 @@ public class MediaPickerOpts implements Parcelable {
         this.filtersEnabled = filtersEnabled;
         this.cropEnabled = cropEnabled;
         this.scaleTypeChangeable = scaleTypeChangeable;
+        this.imgSize = size;
         this.maxSelection = maxSelection;
         this.mediaDir = mediaDir;
-    }
-
-    public boolean showFilters() {
-        return filtersEnabled && (mediaType == MediaType.VIDEO || !cropEnabled);
     }
 
     protected MediaPickerOpts(Parcel in) {
@@ -63,6 +61,7 @@ public class MediaPickerOpts implements Parcelable {
         filtersEnabled = in.readByte() != 0;
         cropEnabled = in.readByte() != 0;
         scaleTypeChangeable = in.readByte() != 0;
+        imgSize = in.readInt();
         maxSelection = in.readInt();
         mediaDir = in.readString();
     }
@@ -79,6 +78,15 @@ public class MediaPickerOpts implements Parcelable {
         }
     };
 
+    public boolean showFilters() {
+        return filtersEnabled && (mediaType == MediaType.VIDEO || !cropEnabled);
+    }
+
+    public static @Nullable Result onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode != REQUEST_CODE || resultCode != Activity.RESULT_OK) return null;
+        return new Result(data.getStringArrayListExtra(INTENT_RES));
+    }
+
     @Override
     public int describeContents() {
         return 0;
@@ -93,13 +101,9 @@ public class MediaPickerOpts implements Parcelable {
         dest.writeByte((byte) (filtersEnabled ? 1 : 0));
         dest.writeByte((byte) (cropEnabled ? 1 : 0));
         dest.writeByte((byte) (scaleTypeChangeable ? 1 : 0));
+        dest.writeInt(imgSize);
         dest.writeInt(maxSelection);
         dest.writeString(mediaDir);
-    }
-
-    public static @Nullable Result onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode != REQUEST_CODE || resultCode != Activity.RESULT_OK) return null;
-        return new Result(data.getStringArrayListExtra(INTENT_RES));
     }
 
     @SuppressWarnings("unused")
@@ -115,6 +119,7 @@ public class MediaPickerOpts implements Parcelable {
         private boolean filtersEnabled = true;
         private boolean scaleTypeChangeable = true;
         private boolean cropEnabled = false;
+        private int imgSize;
 
         private int maxSelection = DEF_MAX_SELECTION;
         private String mediaDir;
@@ -126,7 +131,7 @@ public class MediaPickerOpts implements Parcelable {
 
             MediaPickerOpts opts =
                     new MediaPickerOpts(mediaType, scaleType, galleryEnabled, flashEnabled,
-                            filtersEnabled, cropEnabled, scaleTypeChangeable, maxSelection, mediaDir);
+                            filtersEnabled, cropEnabled, imgSize, scaleTypeChangeable, maxSelection, mediaDir);
 
             Intent newIntent = new Intent(activity, PickerActivity.class);
             newIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -183,6 +188,11 @@ public class MediaPickerOpts implements Parcelable {
                 maxSelection = DEF_MAX_SELECTION;
             }
 
+            return this;
+        }
+
+        public Builder setImgSize(int size) {
+            imgSize = size;
             return this;
         }
 
