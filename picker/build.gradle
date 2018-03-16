@@ -38,10 +38,11 @@ android {
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'com.android.support:appcompat-v7:27.1.0'
-    implementation 'com.android.support.constraint:constraint-layout:1.0.2'
     implementation 'com.android.support:recyclerview-v7:27.1.0'
+    implementation 'com.android.support:exifinterface:27.1.0'
     implementation 'io.github.ypdieguez:cursor-recycler-adapter:1.0.0'
-    implementation 'com.makeramen:roundedimageview:2.3.0'
+    implementation 'com.android.support.constraint:constraint-layout:1.0.2'
+//    implementation 'com.makeramen:roundedimageview:2.3.0'
 }
 
 task sourcesJar(type: Jar) {

@@ -154,6 +154,7 @@ public class BitmapUtils {
         BitmapFactory.decodeFile(imagePath, options);
         options.inSampleSize = BitmapUtils.calculateInSampleSize(options, imgSize, imgSize);
         options.inJustDecodeBounds = false;
-        return BitmapFactory.decodeFile(imagePath, options);
+        Bitmap bitmap = BitmapFactory.decodeFile(imagePath, options);
+        return bitmap != null ? ExifUtil.rotateBitmap(imagePath, bitmap) : null;
     }
 }
