@@ -271,6 +271,7 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
 
         mHasSurface = true;
     }
+
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         Log.d(TAG, "onSurfaceCreated: width: " + getWidth() + " height: " + getHeight());

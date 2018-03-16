@@ -12,7 +12,25 @@ import java.io.IOException;
 
 class ExifUtil {
 
+    static void saveExif(String oldFile, String newFile) {
+        if (!oldFile.endsWith("jpeg") || !oldFile.endsWith("jpg")) return;
+        if (!newFile.endsWith("jpeg") || !newFile.endsWith("jpg")) return;
+
+        try {
+            int orientation = getExifOrientation(oldFile);
+            ExifInterface newInterface = new ExifInterface(newFile);
+            newInterface.setAttribute(ExifInterface.TAG_ORIENTATION, String.valueOf(orientation));
+            newInterface.saveAttributes();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     static Bitmap rotateBitmap(String src, Bitmap bitmap) {
+        if (!src.endsWith("jpeg") || !src.endsWith("jpg")) {
+            return bitmap;
+        }
+
         int orientation;
 
         try {
