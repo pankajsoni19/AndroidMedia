@@ -1,7 +1,13 @@
 package com.softwarejoint.media.multitouch;
 
+import android.content.Context;
+import android.graphics.RectF;
+import android.support.v4.view.GestureDetectorCompat;
+import android.support.v4.view.ScaleGestureDetectorCompat;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.View.OnTouchListener;
 
@@ -9,221 +15,179 @@ import android.view.View.OnTouchListener;
  * Copied from https://github.com/thuytrinh/android-collage-views
  */
 
-public class MultiTouchListener implements OnTouchListener {
+public class MultiTouchListener implements OnTouchListener, GestureDetector.OnGestureListener, ScaleGestureDetector.OnScaleGestureListener {
 
     private static final String TAG = "MultiTouchListener";
 
-    private static final int INVALID_POINTER_ID = -1;
+    private static final float BASE_SCALE = 1.0f;
+    private static final float MIN_SCALE = 0.5f;
+    private static final float MAX_SCALE = 3.0f;
 
-    private final ScaleGestureDetector mScaleGestureDetector;
-    private boolean isRotateEnabled;
-    private boolean isTranslateEnabled;
-    private boolean isTranslateXEnabled;
-    private boolean isScaleEnabled;
-    private int mActivePointerId = INVALID_POINTER_ID;
-    private float mPrevX;
-    private float mPrevY;
-    private boolean isViewTouched;
+    private final GestureDetectorCompat gestureDetector;
+    private final ScaleGestureDetector scaleGestureDetector;
 
-    public MultiTouchListener() {
-        mScaleGestureDetector = new ScaleGestureDetector(new ScaleGestureListener());
+    private View view;
+    private RectF mCurrentViewport;
+
+    private float mLastAngle = 0;
+    private float translationX = 0;
+    private float translationY = 0;
+    private float scale = BASE_SCALE;
+
+    private boolean translateEnabled = true;
+    private boolean scaleEnabled = true;
+    private boolean rotateEnabled = true;
+
+    public MultiTouchListener(Context context) {
+        gestureDetector = new GestureDetectorCompat(context, this);
+        gestureDetector.setIsLongpressEnabled(false);
+
+        scaleGestureDetector = new ScaleGestureDetector(context, this);
+        ScaleGestureDetectorCompat.setQuickScaleEnabled(scaleGestureDetector, false);
     }
 
-    private static float adjustAngle(float degrees) {
-        if (degrees > 180.0f) {
-            degrees -= 360.0f;
-        } else if (degrees < -180.0f) {
-            degrees += 360.0f;
-        }
-
-        return degrees;
+    @SuppressWarnings("unused")
+    public void setTranslateEnabled(boolean enabled) {
+        translateEnabled = enabled;
     }
 
-    private static void computeRenderOffset(View view, float pivotX, float pivotY) {
-        if (view.getPivotX() == pivotX && view.getPivotY() == pivotY) {
-            return;
-        }
-
-        float[] prevPoint = {0.0f, 0.0f};
-        view.getMatrix().mapPoints(prevPoint);
-
-        view.setPivotX(pivotX);
-        view.setPivotY(pivotY);
-
-        float[] currPoint = {0.0f, 0.0f};
-        view.getMatrix().mapPoints(currPoint);
-
-        float offsetX = currPoint[0] - prevPoint[0];
-        float offsetY = currPoint[1] - prevPoint[1];
-
-        view.setTranslationX(-offsetX);
-        view.setTranslationY(-offsetY);
+    @SuppressWarnings("unused")
+    public void setScaleEnabled(boolean enabled) {
+        scaleEnabled = enabled;
     }
 
-    private void move(View view, TransformInfo info) {
-        computeRenderOffset(view, info.pivotX, info.pivotY);
-        adjustTranslation(view, info.deltaX, info.deltaY);
-
-        // Assume that scaling still maintains aspect ratio.
-
-        float scale = view.getScaleX() * info.deltaScale;
-        scale = Math.max(info.minimumScale, Math.min(info.maximumScale, scale));
-        view.setScaleX(scale);
-        view.setScaleY(scale);
-
-        Log.d(TAG, "deltaScale: " + info.deltaScale + " viewrot: " + view.getScaleX());
-
-        float rotation = adjustAngle(info.deltaAngle);
-        view.setRotation(rotation);
-    }
-
-    private void adjustTranslation(View view, float deltaX, float deltaY) {
-        float[] deltaVector = {deltaX, deltaY};
-        view.getMatrix().mapVectors(deltaVector);
-        if (isScaleEnabled || isTranslateXEnabled) {
-            view.setTranslationX(deltaVector[0]);
-        }
-        view.setTranslationY(deltaVector[1]);
+    @SuppressWarnings("unused")
+    public void setRotateEnabled(boolean enabled) {
+        rotateEnabled = enabled;
     }
 
     @Override
-    public boolean onTouch(View view, MotionEvent event) {
-        boolean handled = mScaleGestureDetector.onTouchEvent(view, event);
+    public boolean onTouch(View v, MotionEvent event) {
+        if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
+            view = v;
+            mCurrentViewport = new RectF(0, 0, view.getWidth(), view.getHeight());
+        }
 
-        isViewTouched = isViewTouched || handled;
+        scaleGestureDetector.onTouchEvent(event);
 
-        if (!isTranslateEnabled) { return handled; }
+        if (!scaleGestureDetector.isInProgress()) {
+            gestureDetector.onTouchEvent(event);
+        }
 
-        isViewTouched = true;
-
-        int action = event.getAction();
-        switch (action & event.getActionMasked()) {
-            case MotionEvent.ACTION_DOWN: {
-
-                mPrevX = view.getX() - event.getRawX();
-                mPrevY = view.getY() - event.getRawY();
-                mPrevX = event.getX();
-                mPrevY = event.getY();
-
-                // Save the ID of this pointer.
-                mActivePointerId = event.getPointerId(0);
-                break;
-            }
-
-            case MotionEvent.ACTION_MOVE: {
-                // Find the index of the active pointer and fetch its position.
-                int pointerIndex = event.findPointerIndex(mActivePointerId);
-                if (pointerIndex != -1) {
-                    float currX = event.getX(pointerIndex);
-                    float currY = event.getY(pointerIndex);
-
-                    // Only move if the ScaleGestureDetector isn't processing a
-                    // gesture.
-                    if (!mScaleGestureDetector.isInProgress()) {
-                        adjustTranslation(view, currX - mPrevX, currY - mPrevY);
-                    }
-                }
-
-                break;
-            }
-
-            case MotionEvent.ACTION_CANCEL:
-                mActivePointerId = INVALID_POINTER_ID;
-                break;
-
-            case MotionEvent.ACTION_UP:
-                mActivePointerId = INVALID_POINTER_ID;
-                break;
-
-            case MotionEvent.ACTION_POINTER_UP: {
-                // Extract the index of the pointer that left the touch sensor.
-                int pointerIndex = (action & MotionEvent.ACTION_POINTER_INDEX_MASK)
-                        >> MotionEvent.ACTION_POINTER_INDEX_SHIFT;
-                int pointerId = event.getPointerId(pointerIndex);
-                if (pointerId == mActivePointerId) {
-                    // This was our active pointer going up. Choose a new
-                    // active pointer and adjust accordingly.
-                    int newPointerIndex = pointerIndex == 0 ? 1 : 0;
-                    mPrevX = event.getX(newPointerIndex);
-                    mPrevY = event.getY(newPointerIndex);
-                    mActivePointerId = event.getPointerId(newPointerIndex);
-                }
-
-                break;
-            }
+        if (rotateEnabled && event.getPointerCount() == 2 && event.getActionMasked() == MotionEvent.ACTION_MOVE) {
+            doRotation(event);
         }
 
         return true;
     }
 
-    public void setIsRotateEnabled(boolean enabled) {
-        isRotateEnabled = enabled;
+    @Override
+    public boolean onDown(MotionEvent e) {
+        return true;
     }
 
-    public void setIsTranslateEnabled(boolean enabled) {
-        isTranslateEnabled = enabled;
+    @Override
+    public void onShowPress(MotionEvent e) {
+
     }
 
-    public void setIsScaleEnabled(boolean enabled) {
-        isScaleEnabled = enabled;
+    @Override
+    public boolean onSingleTapUp(MotionEvent e) {
+        Log.d(TAG, "onSingleTapUp: ");
+        view.performClick();
+        return true;
     }
 
-    public void setIsTranslationXEnabled(boolean enabled) {
-        isTranslateXEnabled = enabled;
-    }
+    @Override
+    public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+        if (!translateEnabled) return false;
 
-    private class ScaleGestureListener extends ScaleGestureDetector.SimpleOnScaleGestureListener {
+        float newTransX = translationX + (-distanceX);
+        float newTransY = translationY + distanceY;
 
-        private final Vector2D mPrevSpanVector = new Vector2D();
-        private float mPivotX;
-        private float mPivotY;
-        private float initRotation;
+        float newX = mCurrentViewport.left + newTransX;
+        float newY = mCurrentViewport.top + newTransY;
 
-        @Override
-        public boolean onScaleBegin(View view, ScaleGestureDetector detector) {
-            mPivotX = detector.getFocusX();
-            mPivotY = detector.getFocusY();
-            mPrevSpanVector.set(detector.getCurrentSpanVector());
-            initRotation = view.getRotation();
-            return true;
+//        Log.d(TAG, "onScroll: dX: " + distanceX +
+//                " transX: " + translationX +
+//                " newTransX: " + newTransX +
+//                " newX: " + newX);
+
+        if (Math.abs(newX) < mCurrentViewport.width()) {
+            translationX = newTransX;
+            view.setTranslationX(distanceX);
         }
 
-        @Override
-        public boolean onScale(View view, ScaleGestureDetector detector) {
-            TransformInfo info = new TransformInfo();
+        if (Math.abs(newY) < mCurrentViewport.height()) {
+            translationY = newTransY;
+            view.setTranslationY(distanceY);
+        }
 
-            if (isScaleEnabled) {
-                info.deltaScale = detector.getScaleFactor();
+        return true;
+    }
+
+    @Override
+    public void onLongPress(MotionEvent e) {
+    }
+
+    @Override
+    public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+        return false;
+    }
+
+    /**
+     * Scale Gesture
+     */
+
+    @Override
+    public boolean onScale(ScaleGestureDetector detector) {
+        if (scaleEnabled) {
+            float scaleFactor = detector.getScaleFactor();
+            float totalScale = scale + scaleFactor - 1.0f;
+
+            if (scale != totalScale && totalScale > MIN_SCALE && totalScale < MAX_SCALE) {
+                //Log.d(TAG, "scaleFactor: " + scaleFactor + " totalScale: " + scale);
+                scale = totalScale;
+                view.setScaleX(scaleFactor);
+                view.setScaleY(scaleFactor);
             }
-
-            if (isRotateEnabled) {
-                info.deltaAngle = Vector2D.getAngle(mPrevSpanVector, detector.getCurrentSpanVector()) + initRotation;
-            }
-
-            info.deltaX = isTranslateEnabled ? detector.getFocusX() - mPivotX : 0.0f;
-            info.deltaY = isTranslateEnabled ? detector.getFocusY() - mPivotY : 0.0f;
-            info.pivotX = mPivotX;
-            info.pivotY = mPivotY;
-
-            move(view, info);
-
-            return false;
         }
 
-        @Override
-        public void onScaleEnd(View view, ScaleGestureDetector detector) {
-            super.onScaleEnd(view, detector);
-        }
+        return scaleEnabled;
     }
 
-    private class TransformInfo {
-        float deltaX;
-        float deltaY;
-        float deltaScale = 1.0f;
-        float deltaAngle = 0.0f;
-        float pivotX;
-        float pivotY;
-        float minimumScale = 0.5f;
-        float maximumScale = 3.0f;
+    @Override
+    public boolean onScaleBegin(ScaleGestureDetector detector) {
+        return scaleEnabled;
+    }
+
+    @Override
+    public void onScaleEnd(ScaleGestureDetector detector) {
+    }
+
+    private void doRotation(MotionEvent event) {
+        float deltaX = event.getX(0) - event.getX(1);
+        float deltaY = event.getY(0) - event.getY(1);
+        float degrees = (float) Math.toDegrees(Math.atan(deltaY / deltaX));
+
+        float deltaRot = degrees - mLastAngle;
+
+        if (mLastAngle == 0 && Math.abs(deltaRot) > 5) {
+            deltaRot = 5;
+        }
+
+        if (deltaRot >= 160) {
+            // Going CCW across the boundary
+            Log.d(TAG, "mLastAngle: " + mLastAngle + " degrees: " + degrees + " deltaRot: " + deltaRot + " rot: " + (180 - deltaRot));
+            view.setRotation(180 - deltaRot);
+        } else if (deltaRot < -160) {
+            // Going CW across the boundary
+            Log.d(TAG, "mLastAngle: " + mLastAngle + " degrees: " + degrees + " deltaRot: " + deltaRot);
+            view.setRotation(5);
+        } else {
+            view.setRotation(deltaRot);
+        }
+
+        mLastAngle = degrees;
     }
 }

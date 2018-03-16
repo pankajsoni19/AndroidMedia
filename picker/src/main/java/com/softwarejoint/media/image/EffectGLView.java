@@ -70,10 +70,9 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
     private final float[] mProjectionMatrix = new float[16];
     private final float[] mViewMatrix = new float[16];
 
-    private float scale = 1.0f;
+    private float rotation = 0f;
     private float factorX = 0f;
     private float factorY = 0f;
-    private float rotation = 0;
     private float pivotX = 0;
     private float pivotY = 0;
     private final float heightPixels;
@@ -99,11 +98,7 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
         setRenderer(this);
         setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
 
-        touchListener = new MultiTouchListener();
-        touchListener.setIsRotateEnabled(true);
-        touchListener.setIsTranslationXEnabled(true);
-        touchListener.setIsTranslateEnabled(true);
-        touchListener.setIsScaleEnabled(true);
+        touchListener = new MultiTouchListener(getContext());
 
         setOnTouchListener(touchListener);
 
@@ -143,34 +138,27 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
     @Override
     public void setTranslationX(float translation) {
         factorX = (translation / widthPixels) * translationFactor;
-        Log.d(TAG, "setTranslationX: " + translation + " factorX: " + factorX);
-        //buildTransform();
     }
 
     @Override
     public float getTranslationX() {
-        return (widthPixels * factorX)/ translationFactor;
+        return (widthPixels * factorX) / translationFactor;
     }
 
     @Override
     public void setTranslationY(float translation) {
-        factorY = -1*(translation / heightPixels) * translationFactor;
-        Log.d(TAG, "setTranslationY: " + translation + " factorY: " + factorY);
-        buildTransform();
+        factorY = (translation / heightPixels) * translationFactor;
+        buildTransform(factorX, factorY, 1.0f, 0);
     }
 
     @Override
     public float getTranslationY() {
-        return (heightPixels * factorY)/ translationFactor;
+        return (heightPixels * factorY) / translationFactor;
     }
 
     @Override
-    public void setScaleX(float scaleX) {
-        if (scale == scaleX) return;
-
-        Log.d(TAG, "setScaleX: " + scale);
-        scale = scaleX;
-        buildTransform();
+    public void setScaleX(float scale) {
+        buildTransform(0, 0, scale, 0);
     }
 
     @Override
@@ -179,12 +167,9 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
     }
 
     @Override
-    public void setRotation(float angle) {
-        if (rotation == angle) return;
-
-        rotation = angle;
-        Log.d(TAG, "rotation: " + rotation);
-        buildTransform();
+    public void setRotation(float deltaRot) {
+        rotation = deltaRot + rotation;
+        buildTransform(0, 0, 1.0f, rotation);
     }
 
     @Override
@@ -192,12 +177,20 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
         return rotation;
     }
 
-    private void buildTransform() {
-        Log.d(TAG, "translateX: factorX: " + factorX + " facY: " + factorY);
+    private void buildTransform(float factorX, float factorY, float scale, float rotation) {
+        Log.d(TAG, "buildTransform: factorX: " + factorX + " facY: " + factorY + " scale: " + scale + " rotation: " + rotation);
 
-        Matrix.translateM(mMVPMatrix, 0, factorX, factorY, 0);
-        //Matrix.setRotateM(mMVPMatrix, 0, rotation, 0, 0, -1.0f);
-        //Matrix.scaleM(mMVPMatrix, 0, scale, scale, 0);
+        if (factorX != 0 || factorY != 0) {
+            Matrix.translateM(mMVPMatrix, 0, factorX, factorY, 0);
+        }
+
+        if (rotation != 0) {
+            Matrix.setRotateM(mMVPMatrix, 0, rotation, 0, 0, -1.0f);
+        }
+
+        if (scale != 1.0f) {
+            Matrix.scaleM(mMVPMatrix, 0, scale, scale, 0);
+        }
 
         mTexRenderer.setMatrix(mMVPMatrix);
         requestRender();
@@ -323,8 +316,6 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
         Matrix.frustumM(mProjectionMatrix, 0, -ratio, ratio, -1, 1, 3, 7);
         Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
 
-        buildTransform();
-
         queueEvent(this::loadImage);
     }
 
@@ -394,11 +385,7 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
 
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 
-
-
         runAll(mRunOnDraw);
-
-        Log.d(TAG, "renderResult: mCurrentEffect: " + mCurrentEffect);
 
         if (mCurrentEffect == ImageEffectType.NONE) {
             // if no effect is chosen, just render the original bitmap
