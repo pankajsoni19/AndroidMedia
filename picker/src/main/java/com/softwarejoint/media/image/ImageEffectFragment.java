@@ -1,5 +1,7 @@
 package com.softwarejoint.media.image;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.app.Activity;
 import android.content.res.Resources;
 import android.os.Bundle;
@@ -174,11 +176,11 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
     private void toggleCrop() {
         final long duration = AnimationHelper.getShortDuration(iv_crop.getContext());
 
+        iv_crop.setOnClickListener(null);
+
         if (isCropVisible()) {
             iv_crop_mask.setVisibility(View.GONE);
             pathCropView.setVisibility(View.GONE);
-
-            cropType = CropType.NONE;
 
             final int translationX = (int) (Resources.getSystem().getDisplayMetrics().density * 48);
 
@@ -193,12 +195,21 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
 
             iv_crop_hand.animate().translationX(translationX * 4)
                     .alpha(0).setDuration(duration * 4)
-                    .setUpdateListener(animation -> {
-                        iv_crop_circle.setVisibility(View.GONE);
-                        iv_crop_star.setVisibility(View.GONE);
-                        iv_crop_flower.setVisibility(View.GONE);
-                        iv_crop_hand.setVisibility(View.GONE);
-                        iv_crop.setImageResource(R.drawable.crop_option_white);
+                    .setListener(new AnimatorListenerAdapter() {
+
+                        @Override
+                        public void onAnimationStart(Animator animation) {
+                            iv_crop.setImageResource(R.drawable.crop_option_white);
+                        }
+
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            iv_crop_circle.setVisibility(View.GONE);
+                            iv_crop_star.setVisibility(View.GONE);
+                            iv_crop_flower.setVisibility(View.GONE);
+                            iv_crop_hand.setVisibility(View.GONE);
+                            iv_crop.setOnClickListener(ImageEffectFragment.this);
+                        }
                     }).start();
         } else {
             iv_crop_circle.setVisibility(View.VISIBLE);
@@ -217,9 +228,18 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
 
             iv_crop_hand.animate().translationX(0)
                     .alpha(1).setDuration(duration * 4)
-                    .setUpdateListener(animation -> {
-                        iv_crop.setImageResource(R.drawable.clear_white);
-                        onCropSelected(cropType);
+                    .setListener(new AnimatorListenerAdapter() {
+
+                        @Override
+                        public void onAnimationStart(Animator animation) {
+                            onCropSelected(cropType);
+                            iv_crop.setImageResource(R.drawable.clear_white);
+                        }
+
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            iv_crop.setOnClickListener(ImageEffectFragment.this);
+                        }
                     }).start();
         }
     }
