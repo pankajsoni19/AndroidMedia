@@ -111,20 +111,12 @@ public class MultiTouchListener implements OnTouchListener, GestureDetector.OnGe
         float newTransX = translationX + distanceX;
         float newTransY = translationY + distanceY;
 
-        float newX = mCurrentViewport.left + newTransX;
-        float newY = mCurrentViewport.top + newTransY;
-
-//        Log.d(TAG, "onScroll: dX: " + distanceX +
-//                " transX: " + translationX +
-//                " newTransX: " + newTransX +
-//                " newX: " + newX);
-
-        if (Math.abs(newX) < mCurrentViewport.width()) {
+        if (Math.abs(newTransX) < mCurrentViewport.width()/2) {
             translationX = newTransX;
             view.setTranslationX(distanceX);
         }
 
-        if (Math.abs(newY) < mCurrentViewport.height()) {
+        if (Math.abs(newTransY) < mCurrentViewport.height()/2) {
             translationY = newTransY;
             view.setTranslationY(distanceY);
         }

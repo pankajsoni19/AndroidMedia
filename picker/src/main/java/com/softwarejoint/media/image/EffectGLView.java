@@ -181,15 +181,7 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
     }
 
     private void buildTransform() {
-        Log.d(TAG, "buildTransform: factorX: " + factorX + " facY: " + factorY + " scale: " + scale + " rotation: " + rotation);
-
-//        if (factorX != 0 || factorY != 0) {
-//
-//            Matrix.setRotateM(mMVPMatrix, 0, 0, 0, 0, -1.0f);
-//            Matrix.scaleM(mMVPMatrix, 0, 1.0f, 1.0f, 0);
-//        } else {
-//
-//        }
+        //Log.d(TAG, "buildTransform: factorX: " + factorX + " facY: " + factorY + " scale: " + scale + " rotation: " + rotation);
 
         Matrix.setRotateM(mMVPMatrix, 0, rotation, 0, 0, -1.0f);
         Matrix.scaleM(mMVPMatrix, 0, scale, scale, 0);
