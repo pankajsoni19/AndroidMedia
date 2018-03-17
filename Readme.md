@@ -1,11 +1,13 @@
 # Android Media Picker
 
+[![Android](https://img.shields.io/badge/Android-green.svg)](https://www.android.com/)
 [![Release](https://jitpack.io/v/softwarejoint/AndroidMedia.svg)](https://jitpack.io/#softwarejoint/AndroidMedia)
 
 * Supports picking multiple media files from gallery and camera
 * Support square, rectangle camera
 * Supports media/video effect filters
 * UI Design is similar to [Swift ImagePicker](https://github.com/hyperoslo/ImagePicker)
+* [Design ScreenShot](https://github.com/hyperoslo/ImagePicker/blob/master/Resources/ImagePickerPresentation.png)
 
 ## About
 
@@ -34,27 +36,73 @@ The intention is to sort out the edge cases and make it available as a library p
 
 ```
     dependencies {
-        implementation 'com.softwarejoint.media:1.0.0'
+        implementation 'com.github.softwarejoint:AndroidMedia:1.0.2'
     }
 
 ```
 
-3. Usage
+### Usage
+
+##### To Pick Image
 
 ```
     private void startPicker() {
-            new MediaPicker.Builder()
-                    .setMediaType(MediaType.VIDEO)
-                    .withGallery(Boolean.valueOf("true"))
-                    .withCamera(Boolean.valueOf("true"))
-                    .withCameraType(ScaleType.SCALE_CROP_CENTER)
-                    .withCameraFront(Boolean.valueOf("true"))
-                    .withFlash(Boolean.valueOf("true"))
-                    .withMaxPick(Integer.parseInt("2"))
-                    .startActivity(this);
+             new MediaPickerOpts.Builder()
+                            .setMediaType(MediaType.IMAGE)
+                            .canChangeScaleType(Boolean.valueOf("true"))
+                            .withGallery(Boolean.valueOf("true"))
+                            .withCameraType(ScaleType.SCALE_SQUARE)
+                            .withFlash(Boolean.valueOf("true"))
+                            .withMaxSelection(Integer.parseInt("1"))
+                            .withFilters(Boolean.valueOf("true"))
+                            .withCropEnabled(Boolean.valueOf("true"))                           
+                            .build()
+                            .startActivity(this);
         }
     }
     
+```
+
+##### To Pick Profile Image
+
+```
+    private void startPicker() {
+             new MediaPickerOpts.Builder()
+                            .setMediaType(MediaType.IMAGE)
+                            .canChangeScaleType(Boolean.valueOf("true"))
+                            .withGallery(Boolean.valueOf("true"))
+                            .withCameraType(ScaleType.SCALE_SQUARE)
+                            .withFlash(Boolean.valueOf("true"))
+                            .withMaxSelection(Integer.parseInt("1"))
+                            .withFilters(Boolean.valueOf("true"))
+                            .withCropEnabled(Boolean.valueOf("true"))
+                            .withImgSize(Integer.valueOf("96"))
+                            .build()
+                            .startActivity(this);
+        }
+    }
+    
+```
+
+##### To Pick Video
+
+```
+    new MediaPickerOpts.Builder()
+                    .setMediaType(MediaType.VIDEO)
+                    .canChangeScaleType(Boolean.valueOf("true"))
+                    .withGallery(Boolean.valueOf("true"))
+                    .withCameraType(ScaleType.SCALE_SQUARE)
+                    .withFlash(Boolean.valueOf("true"))
+                    .withMaxSelection(Integer.parseInt("2"))
+                    .withFilters(Boolean.valueOf("true"))
+                    .build()
+                    .startActivity(this);
+    
+```
+
+##### Handle Result
+  
+```
     
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
