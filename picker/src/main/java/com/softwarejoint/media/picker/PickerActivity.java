@@ -72,7 +72,7 @@ public class PickerActivity extends BaseActivity implements PermissionCallBack, 
         }
     }
 
-    private void launchEffectFragment() {
+    private void testEffectFragment() {
         FragmentManager manager = getSupportFragmentManager();
 
         if (manager.getBackStackEntryCount() == 0) {
