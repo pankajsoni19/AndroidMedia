@@ -8,7 +8,6 @@ import android.content.res.ColorStateList;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PorterDuff;
@@ -33,7 +32,7 @@ import com.softwarejoint.media.R;
 import com.softwarejoint.media.anim.AnimationHelper;
 import com.softwarejoint.media.enums.CropType;
 import com.softwarejoint.media.picker.MediaPickerOpts;
-import com.softwarejoint.media.picker.PickerFragment;
+import com.softwarejoint.media.base.PickerFragment;
 import com.softwarejoint.media.utils.BitmapUtils;
 
 /**
@@ -133,6 +132,14 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
     }
 
     @Override
+    public boolean onBackPressed() {
+        //noinspection ConstantConditions
+        getActivity().setResult(Activity.RESULT_CANCELED);
+        getActivity().supportFinishAfterTransition();
+        return true;
+    }
+
+    @Override
     public void onResume() {
         super.onResume();
         effectView.onResume();
@@ -149,8 +156,7 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
         final int id = view.getId();
         if (R.id.iv_back == id) {
             //noinspection ConstantConditions
-            getActivity().setResult(Activity.RESULT_CANCELED);
-            getActivity().supportFinishAfterTransition();
+            dismiss();
         } else if (R.id.iv_crop == id) {
             toggleCrop();
         } else if (R.id.iv_crop_circle == id) {
@@ -247,7 +253,7 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
     private void toggleCrop() {
         if (pathCropView.getVisibility() == View.VISIBLE && pathCropView.clear()) return;
 
-        final long duration = AnimationHelper.getShortDuration(iv_crop.getContext());
+        final long duration = AnimationHelper.getShortDuration();
 
         iv_crop.setOnClickListener(null);
 

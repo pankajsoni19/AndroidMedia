@@ -1,4 +1,4 @@
-package com.softwarejoint.media.anim;
+package com.softwarejoint.media.base;
 
 import android.annotation.TargetApi;
 import android.os.Build;
@@ -8,6 +8,8 @@ import android.support.v4.app.FragmentActivity;
 import android.transition.Fade;
 import android.transition.TransitionSet;
 import android.view.Window;
+
+import com.softwarejoint.media.anim.AnimationHelper;
 
 /**
  * Created by Pankaj Soni <pankajsoni@softwarejoint.com> on 03/03/18.
@@ -51,25 +53,25 @@ public class BaseActivity extends FragmentActivity {
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     private void setEnterTransition(@Nullable Integer gravity, @Nullable Integer fade) {
-        TransitionSet transitionSet = AnimationHelper.getTransition(this, gravity, fade);
+        TransitionSet transitionSet = AnimationHelper.getTransition(gravity, fade);
         getWindow().setEnterTransition(transitionSet);
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     private void setReenterTransition(@Nullable Integer gravity, @Nullable Integer fade) {
-        TransitionSet transitionSet = AnimationHelper.getTransition(this, gravity, fade);
+        TransitionSet transitionSet = AnimationHelper.getTransition(gravity, fade);
         getWindow().setReenterTransition(transitionSet);
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     private void setReturnTransition(@Nullable Integer finish, @Nullable Integer fade) {
-        TransitionSet transitionSet = AnimationHelper.getTransition(this, finish, fade);
+        TransitionSet transitionSet = AnimationHelper.getTransition(finish, fade);
         getWindow().setReturnTransition(transitionSet);
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     private void setExitTransition(@Nullable Integer gravity, @Nullable Integer fade) {
-        TransitionSet transitionSet = AnimationHelper.getTransition(this, gravity, fade);
+        TransitionSet transitionSet = AnimationHelper.getTransition(gravity, fade);
         getWindow().setExitTransition(transitionSet);
     }
 }

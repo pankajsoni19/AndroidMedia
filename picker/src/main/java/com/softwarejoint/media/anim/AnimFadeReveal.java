@@ -25,7 +25,7 @@ public class AnimFadeReveal extends AnimationHelper {
         view.setAlpha(ALPHA_GONE);
 
         view.animate().alpha(ALPHA_VISIBLE)
-                .setDuration(getAnimationDuration(view.getContext()))
+                .setDuration(getAnimationDuration())
                 .setInterpolator(new AccelerateDecelerateInterpolator())
                 .setListener(new AnimatorListenerAdapter() {
                     @Override
@@ -44,7 +44,7 @@ public class AnimFadeReveal extends AnimationHelper {
     public static void fadeOut(View view, AnimationFinishedListener listener) {
         ViewPropertyAnimator animation =
                 view.animate().alpha(ALPHA_GONE)
-                        .setDuration(getAnimationDuration(view.getContext()))
+                        .setDuration(getAnimationDuration())
                         .setInterpolator(new AccelerateDecelerateInterpolator());
 
         if (listener != null) {

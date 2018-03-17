@@ -12,16 +12,14 @@ import android.view.Gravity;
 import android.view.Window;
 
 import com.softwarejoint.media.R;
-import com.softwarejoint.media.anim.BaseActivity;
+import com.softwarejoint.media.base.BaseActivity;
+import com.softwarejoint.media.base.PickerFragment;
 import com.softwarejoint.media.camera.CameraFragment;
-import com.softwarejoint.media.enums.ImageEffectType;
 import com.softwarejoint.media.enums.MediaType;
 import com.softwarejoint.media.fileio.MemoryCache;
 import com.softwarejoint.media.image.ImageEffectFragment;
 import com.softwarejoint.media.permission.PermissionCallBack;
 import com.softwarejoint.media.permission.PermissionManager;
-import com.softwarejoint.media.permission.PermissionRequest;
-import com.softwarejoint.media.picker.MediaPickerOpts;
 
 import java.util.List;
 
@@ -135,8 +133,8 @@ public class PickerActivity extends BaseActivity implements PermissionCallBack, 
     @Override
     public void onAccessPermission(boolean permissionGranted, int permission) {
         if (permissionGranted) {
-            //uiThreadHandler.postDelayed(this::launchCameraFragment, 500L);
-            uiThreadHandler.postDelayed(this::launchEffectFragment, 500L);
+            uiThreadHandler.postDelayed(this::launchCameraFragment, 500L);
+            //uiThreadHandler.postDelayed(this::launchEffectFragment, 500L);
         }
     }
 

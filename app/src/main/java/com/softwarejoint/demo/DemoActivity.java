@@ -2,8 +2,6 @@ package com.softwarejoint.demo;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Handler;
-import android.support.annotation.Nullable;
 import android.support.v4.view.GravityCompat;
 import android.util.Log;
 import android.view.Gravity;
@@ -11,7 +9,7 @@ import android.view.View;
 import android.view.Window;
 import android.widget.TextView;
 
-import com.softwarejoint.media.anim.BaseActivity;
+import com.softwarejoint.media.base.BaseActivity;
 import com.softwarejoint.media.enums.MediaType;
 import com.softwarejoint.media.enums.ScaleType;
 import com.softwarejoint.media.picker.MediaPickerOpts;

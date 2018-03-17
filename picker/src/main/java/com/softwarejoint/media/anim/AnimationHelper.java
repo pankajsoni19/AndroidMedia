@@ -37,20 +37,20 @@ public class AnimationHelper {
         return null;
     }
 
-    static int getAnimationDuration(Context context) {
-        return context.getResources().getInteger(android.R.integer.config_mediumAnimTime);
+    static int getAnimationDuration() {
+        return Resources.getSystem().getInteger(android.R.integer.config_mediumAnimTime);
     }
 
-    public static long getShortDuration(Context context) {
-        return context.getResources().getInteger(android.R.integer.config_shortAnimTime);
+    public static long getShortDuration() {
+        return Resources.getSystem().getInteger(android.R.integer.config_shortAnimTime);
     }
 
-    private static long getLongDuration(Context context) {
-        return context.getResources().getInteger(android.R.integer.config_longAnimTime);
+    private static long getLongDuration() {
+        return Resources.getSystem().getInteger(android.R.integer.config_longAnimTime);
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    static TransitionSet getTransition(Context context, @Nullable Integer gravity, @Nullable Integer fade) {
+    public static TransitionSet getTransition(@Nullable Integer gravity, @Nullable Integer fade) {
         TransitionSet transitionSet = new TransitionSet();
 
         if (gravity != null) {
@@ -63,7 +63,7 @@ public class AnimationHelper {
             transitionSet.addTransition(AnimationHelper.getFadeTransition(fade));
         }
 
-        transitionSet.setDuration(getAnimationDuration(context))
+        transitionSet.setDuration(getAnimationDuration())
                 .setOrdering(TransitionSet.ORDERING_TOGETHER);
 
         return transitionSet;
