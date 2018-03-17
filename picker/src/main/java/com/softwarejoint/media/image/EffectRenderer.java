@@ -2,10 +2,9 @@ package com.softwarejoint.media.image;
 
 import android.media.effect.Effect;
 import android.media.effect.EffectFactory;
-import android.opengl.Matrix;
 import android.support.annotation.Nullable;
 
-import com.softwarejoint.media.enums.ImageEffectType;
+import com.softwarejoint.media.enums.ImageEffect;
 
 /**
  * Created by Pankaj Soni <pankajsoni@softwarejoint.com> on 16/03/18.
@@ -13,13 +12,14 @@ import com.softwarejoint.media.enums.ImageEffectType;
  */
 class EffectRenderer extends TextureRenderer {
 
-    public final @ImageEffectType String TAG;
+    public final @ImageEffect
+    String TAG;
     private Effect mEffect;
     public int startX;
     public int bottomY;
     private int texId;
 
-    EffectRenderer(@Nullable EffectFactory effectFactory, @ImageEffectType String effectType) {
+    EffectRenderer(@Nullable EffectFactory effectFactory, @ImageEffect String effectType) {
         super();
         TAG = effectType;
 
@@ -28,7 +28,7 @@ class EffectRenderer extends TextureRenderer {
     }
 
     void makeEffectCurrent(int inputTexId, int width, int height, int outputTexId) {
-        if (ImageEffectType.NONE.equals(TAG)) {
+        if (ImageEffect.NONE.equals(TAG)) {
             texId = inputTexId;
         } else {
             mEffect.apply(inputTexId, width, height, outputTexId);
@@ -40,34 +40,34 @@ class EffectRenderer extends TextureRenderer {
         super.renderTexture(texId);
     }
 
-    private void initEffect(EffectFactory effectFactory, @ImageEffectType String effectType) {
+    private void initEffect(EffectFactory effectFactory, @ImageEffect String effectType) {
         switch (effectType) {
-            case ImageEffectType.NONE:
+            case ImageEffect.NONE:
                 return;
-            case ImageEffectType.EFFECT_GRAYSCALE:
+            case ImageEffect.GRAYSCALE:
                 mEffect = effectFactory.createEffect(EffectFactory.EFFECT_GRAYSCALE);
                 break;
-            case ImageEffectType.EFFECT_POSTERIZE:
+            case ImageEffect.POSTERIZE:
                 mEffect = effectFactory.createEffect(EffectFactory.EFFECT_POSTERIZE);
                 break;
-            case ImageEffectType.EFFECT_SEPIA:
+            case ImageEffect.SEPIA:
                 mEffect = effectFactory.createEffect(EffectFactory.EFFECT_SEPIA);
                 break;
-            case ImageEffectType.EFFECT_NEGATIVE:
+            case ImageEffect.NEGATIVE:
                 mEffect = effectFactory.createEffect(EffectFactory.EFFECT_NEGATIVE);
                 break;
-            case ImageEffectType.EFFECT_BLACKWHITE:
+            case ImageEffect.BLACKWHITE:
                 mEffect = effectFactory.createEffect(EffectFactory.EFFECT_BLACKWHITE);
                 mEffect.setParameter("black", .1f);
                 mEffect.setParameter("white", .7f);
                 break;
-            case ImageEffectType.EFFECT_DOCUMENTARY:
+            case ImageEffect.DOCUMENTARY:
                 mEffect = effectFactory.createEffect(EffectFactory.EFFECT_DOCUMENTARY);
                 break;
-            case ImageEffectType.EFFECT_LOMOISH:
+            case ImageEffect.LOMOISH:
                 mEffect = effectFactory.createEffect(EffectFactory.EFFECT_LOMOISH);
                 break;
-            case ImageEffectType.EFFECT_VIGNETTE:
+            case ImageEffect.VIGNETTE:
                 mEffect = effectFactory.createEffect(EffectFactory.EFFECT_VIGNETTE);
                 break;
         }

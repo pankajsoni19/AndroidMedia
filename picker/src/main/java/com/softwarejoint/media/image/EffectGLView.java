@@ -17,16 +17,14 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 
-import com.softwarejoint.media.enums.ImageEffectType;
+import com.softwarejoint.media.enums.ImageEffect;
 import com.softwarejoint.media.glutils.GLDrawer2D;
 import com.softwarejoint.media.multitouch.MultiTouchListener;
 import com.softwarejoint.media.picker.MediaPickerOpts;
 import com.softwarejoint.media.utils.BitmapUtils;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -34,15 +32,15 @@ import java.util.concurrent.LinkedBlockingQueue;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-import static com.softwarejoint.media.enums.ImageEffectType.EFFECT_BLACKWHITE;
-import static com.softwarejoint.media.enums.ImageEffectType.EFFECT_DOCUMENTARY;
-import static com.softwarejoint.media.enums.ImageEffectType.EFFECT_GRAYSCALE;
-import static com.softwarejoint.media.enums.ImageEffectType.EFFECT_LOMOISH;
-import static com.softwarejoint.media.enums.ImageEffectType.EFFECT_NEGATIVE;
-import static com.softwarejoint.media.enums.ImageEffectType.EFFECT_POSTERIZE;
-import static com.softwarejoint.media.enums.ImageEffectType.EFFECT_SEPIA;
-import static com.softwarejoint.media.enums.ImageEffectType.EFFECT_VIGNETTE;
-import static com.softwarejoint.media.enums.ImageEffectType.NONE;
+import static com.softwarejoint.media.enums.ImageEffect.BLACKWHITE;
+import static com.softwarejoint.media.enums.ImageEffect.DOCUMENTARY;
+import static com.softwarejoint.media.enums.ImageEffect.GRAYSCALE;
+import static com.softwarejoint.media.enums.ImageEffect.LOMOISH;
+import static com.softwarejoint.media.enums.ImageEffect.NEGATIVE;
+import static com.softwarejoint.media.enums.ImageEffect.POSTERIZE;
+import static com.softwarejoint.media.enums.ImageEffect.SEPIA;
+import static com.softwarejoint.media.enums.ImageEffect.VIGNETTE;
+import static com.softwarejoint.media.enums.ImageEffect.NONE;
 
 @SuppressWarnings("WeakerAccess")
 public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.Renderer {
@@ -50,9 +48,9 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
     private static final String TAG = "EffectGLView";
 
     private static String[] EFFECTS = {
-            NONE, EFFECT_SEPIA,
-            EFFECT_GRAYSCALE,
-            EFFECT_POSTERIZE, EFFECT_NEGATIVE, EFFECT_BLACKWHITE, EFFECT_LOMOISH, EFFECT_DOCUMENTARY, EFFECT_VIGNETTE
+            NONE, SEPIA,
+            GRAYSCALE,
+            POSTERIZE, NEGATIVE, BLACKWHITE, LOMOISH, DOCUMENTARY, VIGNETTE
     };
 
     private static final int FILTERED_PREVIEW_SIZE = 96;
@@ -75,8 +73,8 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
 
     private final Queue<Runnable> mRunOnDraw = new LinkedBlockingQueue<>();
 
-    private @ImageEffectType
-    volatile String mCurrentEffect = ImageEffectType.EFFECT_SEPIA;
+    private @ImageEffect
+    volatile String mCurrentEffect = ImageEffect.NONE;
 
     private String origImagePath;
 
@@ -219,7 +217,7 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
 
         if (!filtersEnabled) {
             for (EffectRenderer renderer: effects) {
-                if (!ImageEffectType.NONE.equals(renderer.name())) {
+                if (!ImageEffect.NONE.equals(renderer.name())) {
                     renderer.release();
                 }
             }
@@ -449,7 +447,7 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
         if (filtersEnabled) {
             EffectFactory effectFactory = mEffectContext.getFactory();
 
-            for (@ImageEffectType String effectType: EFFECTS) {
+            for (@ImageEffect String effectType: EFFECTS) {
 
                 EffectRenderer renderer = new EffectRenderer(effectFactory, effectType);
 
@@ -460,7 +458,7 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
                 effects.add(renderer);
             }
         } else {
-            mEffectRenderer = new EffectRenderer(null, ImageEffectType.NONE);
+            mEffectRenderer = new EffectRenderer(null, ImageEffect.NONE);
         }
     }
 
