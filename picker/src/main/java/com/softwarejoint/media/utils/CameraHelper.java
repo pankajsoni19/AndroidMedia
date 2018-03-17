@@ -10,6 +10,7 @@ package com.softwarejoint.media.utils;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.hardware.Camera;
+import android.util.Log;
 import android.view.Surface;
 import android.view.WindowManager;
 
@@ -34,10 +35,17 @@ public class CameraHelper {
      * @return Best match camera preview size to fit in the view.
      */
 
+    private static double ratio(int w, int h) {
+        int smallSide = Math.min(w, h);
+        int largeSide = Math.max(w, h);
+        return (double) largeSide / smallSide;
+    }
+
     public static Camera.Size getOptimalSize(List<Camera.Size> sizes, int w, int h) {
         // Use a very small tolerance because we want an exact match.
         final double ASPECT_TOLERANCE = 0.1;
-        double targetRatio = (double) w / h;
+        double targetRatio = ratio(w, h);
+
         if (sizes == null)
             return null;
 
@@ -53,10 +61,12 @@ public class CameraHelper {
         // Iterate over all available sizes and pick the largest size that can fit in the view and
         // still maintain the aspect ratio.
         for (Camera.Size size : sizes) {
-            double ratio = (double) size.width / size.height;
+            double ratio = ratio(size.width, size.height);
+
             if (Math.abs(ratio - targetRatio) > ASPECT_TOLERANCE)
                 continue;
             if (Math.abs(size.height - h) < minDiff) {
+                Log.d(TAG, "getOptimalSize: ratio: " + targetRatio + " w: " + w + " h: " + h + " size: h: " + size.height + " w: " + size.width);
                 optimalSize = size;
                 minDiff = Math.abs(size.height - h);
             }

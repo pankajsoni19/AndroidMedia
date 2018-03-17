@@ -19,8 +19,8 @@ import static android.hardware.Camera.CameraInfo.CAMERA_FACING_BACK;
 import static android.hardware.Camera.CameraInfo.CAMERA_FACING_FRONT;
 import static android.hardware.Camera.Parameters.FLASH_MODE_OFF;
 import static android.hardware.Camera.Parameters.FLASH_MODE_TORCH;
-import static com.softwarejoint.media.utils.Constants.PREFERRED_PREVIEW_HEIGHT;
-import static com.softwarejoint.media.utils.Constants.PREFERRED_PREVIEW_WIDTH;
+import static android.hardware.Camera.Parameters.PREVIEW_FPS_MAX_INDEX;
+import static android.hardware.Camera.Parameters.PREVIEW_FPS_MIN_INDEX;
 
 /**
  * Thread for asynchronous operation of camera preview
@@ -30,7 +30,11 @@ public final class CameraThread extends Thread {
 
     private static final String TAG = "CameraThread";
 
+    @SuppressWarnings("unused")
     private static final int MIN_FRAME_RATE = 15000;
+    private static final int MAX_FRAME_RATE = 30000;
+
+    private static final int PREFERRED_SIZE = 720;
 
     private final Object mReadyFence = new Object();
 
@@ -231,7 +235,7 @@ public final class CameraThread extends Thread {
     /**
      * start camera preview
      */
-    public void startPreview(final int reqWidth, final int reqHeight) {
+    public void startPreview(int reqWidth, int reqHeight) {
         Log.d(TAG, "startPreview:");
 
         final CameraGLView parent = mWeakParent.get();
@@ -261,12 +265,17 @@ public final class CameraThread extends Thread {
                     final int n = supportedFpsRange.size();
 
                     for (int i = 0; i < n; i++) {
-                        int range[] = supportedFpsRange.get(i);
 
-                        Log.d(TAG, String.format("supportedFpsRange(%d)=(%d,%d)", i, range[0], range[1]));
+                        final int range[] = supportedFpsRange.get(i);
 
-                        if (range[0] >= MIN_FRAME_RATE) {
-                            params.setPreviewFpsRange(range[0], range[1]);
+                        final int minFPS = range[PREVIEW_FPS_MIN_INDEX];
+                        final int maxFPS = range[PREVIEW_FPS_MAX_INDEX];
+
+                        Log.d(TAG, String.format("supportedFpsRange(%d)=(%d,%d)", i, minFPS, maxFPS));
+
+                        //if (range[0] >= MIN_FRAME_RATE && range[1] >= MAX_FRAME_RATE) {
+                        if (maxFPS >= MAX_FRAME_RATE) {
+                            params.setPreviewFpsRange(minFPS, maxFPS);
                             break;
                         }
                     }
@@ -275,28 +284,26 @@ public final class CameraThread extends Thread {
                 params.setRecordingHint(true);
             }
 
-            final int width = Math.min(reqWidth, PREFERRED_PREVIEW_WIDTH);
-            final int height = Math.min(reqHeight, PREFERRED_PREVIEW_HEIGHT);
-
             // request preview size
             // this is a sample project and just use fixed value
             // if you want to use other size, you also need to change the recording size.
-            Log.d(TAG, "requested: width: " + reqWidth + " height: " + reqHeight
-                    + " selected: width: " + width + " height: " + height);
+            Log.d(TAG, "requested: width: " + reqWidth + " height: " + reqHeight);
 
             final Camera.Size closestSize = CameraHelper.getOptimalSize(
-                    params.getSupportedPreviewSizes(), width, height);
+                    params.getSupportedPreviewSizes(), reqWidth, reqHeight);
 
-            params.setPreviewSize(closestSize.width, closestSize.height);
-
-            Log.d(TAG, String.format("closestSize(%d, %d)", closestSize.width, closestSize.height));
+            if (closestSize != null) {
+                params.setPreviewSize(closestSize.width, closestSize.height);
+                Log.d(TAG, String.format("closestSize(%d, %d)", closestSize.width, closestSize.height));
+            }
 
             final Camera.Size pictureSize = CameraHelper.getOptimalSize(
-                    params.getSupportedPictureSizes(), width, height);
+                    params.getSupportedPictureSizes(), reqWidth, reqHeight);
 
-            params.setPictureSize(pictureSize.width, pictureSize.height);
-
-            Log.d(TAG, String.format("pictureSize(%d, %d)", pictureSize.width, pictureSize.height));
+            if (pictureSize != null) {
+                params.setPictureSize(pictureSize.width, pictureSize.height);
+                Log.d(TAG, String.format("pictureSize(%d, %d)", pictureSize.width, pictureSize.height));
+            }
 
             final int degrees = CameraHelper.getDisplayOrientation(parent.getContext(), parent.cameraId);
             mCamera.setDisplayOrientation(degrees);
@@ -307,11 +314,14 @@ public final class CameraThread extends Thread {
             mCamera.setParameters(params);
 
             final Camera.Size previewSize = mCamera.getParameters().getPreviewSize();
-            Log.d(TAG, String.format("previewSize(%d, %d)", previewSize.width, previewSize.height));
 
-            // adjust view size with keeping the aspect ration of camera preview.
-            // here is not a UI thread and we should request parent view to execute.
-            parent.post(() -> parent.setCameraPreviewSize(previewSize.width, previewSize.height));
+            if (previewSize != null) {
+                Log.d(TAG, String.format("previewSize(%d, %d)", previewSize.width, previewSize.height));
+
+                // adjust view size with keeping the aspect ration of camera preview.
+                // here is not a UI thread and we should request parent view to execute.
+                parent.post(() -> parent.setCameraPreviewSize(previewSize.width, previewSize.height));
+            }
 
             final SurfaceTexture st = parent.getSurfaceTexture();
             //noinspection ConstantConditions

@@ -58,7 +58,7 @@ public class MediaAudioEncoder extends MediaEncoder {
 
         mTrackIndex = -1;
         mMuxerStarted = mIsEOS = false;
-        // prepare MediaCodec for AAC encoding of audio data from inernal mic.
+        // prepare MediaCodec for AAC encoding of audio data from internal mic.
         final MediaCodecInfo audioCodecInfo = selectAudioCodec(MIME_TYPE);
 
         if (audioCodecInfo == null) {

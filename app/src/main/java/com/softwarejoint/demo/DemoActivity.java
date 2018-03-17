@@ -38,6 +38,7 @@ public class DemoActivity extends BaseActivity implements View.OnClickListener {
         setTransition(Gravity.END, GravityCompat.END, GravityCompat.END, GravityCompat.END);
 
         setContentView(R.layout.demo_activity);
+
         txt_files = findViewById(R.id.txt_files);
         findViewById(R.id.video).setOnClickListener(this);
         findViewById(R.id.image).setOnClickListener(this);
@@ -63,7 +64,7 @@ public class DemoActivity extends BaseActivity implements View.OnClickListener {
     private void startVideoPicker() {
         new MediaPickerOpts.Builder()
                 .setMediaType(MediaType.VIDEO)
-                .canChangeScaleType(Boolean.valueOf("false"))
+                .canChangeScaleType(Boolean.valueOf("true"))
                 .withGallery(Boolean.valueOf("true"))
                 .withCameraType(ScaleType.SCALE_SQUARE)
                 .withFlash(Boolean.valueOf("true"))

@@ -127,7 +127,7 @@ public class GLDrawer2D {
     }
 
     public int init() {
-        Log.d(TAG, "init: " + mGLProgId);
+        //Log.d(TAG, "init: " + mGLProgId);
         mGLProgId = createProgram(mVertexShader, mFragmentShader);
         onInit(mGLProgId);
         return mGLProgId;
