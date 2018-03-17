@@ -62,6 +62,8 @@ public class GalleryAdapter extends CursorRecyclerAdapter<ViewHolder> {
         items.addAll(selected);
     }
 
+
+
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.adapter_video, parent, false);
@@ -88,6 +90,10 @@ public class GalleryAdapter extends CursorRecyclerAdapter<ViewHolder> {
         }
 
         holder.itemView.setOnClickListener(clickListener);
+    }
+
+    public void clearSelection() {
+        selected.clear();
     }
 
     private class GalleryClickListener implements View.OnClickListener {

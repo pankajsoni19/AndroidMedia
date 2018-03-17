@@ -684,9 +684,10 @@ public class CameraFragment extends PickerFragment implements OnClickListener {
 
         if (galleryAdapter != null) {
             galleryAdapter.fill(items);
-
+            galleryAdapter.clearSelection();
         } else if (selectedAdapter != null) {
             selectedAdapter.fill(items);
+            selectedAdapter.clearSelection();
         }
 
         if (opts.mediaType == MediaType.IMAGE && opts.cropEnabled) {

@@ -24,7 +24,8 @@ public class SelectedAdapter extends RecyclerView.Adapter<ViewHolder> {
     private static final String TAG = "SelectedAdapter";
 
     private List<String> selected = new ArrayList<>();
-    private @MediaType int mediaType;
+    private @MediaType
+    int mediaType;
     private CameraFragment cameraFragment;
 
     public SelectedAdapter(@MediaType int mediaType, CameraFragment fragment) {
@@ -79,6 +80,10 @@ public class SelectedAdapter extends RecyclerView.Adapter<ViewHolder> {
         holder.iv_select.setVisibility(View.VISIBLE);
 
         holder.itemView.setOnClickListener(clickListener);
+    }
+
+    public void clearSelection() {
+        selected.clear();
     }
 
     private class ClickListener implements View.OnClickListener {
