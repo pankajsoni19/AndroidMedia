@@ -1,5 +1,6 @@
 package com.softwarejoint.media.camera;
 
+import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.os.Looper;
@@ -13,6 +14,7 @@ import com.softwarejoint.media.utils.CameraHelper;
 
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.util.Collections;
 import java.util.List;
 
 import static android.hardware.Camera.CameraInfo.CAMERA_FACING_BACK;
@@ -33,7 +35,7 @@ public final class CameraThread extends Thread {
     @SuppressWarnings("unused")
     private static final int MIN_FRAME_RATE = 15000;
     private static final int MAX_FRAME_RATE = 30000;
-
+    private static final int AREA_PER_1000 = 400;
     private static final int PREFERRED_SIZE = 720;
 
     private final Object mReadyFence = new Object();
@@ -252,58 +254,18 @@ public final class CameraThread extends Thread {
             mCamera = Camera.open(parent.cameraId);
             final Camera.Parameters params = mCamera.getParameters();
 
-            List<String> focusModes = params.getSupportedFocusModes();
-
-            if (focusModes != null) {
-                if (isVideo && focusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
-                    params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
-                } else if (!isVideo && focusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
-                    params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
-                } else if (focusModes.contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
-                    params.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
-                }
-            }
+            setFocusParams(params, isVideo);
 
             if (isVideo) {
-                final List<int[]> supportedFpsRange = params.getSupportedPreviewFpsRange();
-
-                if (supportedFpsRange != null) {
-                    final int n = supportedFpsRange.size();
-
-                    for (int i = 0; i < n; i++) {
-
-                        final int range[] = supportedFpsRange.get(i);
-
-                        final int minFPS = range[PREVIEW_FPS_MIN_INDEX];
-                        final int maxFPS = range[PREVIEW_FPS_MAX_INDEX];
-
-                        Log.d(TAG, String.format("supportedFpsRange(%d)=(%d,%d)", i, minFPS, maxFPS));
-
-                        //if (range[0] >= MIN_FRAME_RATE && range[1] >= MAX_FRAME_RATE) {
-                        if (maxFPS >= MAX_FRAME_RATE) {
-                            params.setPreviewFpsRange(minFPS, maxFPS);
-                            break;
-                        }
-                    }
-                }
-
+                setPreviewFPS(params);
                 params.setRecordingHint(true);
             }
 
-            //TODO: video exposure
+            setMetering(params);
+            setExposureCompensation(params);
+
             if (params.isVideoStabilizationSupported()) {
                 params.setVideoStabilization(true);
-            }
-
-            //exposure
-            int maxExposure = params.getMaxExposureCompensation();
-            int minExposure = params.getMinExposureCompensation();
-            float step = params.getExposureCompensationStep();
-
-            if ((minExposure < 0 || maxExposure > 0) && step > 0.0f) {
-                int compensation = Math.max(1, maxExposure / 2);
-                Log.d(TAG, "setExposureCompensation: " + compensation);
-                params.setExposureCompensation(compensation);
             }
 
             // request preview size
@@ -364,6 +326,73 @@ public final class CameraThread extends Thread {
             mCamera.startPreview();
             cameraZoom.setCamera(mCamera);
         }
+    }
+
+    private static void setPreviewFPS(Camera.Parameters params) {
+        final List<int[]> supportedFpsRange = params.getSupportedPreviewFpsRange();
+
+        if (supportedFpsRange != null) {
+            final int n = supportedFpsRange.size();
+
+            for (int i = 0; i < n; i++) {
+
+                final int range[] = supportedFpsRange.get(i);
+
+                final int minFPS = range[PREVIEW_FPS_MIN_INDEX];
+                final int maxFPS = range[PREVIEW_FPS_MAX_INDEX];
+
+                Log.d(TAG, String.format("supportedFpsRange(%d)=(%d,%d)", i, minFPS, maxFPS));
+
+                //if (range[0] >= MIN_FRAME_RATE && range[1] >= MAX_FRAME_RATE) {
+                if (maxFPS >= MAX_FRAME_RATE) {
+                    params.setPreviewFpsRange(minFPS, maxFPS);
+                    break;
+                }
+            }
+        }
+    }
+
+    private static void setExposureCompensation(Camera.Parameters params) {
+        int maxExposure = params.getMaxExposureCompensation();
+        int minExposure = params.getMinExposureCompensation();
+        float step = params.getExposureCompensationStep();
+
+        if ((minExposure < 0 || maxExposure > 0) && step > 0.0f) {
+            int compensation = Math.max(1, maxExposure / 4);
+            Log.d(TAG, "setExposureCompensation: " + compensation);
+            params.setExposureCompensation(compensation);
+        }
+    }
+
+    private static void setFocusParams(Camera.Parameters params, boolean isVideo) {
+        List<String> focusModes = params.getSupportedFocusModes();
+
+        if (focusModes != null) {
+            if (isVideo && focusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
+                params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+            } else if (!isVideo && focusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
+                params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+            } else if (focusModes.contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
+                params.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+            }
+        }
+
+        if (params.getMaxNumFocusAreas() > 0) {
+            List<Camera.Area> middleArea = buildMiddleArea(AREA_PER_1000);
+            params.setFocusAreas(middleArea);
+        }
+    }
+
+    public static void setMetering(Camera.Parameters params) {
+        if (params.getMaxNumMeteringAreas() > 0) {
+            List<Camera.Area> middleArea = buildMiddleArea(AREA_PER_1000);
+            params.setMeteringAreas(middleArea);
+        }
+    }
+
+    private static List<Camera.Area> buildMiddleArea(int areaPer1000) {
+        return Collections.singletonList(
+                new Camera.Area(new Rect(-areaPer1000, -areaPer1000, areaPer1000, areaPer1000), 1));
     }
 
     /**

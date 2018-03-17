@@ -2,6 +2,7 @@ package com.softwarejoint.media.picker;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.Nullable;
@@ -202,8 +203,8 @@ public class MediaPickerOpts implements Parcelable {
             return this;
         }
 
-        public Builder setImgSize(int size) {
-            imgSize = size;
+        public Builder withImgSize(int size) {
+            imgSize = (int) (size * Resources.getSystem().getDisplayMetrics().density);
             return this;
         }
 

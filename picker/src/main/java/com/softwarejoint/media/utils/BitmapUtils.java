@@ -3,6 +3,9 @@ package com.softwarejoint.media.utils;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Matrix;
+import android.graphics.Paint;
 import android.opengl.GLException;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.StringDef;
@@ -19,6 +22,11 @@ import java.nio.IntBuffer;
 import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLContext;
 import javax.microedition.khronos.opengles.GL10;
+
+import static android.graphics.Bitmap.CompressFormat.JPEG;
+import static android.graphics.Bitmap.CompressFormat.PNG;
+import static android.graphics.Bitmap.Config.ARGB_8888;
+
 
 /**
  * Created by Pankaj Soni <pankajsoni@softwarejoint.com> on 15/03/18.
@@ -42,35 +50,15 @@ public class BitmapUtils {
         return bitmap != null ? saveBitmap(bitmap, opts) : null;
     }
 
-    public static String saveBitmap(Bitmap bitmap, MediaPickerOpts opts, File tempFile) {
-        try {
-            FileOutputStream fileOutputStream = new FileOutputStream(tempFile);
-            if (opts.cropEnabled) {
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream);
-            } else {
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 90, fileOutputStream);
-            }
-            fileOutputStream.flush();
-            fileOutputStream.close();
-        } catch (Exception ex) {
-            Log.e(TAG, "saveBitmap: ", ex);
-            //noinspection ResultOfMethodCallIgnored
-            tempFile.delete();
-            return null;
-        }
-
-        return tempFile.exists() ? tempFile.getPath() : null;
-    }
-
     public static String saveBitmap(Bitmap bitmap, MediaPickerOpts opts) {
         File tempFile = FileHandler.getTempFile(opts);
 
         try {
             FileOutputStream fileOutputStream = new FileOutputStream(tempFile);
             if (opts.cropEnabled) {
-                bitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream);
+                bitmap.compress(PNG, 100, fileOutputStream);
             } else {
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 90, fileOutputStream);
+                bitmap.compress(JPEG, 90, fileOutputStream);
             }
             fileOutputStream.flush();
             fileOutputStream.close();
@@ -113,7 +101,7 @@ public class BitmapUtils {
             return null;
         }
 
-        return Bitmap.createBitmap(bitmapSource, w, h, Bitmap.Config.ARGB_8888);
+        return Bitmap.createBitmap(bitmapSource, w, h, ARGB_8888);
     }
 
     public static Bitmap decodeResource(Resources resources, @DrawableRes int resId, Bitmap original) {
@@ -159,9 +147,85 @@ public class BitmapUtils {
         return bitmap != null ? ExifUtil.rotateBitmap(imagePath, bitmap) : null;
     }
 
-    public static String createCroppedBitmap(String imagePath, int imgSize) {
+    public static String createCroppedBitmap(String origImagePath, MediaPickerOpts opts) {
+        final int imgSize = opts.imgSize;
 
+        Bitmap originalImage = decodeBitmapFromFile(origImagePath, imgSize);
+        if (originalImage == null) return origImagePath;
 
-        return imagePath;
+        final int originalWidth = originalImage.getWidth();
+        final int originalHeight = originalImage.getHeight();
+
+        if (originalWidth == imgSize && originalHeight == imgSize) {
+            originalImage.recycle();
+            return origImagePath;
+        }
+
+        String savedPath = null;
+        float scale = 1.0f;
+        float xTranslation = 0;
+        float yTranslation = 0;
+
+        Bitmap result = Bitmap.createBitmap(imgSize, imgSize, ARGB_8888);
+        Canvas canvas = new Canvas(result);
+
+        if (originalWidth >= imgSize && originalHeight >= imgSize) {
+            //take smaller of 2 dimensions
+            if (originalWidth > originalHeight) {
+                scale = (float) imgSize / originalHeight;
+                xTranslation = (imgSize - (originalWidth * scale)) / 2.0f;
+            } else {
+                scale = (float) imgSize / originalWidth;
+                yTranslation = (imgSize - (originalHeight * scale)) / 2.0f;
+            }
+
+            Matrix transformation = new Matrix();
+            transformation.postTranslate(xTranslation, yTranslation);
+            transformation.preScale(scale, scale);
+
+            Paint paint = new Paint();
+            paint.setAntiAlias(true);
+            paint.setFilterBitmap(true);
+
+            canvas.drawBitmap(originalImage, transformation, paint);
+
+            savedPath = saveBitmap(result, opts);
+
+            result.recycle();
+        } else {
+            //TODO: crop long images
+        }
+
+        originalImage.recycle();
+
+        return savedPath != null ? savedPath : origImagePath;
     }
+
+
+    /**
+    public static String saveBitmap(Bitmap bitmap, MediaPickerOpts opts, File tempFile) {
+        try {
+            FileOutputStream fileOutputStream = new FileOutputStream(tempFile);
+            if (opts.cropEnabled) {
+                bitmap.compress(PNG, 100, fileOutputStream);
+            } else {
+                bitmap.compress(JPEG, 90, fileOutputStream);
+            }
+            fileOutputStream.flush();
+            fileOutputStream.close();
+        } catch (Exception ex) {
+            Log.e(TAG, "saveBitmap: ", ex);
+            //noinspection ResultOfMethodCallIgnored
+            tempFile.delete();
+            return null;
+        }
+
+        return tempFile.exists() ? tempFile.getPath() : null;
+    }
+
+    private static double ratio(int w, int h) {
+        int smallSide = Math.min(w, h);
+        int largeSide = Math.max(w, h);
+        return (double) largeSide / smallSide;
+    }*/
 }

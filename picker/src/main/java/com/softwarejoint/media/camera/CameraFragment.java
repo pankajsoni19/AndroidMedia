@@ -705,7 +705,7 @@ public class CameraFragment extends PickerFragment implements OnClickListener {
 
         if (opts.mediaType == MediaType.IMAGE && opts.imgSize > 0) {
             String imagePath = items.remove(0);
-            imagePath = BitmapUtils.createCroppedBitmap(imagePath, opts.imgSize);
+            imagePath = BitmapUtils.createCroppedBitmap(imagePath, opts);
             items.add(0, imagePath);
         }
 
