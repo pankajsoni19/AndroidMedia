@@ -28,11 +28,6 @@ public class FileHandler {
         @StringRes int stringId = applicationInfo.labelRes;
         return stringId == 0 ? applicationInfo.nonLocalizedLabel.toString() : context.getString(stringId);
     }
-//
-//    public static File getTempFile(Context context, MediaPickerOpts opts) {
-//        final String appName = getApplicationName(context);
-//        return getTempFile(appName, opts);
-//    }
 
     public static File getTempFile(MediaPickerOpts opts) {
         File dir = getPublicAlbumStorageDir(opts.mediaDir, opts.mediaType);
@@ -58,7 +53,7 @@ public class FileHandler {
 
     private static String getDateTimeString() {
         final SimpleDateFormat mDateTimeFormat =
-                new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss", Locale.US);
+                new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS", Locale.US);
         return mDateTimeFormat.format(new Date());
     }
 

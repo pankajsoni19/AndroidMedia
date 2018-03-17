@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.media.MediaActionSound;
 import android.media.MediaScannerConnection;
+import android.media.MediaScannerConnection.OnScanCompletedListener;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -438,11 +439,7 @@ public class CameraFragment extends PickerFragment implements OnClickListener {
         }
 
         //noinspection ConstantConditions
-        MediaScannerConnection.scanFile(getContext().getApplicationContext(), new String[]{
-                imagePath
-        }, new String[]{
-                "image/jpg"
-        }, callBack);
+        scanFile(imagePath, "image/jpg", callBack);
     }
 
     /**
@@ -581,12 +578,7 @@ public class CameraFragment extends PickerFragment implements OnClickListener {
             };
         }
 
-        //noinspection ConstantConditions
-        MediaScannerConnection.scanFile(getContext().getApplicationContext(), new String[]{
-                mediaPath
-        }, new String[]{
-                "video/mp4"
-        }, callBack);
+        scanFile(mediaPath, "video/mp4", callBack);
     }
 
     private int getListItemCount() {
@@ -705,8 +697,11 @@ public class CameraFragment extends PickerFragment implements OnClickListener {
 
         if (opts.mediaType == MediaType.IMAGE && opts.imgSize > 0) {
             String imagePath = items.remove(0);
-            imagePath = BitmapUtils.createCroppedBitmap(imagePath, opts);
-            items.add(0, imagePath);
+            String newPath = BitmapUtils.createCroppedBitmap(imagePath, opts);
+            if (!imagePath.equals(newPath)) {
+                scanFile(newPath, "image/jpg", null);
+            }
+            items.add(0, newPath);
         }
 
         Intent resultIntent = new Intent();
@@ -714,6 +709,15 @@ public class CameraFragment extends PickerFragment implements OnClickListener {
         FragmentActivity activity = getActivity();
         activity.setResult(RESULT_OK, resultIntent);
         activity.supportFinishAfterTransition();
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    private void scanFile(String mediaPath, String mimeType, OnScanCompletedListener callback) {
+        MediaScannerConnection.scanFile(getContext().getApplicationContext(), new String[]{
+                mediaPath
+        }, new String[]{
+                mimeType
+        }, callback);
     }
 
     private void playSound(int soundId) {

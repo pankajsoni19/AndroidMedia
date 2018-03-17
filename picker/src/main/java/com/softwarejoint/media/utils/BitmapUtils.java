@@ -45,7 +45,7 @@ public class BitmapUtils {
         return saveBitmapFromGLSurface(x, y, w, h, opts);
     }
 
-    public static String saveBitmapFromGLSurface(int x, int y, int w, int h, MediaPickerOpts opts) {
+    private static String saveBitmapFromGLSurface(int x, int y, int w, int h, MediaPickerOpts opts) {
         Bitmap bitmap = createBitmapFromGLSurface(x, y, w, h);
         return bitmap != null ? saveBitmap(bitmap, opts) : null;
     }
@@ -161,46 +161,47 @@ public class BitmapUtils {
             return origImagePath;
         }
 
-        String savedPath = null;
-        float scale = 1.0f;
-        float xTranslation = 0;
-        float yTranslation = 0;
+        float scale;
+        float xTranslation = 0.0f;
+        float yTranslation = 0.0f;
+
+        /**
+         Handles this condition:
+         ((originalWidth >= imgSize && originalHeight >= imgSize) ||
+         (originalWidth < imgSize && originalHeight < imgSize))
+
+         irregular sizes may not fit
+         */
 
         Bitmap result = Bitmap.createBitmap(imgSize, imgSize, ARGB_8888);
         Canvas canvas = new Canvas(result);
 
-        if (originalWidth >= imgSize && originalHeight >= imgSize) {
-            //take smaller of 2 dimensions
-            if (originalWidth > originalHeight) {
-                scale = (float) imgSize / originalHeight;
-                xTranslation = (imgSize - (originalWidth * scale)) / 2.0f;
-            } else {
-                scale = (float) imgSize / originalWidth;
-                yTranslation = (imgSize - (originalHeight * scale)) / 2.0f;
-            }
-
-            Matrix transformation = new Matrix();
-            transformation.postTranslate(xTranslation, yTranslation);
-            transformation.preScale(scale, scale);
-
-            Paint paint = new Paint();
-            paint.setAntiAlias(true);
-            paint.setFilterBitmap(true);
-
-            canvas.drawBitmap(originalImage, transformation, paint);
-
-            savedPath = saveBitmap(result, opts);
-
-            result.recycle();
+        //take smaller of 2 dimensions
+        if (originalWidth > originalHeight) {
+            scale = (float) imgSize / originalHeight;
+            xTranslation = (imgSize - (originalWidth * scale)) / 2.0f;
         } else {
-            //TODO: crop long images
+            scale = (float) imgSize / originalWidth;
+            yTranslation = (imgSize - (originalHeight * scale)) / 2.0f;
         }
 
+        Matrix transformation = new Matrix();
+        transformation.postTranslate(xTranslation, yTranslation);
+        transformation.preScale(scale, scale);
+
+        Paint paint = new Paint();
+        paint.setAntiAlias(true);
+        paint.setFilterBitmap(true);
+
+        canvas.drawBitmap(originalImage, transformation, paint);
+
+        String savedPath = saveBitmap(result, opts);
+
         originalImage.recycle();
+        result.recycle();
 
         return savedPath != null ? savedPath : origImagePath;
     }
-
 
     /**
     public static String saveBitmap(Bitmap bitmap, MediaPickerOpts opts, File tempFile) {
