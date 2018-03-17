@@ -1,6 +1,8 @@
 package com.softwarejoint.media.tasks;
 
+import android.content.Context;
 import android.graphics.Bitmap;
+import android.media.MediaScannerConnection;
 import android.os.AsyncTask;
 
 import com.softwarejoint.media.image.ImageEffectFragment;
@@ -31,7 +33,7 @@ public class LoadGLImageTask extends AsyncTask<Void, Void, Bitmap> {
     @Override
     protected Bitmap doInBackground(Void... voids) {
         Bitmap bitmap = BitmapUtils.createBitmapFromGLBuffer(w, h, bitmapBuffer);
-        imagePath = BitmapUtils.saveBitmap(bitmap, opts);
+        imagePath = BitmapUtils.saveBitmap(bitmap, opts, false);
         return bitmap;
     }
 
@@ -39,6 +41,12 @@ public class LoadGLImageTask extends AsyncTask<Void, Void, Bitmap> {
     protected void onPostExecute(Bitmap bitmap) {
         if (fragment != null && !fragment.isRemoving()) {
             fragment.onImageLoaded(imagePath, bitmap);
+            //noinspection ConstantConditions
+            MediaScannerConnection.scanFile(fragment.getContext().getApplicationContext(), new String[]{
+                    imagePath
+            }, new String[]{
+                    "image/jpg"
+            }, null);
         }
     }
 }

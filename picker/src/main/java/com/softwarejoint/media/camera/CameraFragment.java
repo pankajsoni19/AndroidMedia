@@ -41,6 +41,7 @@ import com.softwarejoint.media.picker.MediaPickerOpts;
 import com.softwarejoint.media.base.PickerFragment;
 import com.softwarejoint.media.tasks.LoadGLImageTask;
 import com.softwarejoint.media.tasks.LoadImageTask;
+import com.softwarejoint.media.tasks.SaveGLImageTask;
 import com.softwarejoint.media.utils.BitmapUtils;
 import com.softwarejoint.media.utils.CameraHelper;
 import com.softwarejoint.media.utils.TimeParseUtils;
@@ -428,15 +429,17 @@ public class CameraFragment extends PickerFragment implements OnClickListener {
                 uiThreadHandler.post(() -> showFragment(fragment));
                 new LoadGLImageTask(w, h, bitmapBuffer, fragment, opts).execute();
             } else {
-                Bitmap bitmap = BitmapUtils.createBitmapFromGLBuffer(w, h, bitmapBuffer);
-                final String imagePath = BitmapUtils.saveBitmap(bitmap, opts);
-                uiThreadHandler.post(() -> onPictureTaken(imagePath));
+                new SaveGLImageTask(w, h, bitmapBuffer, this, opts).execute();
             }
         });
     }
 
-    private void onPictureTaken(String imagePath) {
-        if (imagePath == null || !FileHandler.exists(imagePath)) return;
+    public void onPictureSaved(String imagePath) {
+        if (imagePath == null || !FileHandler.exists(imagePath)) {
+            mRecordButton.setVisibility(View.VISIBLE);
+            mRecordButton.setOnClickListener(this);
+            return;
+        }
 
         if (galleryAdapter != null) {
             galleryAdapter.addSelected(imagePath);
@@ -449,6 +452,7 @@ public class CameraFragment extends PickerFragment implements OnClickListener {
         if (!checkIfMediaSelectionCompleted()) {
             mRecordButton.setVisibility(View.VISIBLE);
             mRecordButton.setOnClickListener(this);
+
             callBack = new MediaScannerConnection.MediaScannerConnectionClient() {
                 @Override
                 public void onMediaScannerConnected() {

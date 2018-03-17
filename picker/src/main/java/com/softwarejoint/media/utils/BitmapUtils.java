@@ -36,12 +36,12 @@ public class BitmapUtils {
 
     private static final String TAG = "BitmapUtils";
 
-    public static String saveBitmap(Bitmap bitmap, MediaPickerOpts opts) {
+    public static String saveBitmap(Bitmap bitmap, MediaPickerOpts opts, boolean keepAlpha) {
         File tempFile = FileHandler.getTempFile(opts);
 
         try {
             FileOutputStream fileOutputStream = new FileOutputStream(tempFile);
-            if (opts.cropEnabled) {
+            if (keepAlpha) {
                 bitmap.compress(PNG, 100, fileOutputStream);
             } else {
                 bitmap.compress(JPEG, 90, fileOutputStream);
@@ -197,7 +197,7 @@ public class BitmapUtils {
 
         canvas.drawBitmap(originalImage, transformation, paint);
 
-        String savedPath = saveBitmap(result, opts);
+        String savedPath = saveBitmap(result, opts, true);
 
         originalImage.recycle();
         result.recycle();

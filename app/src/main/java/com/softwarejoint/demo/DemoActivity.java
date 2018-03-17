@@ -81,9 +81,9 @@ public class DemoActivity extends BaseActivity implements View.OnClickListener {
                 .withGallery(Boolean.valueOf("true"))
                 .withCameraType(ScaleType.SCALE_SQUARE)
                 .withFlash(Boolean.valueOf("true"))
-                .withMaxSelection(Integer.parseInt("1"))
+                .withMaxSelection(Integer.parseInt("5"))
                 .withFilters(Boolean.valueOf("true"))
-                .withCropEnabled(Boolean.valueOf("true"))
+                //.withCropEnabled(Boolean.valueOf("true"))
                 //.withImgSize(Integer.valueOf("96"))
                 .build()
                 .startActivity(this);

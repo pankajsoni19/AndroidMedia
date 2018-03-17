@@ -346,7 +346,7 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
         String mediaPath;
 
         if (!isCropVisible() || cropType == CropType.NONE) {
-            mediaPath = BitmapUtils.saveBitmap(original, opts);
+            mediaPath = BitmapUtils.saveBitmap(original, opts, true);
             original.recycle();
         } else if (cropType != CropType.PATH) {
             @DrawableRes int resId;
@@ -376,14 +376,14 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
             mCanvas.drawBitmap(mask, 0, 0, paint);
             paint.setXfermode(null);
 
-            mediaPath = BitmapUtils.saveBitmap(result, opts);
+            mediaPath = BitmapUtils.saveBitmap(result, opts, true);
 
             original.recycle();
             mask.recycle();
             result.recycle();
 
         } else if (!pathCropView.pathValidForCrop()) {
-            mediaPath = BitmapUtils.saveBitmap(original, opts);
+            mediaPath = BitmapUtils.saveBitmap(original, opts, true);
             original.recycle();
         } else {
             pathCropView.completePath();
@@ -412,7 +412,7 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
         canvas.drawBitmap(original, 0, 0, paint);
         paint.setXfermode(null);
 
-        String mediaPath = BitmapUtils.saveBitmap(result, opts);
+        String mediaPath = BitmapUtils.saveBitmap(result, opts, true);
 
         result.recycle();
         original.recycle();
