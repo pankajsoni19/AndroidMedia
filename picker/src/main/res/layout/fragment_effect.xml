@@ -44,7 +44,8 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        android:background="@color/path_bg"/>
 
     <android.support.v7.widget.AppCompatImageView
         android:id="@+id/iv_crop"
@@ -74,7 +75,7 @@
         android:layout_height="40dp"
         android:layout_marginEnd="8dp"
         android:layout_marginTop="8dp"
-        android:padding="4dp"
+        android:padding="7dp"
         app:layout_constraintEnd_toStartOf="@id/iv_crop_circle"
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@drawable/star_white" />
@@ -85,21 +86,21 @@
         android:layout_height="40dp"
         android:layout_marginEnd="8dp"
         android:layout_marginTop="8dp"
-        android:padding="8dp"
+        android:padding="10dp"
         app:layout_constraintEnd_toStartOf="@id/iv_crop_star"
         app:layout_constraintTop_toTopOf="parent"
         android:src="@drawable/flower_outline_small" />
 
     <android.support.v7.widget.AppCompatImageView
-        android:id="@+id/iv_crop_hand"
+        android:id="@+id/iv_crop_path"
         android:layout_width="40dp"
         android:layout_height="40dp"
         android:layout_marginEnd="8dp"
         android:layout_marginTop="8dp"
-        android:padding="8dp"
+        android:padding="7dp"
         app:layout_constraintEnd_toStartOf="@id/iv_crop_flower"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/crop_free" />
+        app:srcCompat="@drawable/pencil_white" />
 
     <android.support.v7.widget.AppCompatImageView
         android:id="@+id/iv_filter"

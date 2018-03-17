@@ -100,7 +100,7 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
         iv_crop_circle = rootView.findViewById(R.id.iv_crop_circle);
         iv_crop_star = rootView.findViewById(R.id.iv_crop_star);
         iv_crop_flower = rootView.findViewById(R.id.iv_crop_flower);
-        iv_crop_path = rootView.findViewById(R.id.iv_crop_hand);
+        iv_crop_path = rootView.findViewById(R.id.iv_crop_path);
 
         iv_crop_mask = rootView.findViewById(R.id.iv_crop_mask);
         pathCropView = rootView.findViewById(R.id.pathCropView);
@@ -159,7 +159,7 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
             onCropSelected(CropType.STAR);
         } else if (R.id.iv_crop_flower == id) {
             onCropSelected(CropType.FLOWER);
-        } else if (R.id.iv_crop_hand == id) {
+        } else if (R.id.iv_crop_path == id) {
             onCropSelected(CropType.PATH);
         } else if (R.id.iv_filter == id) {
             if (effectView.toggleEffectPreviews() && cropType == CropType.PATH) {

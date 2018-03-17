@@ -319,17 +319,18 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
                     renderer.startX + previewSize, filterTop + previewSize);
 
             if (openGLRect.contains(x, y)) {
+
+                Log.d(TAG, "onTouched rect: " + openGLRect + " selected: " + renderer.name());
+
                 queueEvent(() -> {
                     Log.d(TAG, "onTouched: queueEvent");
                     mCurrentEffect = renderer.name();
                     mEffectRenderer = renderer;
                 });
-                Log.d(TAG, "onTouched rect: " + openGLRect + " selected: " + renderer.name());
+                toggleEffectPreviews();
                 break;
             }
         }
-
-        toggleEffectPreviews();
     }
 
     private void init() {
