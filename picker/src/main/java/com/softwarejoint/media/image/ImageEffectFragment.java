@@ -4,6 +4,7 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -20,6 +21,7 @@ import android.support.annotation.ColorRes;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.ImageViewCompat;
 import android.util.Log;
@@ -34,6 +36,10 @@ import com.softwarejoint.media.enums.CropType;
 import com.softwarejoint.media.picker.MediaPickerOpts;
 import com.softwarejoint.media.base.PickerFragment;
 import com.softwarejoint.media.utils.BitmapUtils;
+
+import java.util.ArrayList;
+
+import static android.app.Activity.RESULT_OK;
 
 /**
  * Created by Pankaj Soni <pankajsoni@softwarejoint.com> on 15/03/18.
@@ -423,13 +429,13 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
                 "image/png"
         }, null);
 
-//        ArrayList<String> items = new ArrayList<>();
-//        items.add(mediaPath);
-//
-//        Intent resultIntent = new Intent();
-//        resultIntent.putStringArrayListExtra(MediaPickerOpts.INTENT_RES, items);
-//        FragmentActivity activity = getActivity();
-//        activity.setResult(RESULT_OK, resultIntent);
-//        activity.supportFinishAfterTransition();
+        ArrayList<String> items = new ArrayList<>();
+        items.add(mediaPath);
+
+        Intent resultIntent = new Intent();
+        resultIntent.putStringArrayListExtra(MediaPickerOpts.INTENT_RES, items);
+        FragmentActivity activity = getActivity();
+        activity.setResult(RESULT_OK, resultIntent);
+        activity.supportFinishAfterTransition();
     }
 }

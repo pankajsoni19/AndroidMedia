@@ -47,10 +47,10 @@ public class GalleryAdapter extends CursorRecyclerAdapter<ViewHolder> {
     public void addSelected(String filePath) {
         selected.add(filePath);
 
-        int count = 0;
-        for (String file: selected) {
-            Log.d(TAG, "count : " + (++count) +  " selected: " + file);
-        }
+//        int count = 0;
+//        for (String file: selected) {
+//            Log.d(TAG, "count : " + (++count) +  " selected: " + file);
+//        }
 
         notifyDataSetChanged();
     }
@@ -76,7 +76,7 @@ public class GalleryAdapter extends CursorRecyclerAdapter<ViewHolder> {
         final long itemId = cursor.getLong(colIdIndex);
         final String mediaPath = cursor.getString(colDataIndex);
 
-        Log.d(TAG, "mediaPath: " + mediaPath);
+        //Log.d(TAG, "mediaPath: " + mediaPath);
 
         ImageLoader.load(itemId).withMediaHint(mediaType).into(holder.iv_image);
 
