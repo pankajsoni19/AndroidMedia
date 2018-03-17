@@ -118,7 +118,7 @@ public class MediaPickerOpts implements Parcelable {
         }
 
         Intent newIntent = new Intent(activity, PickerActivity.class);
-        newIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        //newIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         newIntent.putExtra(INTENT_OPTS, this);
 
         //noinspection unchecked

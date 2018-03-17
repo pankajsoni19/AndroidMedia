@@ -33,8 +33,7 @@ public class AnimFadeReveal extends AnimationHelper {
                         super.onAnimationEnd(animation);
                         Log.d(TAG, "onAnimationEnd: " + view.getHeight() + " w: " + view.getWidth() + " alpha: " + view.getAlpha());
                     }
-                })
-                .start();
+                }).start();
     }
 
     public static void fadeOut(View view) {

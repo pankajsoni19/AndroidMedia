@@ -37,7 +37,7 @@ public class AnimationHelper {
         return null;
     }
 
-    static int getAnimationDuration() {
+    public static int getAnimationDuration() {
         return Resources.getSystem().getInteger(android.R.integer.config_mediumAnimTime);
     }
 

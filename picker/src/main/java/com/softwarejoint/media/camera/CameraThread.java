@@ -298,19 +298,16 @@ public final class CameraThread extends Thread {
             mCamera.setParameters(params);
 
             final Camera.Size previewSize = mCamera.getParameters().getPreviewSize();
-
-            if (previewSize != null) {
-                Log.d(TAG, String.format("previewSize(%d, %d)", previewSize.width, previewSize.height));
-
-                // adjust view size with keeping the aspect ration of camera preview.
-                // here is not a UI thread and we should request parent view to execute.
-                parent.post(() -> parent.setCameraPreviewSize(previewSize.width, previewSize.height));
-            }
+            Log.d(TAG, String.format("previewSize(%d, %d)", previewSize.width, previewSize.height));
 
             final SurfaceTexture st = parent.getSurfaceTexture();
             //noinspection ConstantConditions
             st.setDefaultBufferSize(previewSize.width, previewSize.height);
             mCamera.setPreviewTexture(st);
+
+            // adjust view size with keeping the aspect ration of camera preview.
+            // here is not a UI thread and we should request parent view to execute.
+            parent.post(() -> parent.setCameraPreviewSize(previewSize.width, previewSize.height));
         } catch (final IOException | RuntimeException e) {
             Log.e(TAG, "startPreview: error:", e);
             cameraZoom.setCamera(null);

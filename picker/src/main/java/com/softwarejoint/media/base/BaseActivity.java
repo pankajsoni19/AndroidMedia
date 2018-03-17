@@ -29,6 +29,10 @@ public class BaseActivity extends FragmentActivity {
         }
     }
 
+    protected boolean isRemoving() {
+        return isDestroyed() || isFinishing();
+    }
+
     /**
      * Note: all values are #Gravity.Class
      *
@@ -38,6 +42,7 @@ public class BaseActivity extends FragmentActivity {
      * @param finish  when finishing current activity and going back
      */
     @SuppressWarnings("SameParameterValue")
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     protected void setTransition(@Nullable Integer enter, @Nullable Integer reenter,
                                  @Nullable Integer exit, @Nullable Integer finish) {
 
@@ -52,25 +57,25 @@ public class BaseActivity extends FragmentActivity {
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    private void setEnterTransition(@Nullable Integer gravity, @Nullable Integer fade) {
+    protected void setEnterTransition(@Nullable Integer gravity, @Nullable Integer fade) {
         TransitionSet transitionSet = AnimationHelper.getTransition(gravity, fade);
         getWindow().setEnterTransition(transitionSet);
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    private void setReenterTransition(@Nullable Integer gravity, @Nullable Integer fade) {
+    protected void setReenterTransition(@Nullable Integer gravity, @Nullable Integer fade) {
         TransitionSet transitionSet = AnimationHelper.getTransition(gravity, fade);
         getWindow().setReenterTransition(transitionSet);
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    private void setReturnTransition(@Nullable Integer finish, @Nullable Integer fade) {
+    protected void setReturnTransition(@Nullable Integer finish, @Nullable Integer fade) {
         TransitionSet transitionSet = AnimationHelper.getTransition(finish, fade);
         getWindow().setReturnTransition(transitionSet);
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    private void setExitTransition(@Nullable Integer gravity, @Nullable Integer fade) {
+    protected void setExitTransition(@Nullable Integer gravity, @Nullable Integer fade) {
         TransitionSet transitionSet = AnimationHelper.getTransition(gravity, fade);
         getWindow().setExitTransition(transitionSet);
     }

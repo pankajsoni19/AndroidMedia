@@ -469,7 +469,7 @@ public final class CameraGLView extends GLSurfaceView {
             // create SurfaceTexture with texture ID.
             mSTexture = new SurfaceTexture(mGLTextureId);
             mSTexture.setOnFrameAvailableListener(this);
-            //TODO: clear screen with yellow color so that you can see rendering rectangle
+
             GLES20.glClearColor(0.00f, 0.00f, 0.00f, 1.0f);
             final CameraGLView parent = mWeakParent.get();
 
@@ -531,9 +531,11 @@ public final class CameraGLView extends GLSurfaceView {
             final double video_height = parent.mVideoHeight;
 
             if (view_width == 0 || view_height == 0 || video_width == 0 || video_height == 0) {
-                Log.e(TAG, "updateViewport: view: width: " + view_width + " height: " + view_height + " video: width: " + view_width + " height: " + view_height);
+                Log.e(TAG, "updateViewport: view: width: " + view_width + " height: " + view_height + " video: width: " + video_width + " height: " + video_height);
                 return;
             }
+
+            Log.d(TAG, "glViewport: updateViewport: (0, 0, " + view_width + "," + view_height + ")");
 
             GLES20.glViewport(0, 0, view_width, view_height);
             GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
@@ -541,7 +543,7 @@ public final class CameraGLView extends GLSurfaceView {
             Matrix.setIdentityM(mMvpMatrix, 0);
             final double view_aspect = view_width / (double) view_height;
 
-            Log.i(TAG, String.format("updateViewport view: (%d,%d) view_aspect: %f,video: (%1.0f,%1.0f)",
+            Log.i(TAG, String.format("updateViewport: view: (%d,%d) view_aspect: %f,video: (%1.0f,%1.0f)",
                     view_width, view_height, view_aspect, video_width, video_height));
 
             mDrawer.setRect(0, 0, view_width, view_height);
@@ -568,6 +570,8 @@ public final class CameraGLView extends GLSurfaceView {
                     }
                     // set viewport to draw keeping aspect ration of camera image
                     Log.d(TAG, String.format("xy(%d,%d),size(%d,%d)", x, y, width, height));
+
+                    Log.d(TAG, "glViewport: (" + x + ", " + y + ", " + width + "," + height + ")");
 
                     GLES20.glViewport(x, y, width, height);
                     break;
@@ -615,6 +619,8 @@ public final class CameraGLView extends GLSurfaceView {
                     Log.v(TAG, "scale square: " + scale_x + " " + scale_y + " (x,y) view_x : " + view_x + " view_y : " + view_y);
 
                     GLES20.glViewport(view_x, view_y, newPreviewSize, newPreviewSize);
+                    Log.d(TAG, "glViewport: (" + view_x + ", " + view_y + ", " + newPreviewSize + "," + newPreviewSize + ")");
+
                     GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 
                     mDrawer.setRect(view_x, view_y, newPreviewSize, newPreviewSize);
@@ -702,10 +708,13 @@ public final class CameraGLView extends GLSurfaceView {
 
             if (showFilters) {
 
+                Log.d(TAG, "glViewport: (" + mDrawer.getStartX() + ", " + mDrawer.getStartY() + ", " + mDrawer.width() + "," + mDrawer.height() + ")");
                 GLES20.glViewport(mDrawer.getStartX(), mDrawer.getStartY(), mDrawer.width(), mDrawer.height());
                 mDrawer.draw(mGLTextureId, mStMatrix);
 
                 for (GLDrawer2D drawer : filterPreviews) {
+                    Log.d(TAG, "glViewport: (" + drawer.getStartX() + ", " + drawer.getStartY() + ", " + filterPreviewSize + "," + filterPreviewSize + ")");
+
                     GLES20.glViewport(drawer.getStartX(), drawer.getStartY(), filterPreviewSize, filterPreviewSize);
                     drawer.draw(mGLTextureId, mStMatrix);
                 }

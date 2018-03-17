@@ -1,5 +1,6 @@
 package com.softwarejoint.media.picker;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
@@ -8,6 +9,7 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
 import android.support.v7.app.AppCompatDelegate;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.Window;
@@ -29,6 +31,8 @@ import static android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN;
 
 public class PickerActivity extends BaseActivity implements PermissionCallBack, FragmentManager.OnBackStackChangedListener {
 
+    private static final String TAG = "PickerActivity";
+
     private Handler uiThreadHandler;
     private MemoryCache memoryCache;
     private MediaPickerOpts opts;
@@ -47,66 +51,22 @@ public class PickerActivity extends BaseActivity implements PermissionCallBack, 
 
         uiThreadHandler = new Handler();
 
-        memoryCache = MemoryCache.getInstance();
         opts = getIntent().getParcelableExtra(MediaPickerOpts.INTENT_OPTS);
+
+        if (opts == null) {
+            uiThreadHandler.postDelayed(this::supportFinishAfterTransition, 500L);
+            return;
+        }
+
+        memoryCache = MemoryCache.getInstance();
+
+        AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
 
         if (opts.mediaType == MediaType.IMAGE) {
             PermissionManager.photoPermission(this, this);
         } else {
             PermissionManager.videoPermission(this, this);
         }
-
-        AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
-    }
-
-    private void launchCameraFragment() {
-        FragmentManager manager = getSupportFragmentManager();
-
-        if (manager.getBackStackEntryCount() == 0) {
-
-            if (opts == null) {
-                uiThreadHandler.postDelayed(this::supportFinishAfterTransition, 500L);
-                return;
-            }
-
-            CameraFragment fragment = CameraFragment.newInstance(opts);
-            FragmentTransaction transaction = manager.beginTransaction();
-            transaction.replace(R.id.container, fragment, fragment.TAG);
-            transaction.addToBackStack(fragment.TAG);
-            transaction.commit();
-        }
-    }
-
-//    private void testEffectFragment() {
-//        FragmentManager manager = getSupportFragmentManager();
-//
-//        if (manager.getBackStackEntryCount() == 0) {
-//            MediaPickerOpts opts = getIntent().getParcelableExtra(MediaPickerOpts.INTENT_OPTS);
-//            if (opts == null) {
-//                uiThreadHandler.postDelayed(this::supportFinishAfterTransition, 500L);
-//                return;
-//            }
-//
-//            // /storage/emulated/0/WhatsApp/Media/WhatsApp Images/IMG-20180312-WA0001.jpg
-//            ImageEffectFragment fragment = ImageEffectFragment.newInstance(opts);, "/storage/emulated/0/WhatsApp/Media/WhatsApp Images/IMG-20180312-WA0001.jpg");
-//            FragmentTransaction transaction = manager.beginTransaction();
-//            transaction.replace(R.id.container, fragment, fragment.TAG);
-//            transaction.addToBackStack(fragment.TAG);
-//            transaction.commit();
-//        }
-//    }
-
-    @Override
-    public void onBackPressed() {
-        List<Fragment> fragments = getSupportFragmentManager().getFragments();
-        if (fragments.size() > 0) {
-            Fragment topFrag = fragments.get(fragments.size() - 1);
-            if (!topFrag.isRemoving() && topFrag instanceof PickerFragment) {
-                if (((PickerFragment) topFrag).onBackPressed()) return;
-            }
-        }
-
-        super.onBackPressed();
     }
 
     @Override
@@ -126,19 +86,29 @@ public class PickerActivity extends BaseActivity implements PermissionCallBack, 
         super.onStop();
         if (isFinishing()) {
             memoryCache.clear();
-            uiThreadHandler.postDelayed(() -> container.setVisibility(View.GONE), AnimationHelper.getShortDuration());
+            uiThreadHandler.postDelayed(() -> {
+                container.setVisibility(View.GONE);
+            }, AnimationHelper.getShortDuration());
         }
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        PermissionManager.onRequestPermissionResult(requestCode, grantResults, this);
+    public void onBackPressed() {
+        List<Fragment> fragments = getSupportFragmentManager().getFragments();
+        if (fragments.size() > 0) {
+            Fragment topFrag = fragments.get(fragments.size() - 1);
+            if (!topFrag.isRemoving() && topFrag instanceof PickerFragment) {
+                if (((PickerFragment) topFrag).onBackPressed()) return;
+            }
+        }
+
+        super.onBackPressed();
     }
 
     @Override
-    public void onAccessPermission(boolean permissionGranted, int permission) {
-        if (permissionGranted) {
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == RESULT_OK) {
             uiThreadHandler.postDelayed(this::launchCameraFragment, 500L);
         } else {
             uiThreadHandler.postDelayed(this::supportFinishAfterTransition, 500L);
@@ -146,9 +116,27 @@ public class PickerActivity extends BaseActivity implements PermissionCallBack, 
     }
 
     @Override
+    public void onPermissionGranted() {
+        uiThreadHandler.postDelayed(this::launchCameraFragment, 500L);
+    }
+
+    @Override
     public void onBackStackChanged() {
         if (getSupportFragmentManager().getBackStackEntryCount() == 0) {
             supportFinishAfterTransition();
+        }
+    }
+
+    private void launchCameraFragment() {
+        FragmentManager manager = getSupportFragmentManager();
+
+        if (manager.getBackStackEntryCount() == 0) {
+
+            CameraFragment fragment = CameraFragment.newInstance(opts);
+            FragmentTransaction transaction = manager.beginTransaction();
+            transaction.replace(R.id.container, fragment, fragment.TAG);
+            transaction.addToBackStack(fragment.TAG);
+            transaction.commit();
         }
     }
 }
