@@ -97,7 +97,8 @@ public class ImageLoader extends AsyncTask<String, Void, Bitmap> {
 
             ContentResolver crThumb = imageView.getContext().getContentResolver();
 
-            int imgHeight = imageView.getHeight();
+/**
+    int imgHeight = imageView.getHeight();
             int imgWidth = imageView.getWidth();
 
             imgHeight =  imgHeight > 0 ? imgHeight : imageSize;
@@ -110,10 +111,12 @@ public class ImageLoader extends AsyncTask<String, Void, Bitmap> {
             options.outWidth = 96;
             options.inSampleSize = BitmapUtils.calculateInSampleSize(options, imgSize, imgSize);
 
+           */
+
             if (mediaType == MediaType.VIDEO) {
-                bitmap = MediaStore.Video.Thumbnails.getThumbnail(crThumb, id, MICRO_KIND, options);
+                bitmap = MediaStore.Video.Thumbnails.getThumbnail(crThumb, id, MICRO_KIND, null);
             } else {
-                bitmap = MediaStore.Images.Thumbnails.getThumbnail(crThumb, id, MICRO_KIND, options);
+                bitmap = MediaStore.Images.Thumbnails.getThumbnail(crThumb, id, MICRO_KIND, null);
             }
         } else if (mediaPath != null) {
 

@@ -56,7 +56,7 @@ public class DemoActivity extends BaseActivity implements View.OnClickListener {
 
             txt_files.setText(builder.toString());
         } else {
-            txt_files.setText("Selection Empty");
+            txt_files.setText(R.string.empty_selection);
         }
     }
 
