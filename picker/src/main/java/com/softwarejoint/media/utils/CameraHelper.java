@@ -34,13 +34,6 @@ public class CameraHelper {
      * @param h     The height of the view.
      * @return Best match camera preview size to fit in the view.
      */
-
-    private static double ratio(int w, int h) {
-        int smallSide = Math.min(w, h);
-        int largeSide = Math.max(w, h);
-        return (double) largeSide / smallSide;
-    }
-
     public static Camera.Size getOptimalSize(List<Camera.Size> sizes, int w, int h) {
         // Use a very small tolerance because we want an exact match.
         final double ASPECT_TOLERANCE = 0.1;
@@ -164,6 +157,12 @@ public class CameraHelper {
     public static boolean isFlashAvailable(Context context) {
         PackageManager pm = context.getPackageManager();
         return pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH);
+    }
+
+    private static double ratio(int w, int h) {
+        int smallSide = Math.min(w, h);
+        int largeSide = Math.max(w, h);
+        return (double) largeSide / smallSide;
     }
 
     public static int getFrontCameraID(Context context) {

@@ -247,18 +247,24 @@ public final class CameraThread extends Thread {
         // This is a sample project so just use 0 as camera ID.
         // it is better to selecting camera is available
         try {
+            final boolean isVideo = parent.mMediaType == MediaType.VIDEO;
+
             mCamera = Camera.open(parent.cameraId);
             final Camera.Parameters params = mCamera.getParameters();
 
-            final List<String> focusModes = params.getSupportedFocusModes();
+            List<String> focusModes = params.getSupportedFocusModes();
 
-            if (focusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
-                params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
-            } else if (focusModes.contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
-                params.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+            if (focusModes != null) {
+                if (isVideo && focusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
+                    params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+                } else if (!isVideo && focusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
+                    params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+                } else if (focusModes.contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
+                    params.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+                }
             }
 
-            if (parent.mMediaType == MediaType.VIDEO) {
+            if (isVideo) {
                 final List<int[]> supportedFpsRange = params.getSupportedPreviewFpsRange();
 
                 if (supportedFpsRange != null) {
@@ -282,6 +288,22 @@ public final class CameraThread extends Thread {
                 }
 
                 params.setRecordingHint(true);
+            }
+
+            //TODO: video exposure
+            if (params.isVideoStabilizationSupported()) {
+                params.setVideoStabilization(true);
+            }
+
+            //exposure
+            int maxExposure = params.getMaxExposureCompensation();
+            int minExposure = params.getMinExposureCompensation();
+            float step = params.getExposureCompensationStep();
+
+            if ((minExposure < 0 || maxExposure > 0) && step > 0.0f) {
+                int compensation = Math.max(1, maxExposure / 2);
+                Log.d(TAG, "setExposureCompensation: " + compensation);
+                params.setExposureCompensation(compensation);
             }
 
             // request preview size
