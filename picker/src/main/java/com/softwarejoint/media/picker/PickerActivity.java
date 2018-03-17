@@ -134,7 +134,8 @@ public class PickerActivity extends BaseActivity implements PermissionCallBack, 
     public void onAccessPermission(boolean permissionGranted, int permission) {
         if (permissionGranted) {
             uiThreadHandler.postDelayed(this::launchCameraFragment, 500L);
-            //uiThreadHandler.postDelayed(this::launchEffectFragment, 500L);
+        } else {
+            uiThreadHandler.postDelayed(this::supportFinishAfterTransition, 500L);
         }
     }
 

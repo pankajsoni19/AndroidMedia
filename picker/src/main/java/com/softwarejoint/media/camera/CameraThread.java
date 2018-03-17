@@ -312,7 +312,7 @@ public final class CameraThread extends Thread {
             st.setDefaultBufferSize(previewSize.width, previewSize.height);
             mCamera.setPreviewTexture(st);
         } catch (final IOException | RuntimeException e) {
-            Log.e(TAG, "startPreview:", e);
+            Log.e(TAG, "startPreview: error:", e);
             cameraZoom.setCamera(null);
 
             if (mCamera != null) {
