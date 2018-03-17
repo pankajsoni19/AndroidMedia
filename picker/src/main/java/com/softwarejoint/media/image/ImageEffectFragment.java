@@ -162,7 +162,9 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
         } else if (R.id.iv_crop_hand == id) {
             onCropSelected(CropType.PATH);
         } else if (R.id.iv_filter == id) {
-            effectView.toggleEffectPreviews();
+            if (effectView.toggleEffectPreviews() && cropType == CropType.PATH) {
+                onCropSelected(cropType);
+            }
         } else if (R.id.iv_done == id) {
             onClickDone();
         }

@@ -301,13 +301,15 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
         GLToolbox.checkGlError("glViewport");
     }
 
-    public void toggleEffectPreviews() {
+    public boolean toggleEffectPreviews() {
         runOnDraw(() -> {
             Log.d(TAG, "toggleEffectPreviews");
             filtersPreviewEnabled = !filtersPreviewEnabled;
             GLDrawer2D.deleteTex(mTextures[1]);
             GLES20.glGenTextures(1, mTextures, 1);
         });
+
+        return !filtersPreviewEnabled;
     }
 
     private void onTouched(int x, int y) {
