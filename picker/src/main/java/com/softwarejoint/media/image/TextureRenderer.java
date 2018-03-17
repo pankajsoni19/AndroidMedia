@@ -116,8 +116,12 @@ public class TextureRenderer {
         computeOutputVertices();
     }
 
-    void setMatrix(float[] mvpMatrix) {
-        System.arraycopy(mvpMatrix, 0, mMVPMatrix, 0, mMVPMatrix.length);
+    void setMatrix(final float[] matrix) {
+        if (matrix != null && matrix.length >= 16) {
+            System.arraycopy(matrix, 0, mMVPMatrix, 0, 16);
+        } else {
+            Matrix.setIdentityM(mMVPMatrix, 0);
+        }
     }
 
     void renderTexture(int texId) {
@@ -153,7 +157,7 @@ public class TextureRenderer {
         GLES20.glUseProgram(0);
     }
 
-    public void computeOutputVertices() {
+    private void computeOutputVertices() {
         if (mPosVertices == null || mTexWidth == 0 || mTexHeight == 0 || mViewWidth == 0 || mViewHeight == 0) {
             return;
         }
@@ -176,16 +180,6 @@ public class TextureRenderer {
         }
 
         float[] coords = new float[]{x0, y0, x1, y0, x0, y1, x1, y1};
-
-//        Log.d(TAG, "mTexWidth: " + mTexWidth + " mTexHeight: " + mTexHeight + " ratio: " + imgAspectRatio);
-//
-//        Log.d(TAG, "mViewWidth: " + mViewWidth + " mViewHeight: " + mViewHeight + " ratio: " + viewAspectRatio);
-//
-//        Log.d(TAG, "relativeAspectRatio: " + relativeAspectRatio);
-//
-//        for (float coord : coords) {
-//            Log.d(TAG, "computeOutputVertices: " + coord);
-//        }
 
         mPosVertices.put(coords).position(0);
     }

@@ -1,8 +1,8 @@
 package com.softwarejoint.media.image;
 
-import android.graphics.Rect;
 import android.media.effect.Effect;
 import android.media.effect.EffectFactory;
+import android.opengl.Matrix;
 import android.support.annotation.Nullable;
 
 import com.softwarejoint.media.enums.ImageEffectType;
@@ -34,10 +34,6 @@ class EffectRenderer extends TextureRenderer {
             mEffect.apply(inputTexId, width, height, outputTexId);
             texId = outputTexId;
         }
-    }
-
-    void setTextureId(int texId) {
-        this.texId = texId;
     }
 
     void renderTexture() {
@@ -87,6 +83,7 @@ class EffectRenderer extends TextureRenderer {
             mEffect.release();
         }
 
+        mEffect = null;
         super.release();
     }
 

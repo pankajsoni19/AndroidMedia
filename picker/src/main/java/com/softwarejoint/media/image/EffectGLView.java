@@ -23,11 +23,13 @@ import com.softwarejoint.media.multitouch.MultiTouchListener;
 import com.softwarejoint.media.picker.MediaPickerOpts;
 import com.softwarejoint.media.utils.BitmapUtils;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -71,10 +73,10 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
 
     private List<EffectRenderer> effects = new ArrayList<>();
 
-    private final Queue<Runnable> mRunOnDraw = new LinkedList<>();
+    private final Queue<Runnable> mRunOnDraw = new LinkedBlockingQueue<>();
 
     private @ImageEffectType
-    volatile String mCurrentEffect = ImageEffectType.NONE;
+    volatile String mCurrentEffect = ImageEffectType.EFFECT_SEPIA;
 
     private String origImagePath;
 
@@ -200,12 +202,12 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
     private void buildTransform() {
         if (!mInitialised || !mHasSurface) return;
         Log.d(TAG, "buildTransform");
-        buildMainTransform();
+        updateMainTransform();
         mEffectRenderer.setMatrix(mMVPMatrix);
         requestRender();
     }
 
-    private void buildMainTransform() {
+    private void updateMainTransform() {
         Matrix.setRotateM(mMVPMatrix, 0, rotation, 0, 0, -1.0f);
         Matrix.scaleM(mMVPMatrix, 0, scale, scale, 0);
         Matrix.translateM(mMVPMatrix, 0, -factorX * translationFactor/widthPixels, factorY * translationFactor/heightPixels, 0);
@@ -275,29 +277,25 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
                 GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, origBitmap, 0);
 
                 createEffects();
-
-                updateMainEffect();
             }
 
             mInitialised = true;
-        }
-
-        if (mInitialised) {
-            requestRender();
         }
     }
 
     private void updateMainEffect() {
         final int width = getWidth();
         final int height = getHeight();
+        GLES20.glViewport(0, 0, width, height);
+
+        mEffectRenderer.makeEffectCurrent(mTextures[0], mImageWidth, mImageHeight, mTextures[1]);
 
         mEffectRenderer.updateViewSize(width, height);
         mEffectRenderer.updateTextureSize(mImageWidth, mImageHeight);
-        mEffectRenderer.setMatrix(mMVPMatrix);
 
-        if (ImageEffectType.NONE.equals(mCurrentEffect)) {
-            mEffectRenderer.setTextureId(mTextures[0]);
-        }
+        updateMainTransform();
+
+        mEffectRenderer.setMatrix(mMVPMatrix);
 
         GLES20.glViewport(0, 0, width, height);
         GLToolbox.checkGlError("glViewport");
@@ -305,23 +303,26 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
 
     public void toggleEffectPreviews() {
         runOnDraw(() -> {
+            Log.d(TAG, "toggleEffectPreviews");
             filtersPreviewEnabled = !filtersPreviewEnabled;
-            if (!filtersPreviewEnabled) {
-                updateMainEffect();
-            }
+            GLDrawer2D.deleteTex(mTextures[1]);
+            GLES20.glGenTextures(1, mTextures, 1);
         });
     }
 
     private void onTouched(int x, int y) {
         for (EffectRenderer renderer: effects) {
-            Rect openGLRect = new Rect(renderer.startX, renderer.bottomY - previewSize,
-                    renderer.startX + previewSize, renderer.bottomY);
-
-            Log.d(TAG, "openGL: " + openGLRect);
+            final int filterTop = (heightPixels - renderer.bottomY - previewSize);
+            Rect openGLRect = new Rect(renderer.startX, filterTop,
+                    renderer.startX + previewSize, filterTop + previewSize);
 
             if (openGLRect.contains(x, y)) {
-                mCurrentEffect = renderer.name();
-                mEffectRenderer = renderer;
+                queueEvent(() -> {
+                    Log.d(TAG, "onTouched: queueEvent");
+                    mCurrentEffect = renderer.name();
+                    mEffectRenderer = renderer;
+                });
+                Log.d(TAG, "onTouched rect: " + openGLRect + " selected: " + renderer.name());
                 break;
             }
         }
@@ -381,7 +382,7 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
         }
 
         for (EffectRenderer renderer : effects) {
-            if (renderer != null) renderer.release();
+            renderer.release();
         }
 
         effects.clear();
@@ -397,31 +398,32 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
         }
 
         mEffectContext = null;
+
+        if (origBitmap != null) {
+            origBitmap.recycle();
+        }
+
+        origBitmap = null;
     }
 
     protected void runOnDraw(final Runnable runnable) {
-        synchronized (mRunOnDraw) {
-            mRunOnDraw.add(runnable);
-        }
-
+        mRunOnDraw.add(runnable);
         requestRender();
-    }
-
-    private void runAll(Queue<Runnable> queue) {
-        synchronized (queue) {
-            while (!queue.isEmpty()) {
-                queue.poll().run();
-            }
-        }
     }
 
     @Override
     public void onDrawFrame(GL10 gl) {
+        Log.d(TAG, "onDrawFrame mHasSurface: " + mHasSurface + " mInitialised: " + mInitialised);
+
         if (!mHasSurface) return;
 
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 
-        runAll(mRunOnDraw);
+        while (!mRunOnDraw.isEmpty()) {
+            mRunOnDraw.poll().run();
+        }
+
+        if (!mInitialised) return;
 
         if (filtersPreviewEnabled) {
             updateAllEffects();
@@ -435,6 +437,7 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
                 renderer.renderTexture();
             }
         } else {
+            updateMainEffect();
             mEffectRenderer.renderTexture();
         }
     }
@@ -453,7 +456,6 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
 
                 effects.add(renderer);
             }
-
         } else {
             mEffectRenderer = new EffectRenderer(null, ImageEffectType.NONE);
         }
@@ -471,6 +473,8 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
         Matrix.setIdentityM(matrix, 0);
 
         for (EffectRenderer renderer: effects) {
+            Log.d(TAG, "updateAllEffects: startX: " + startX + " bottomY: " + bottomY + " name: " + renderer.name());
+
             renderer.setStartXY(startX, bottomY);
             renderer.updateTextureSize(mImageWidth, mImageHeight);
             renderer.updateViewSize(previewSize, previewSize);

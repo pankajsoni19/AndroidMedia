@@ -169,58 +169,39 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
     }
 
     @SuppressLint("SwitchIntDef")
-    private void animateOutCropOption() {
-        float scale = 1.0f;
-
+    private void animateCropOption(boolean animateIn) {
         switch (cropType) {
             case CropType.CIRCLE:
-                animateOption(iv_crop_circle, scale);
+                animateOption(iv_crop_circle, animateIn);
                 break;
             case CropType.STAR:
-                animateOption(iv_crop_star, scale);
+                animateOption(iv_crop_star, animateIn);
                 break;
             case CropType.FLOWER:
-                animateOption(iv_crop_flower, scale);
+                animateOption(iv_crop_flower, animateIn);
                 break;
             case CropType.PATH:
-                animateOption(iv_crop_path, scale);
+                animateOption(iv_crop_path, animateIn);
                 break;
         }
     }
 
-    @SuppressLint("SwitchIntDef")
-    private void animateInCropOption() {
-        float scale = 1.2f;
+    private void animateOption(ImageView view, boolean animateIn) {
+        final float scale = animateIn ? 1.2f : 1.0f;
+        @ColorRes int colorRes = animateIn ?  R.color.holo_purple : android.R.color.white;
 
-        switch (cropType) {
-            case CropType.CIRCLE:
-                animateOption(iv_crop_circle, scale);
-                break;
-            case CropType.STAR:
-                animateOption(iv_crop_star, scale);
-                break;
-            case CropType.FLOWER:
-                animateOption(iv_crop_flower, scale);
-                break;
-            case CropType.PATH:
-                animateOption(iv_crop_path, scale);
-                break;
-        }
-    }
-
-    private void animateOption(ImageView view, float scale) {
         if (view.getScaleX() == scale) return;
+
         view.animate().scaleX(scale).scaleY(scale)
                 .setDuration(200L)
                 .setListener(null)
                 .start();
-        @ColorRes int colorRes = (scale > 1.0f) ? R.color.holo_purple : android.R.color.white;
         @ColorInt int colorInt = ContextCompat.getColor(view.getContext(), colorRes);
         ImageViewCompat.setImageTintList(view, ColorStateList.valueOf(colorInt));
     }
 
     private void onCropSelected(@CropType int type) {
-        animateOutCropOption();
+        animateCropOption(false);
 
         if (cropType == type) {
             cropType = CropType.NONE;
@@ -253,7 +234,7 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
         }
 
         if (cropType != CropType.NONE) {
-            animateInCropOption();
+            animateCropOption(true);
         }
     }
 
