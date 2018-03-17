@@ -1,6 +1,6 @@
 # Android Media Picker
 
-[![Android](https://img.shields.io/badge/Android-19-green.svg)](https://www.android.com/)
+[![Android](https://img.shields.io/badge/Android-19-brightgreen.svg)](https://www.android.com/)
 [![Release](https://jitpack.io/v/softwarejoint/AndroidMedia.svg)](https://jitpack.io/#softwarejoint/AndroidMedia)
 
 * Supports picking multiple media files from gallery and camera
