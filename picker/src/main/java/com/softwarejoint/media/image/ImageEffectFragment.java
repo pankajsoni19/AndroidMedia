@@ -47,14 +47,14 @@ import static android.app.Activity.RESULT_OK;
  */
 public class ImageEffectFragment extends PickerFragment implements View.OnClickListener {
 
-    private static final String IMAGE_PATH = "com.softwarejoint.image";
+    //private static final String IMAGE_PATH = "com.softwarejoint.image";
 
     public final String TAG = "ImageEffectFragment";
 
-    public static ImageEffectFragment newInstance(MediaPickerOpts opts, String imagePath) {
+    public static ImageEffectFragment newInstance(MediaPickerOpts opts) {
         Bundle args = new Bundle();
         args.putParcelable(MediaPickerOpts.INTENT_OPTS, opts);
-        args.putString(ImageEffectFragment.IMAGE_PATH, imagePath);
+        //args.putString(ImageEffectFragment.IMAGE_PATH, imagePath);
 
         ImageEffectFragment fragment = new ImageEffectFragment();
         fragment.setArguments(args);
@@ -85,7 +85,6 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
             Bundle args = getArguments();
             //noinspection ConstantConditions
             opts = args.getParcelable(MediaPickerOpts.INTENT_OPTS);
-            originalImagePath = args.getString(ImageEffectFragment.IMAGE_PATH);
         }
 
         uiThreadHandler = new Handler();
@@ -128,13 +127,17 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
             iv_filter.setVisibility(View.GONE);
         }
 
-        effectView.init(originalImagePath, opts);
+        effectView.init(opts);
 
         iv_done.setOnClickListener(this);
 
         onCropSelected(cropType);
 
         return rootView;
+    }
+
+    public void onImageLoaded(String imagePath, Bitmap bitmap) {
+        effectView.onImageLoaded(imagePath, bitmap);
     }
 
     @Override

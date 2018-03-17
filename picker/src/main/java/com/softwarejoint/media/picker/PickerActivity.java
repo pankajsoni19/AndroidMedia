@@ -72,24 +72,24 @@ public class PickerActivity extends BaseActivity implements PermissionCallBack, 
         }
     }
 
-    private void testEffectFragment() {
-        FragmentManager manager = getSupportFragmentManager();
-
-        if (manager.getBackStackEntryCount() == 0) {
-            MediaPickerOpts opts = getIntent().getParcelableExtra(MediaPickerOpts.INTENT_OPTS);
-            if (opts == null) {
-                uiThreadHandler.postDelayed(this::supportFinishAfterTransition, 500L);
-                return;
-            }
-
-            // /storage/emulated/0/WhatsApp/Media/WhatsApp Images/IMG-20180312-WA0001.jpg
-            ImageEffectFragment fragment = ImageEffectFragment.newInstance(opts, "/storage/emulated/0/WhatsApp/Media/WhatsApp Images/IMG-20180312-WA0001.jpg");
-            FragmentTransaction transaction = manager.beginTransaction();
-            transaction.replace(R.id.container, fragment, fragment.TAG);
-            transaction.addToBackStack(fragment.TAG);
-            transaction.commit();
-        }
-    }
+//    private void testEffectFragment() {
+//        FragmentManager manager = getSupportFragmentManager();
+//
+//        if (manager.getBackStackEntryCount() == 0) {
+//            MediaPickerOpts opts = getIntent().getParcelableExtra(MediaPickerOpts.INTENT_OPTS);
+//            if (opts == null) {
+//                uiThreadHandler.postDelayed(this::supportFinishAfterTransition, 500L);
+//                return;
+//            }
+//
+//            // /storage/emulated/0/WhatsApp/Media/WhatsApp Images/IMG-20180312-WA0001.jpg
+//            ImageEffectFragment fragment = ImageEffectFragment.newInstance(opts);, "/storage/emulated/0/WhatsApp/Media/WhatsApp Images/IMG-20180312-WA0001.jpg");
+//            FragmentTransaction transaction = manager.beginTransaction();
+//            transaction.replace(R.id.container, fragment, fragment.TAG);
+//            transaction.addToBackStack(fragment.TAG);
+//            transaction.commit();
+//        }
+//    }
 
     @Override
     public void onBackPressed() {

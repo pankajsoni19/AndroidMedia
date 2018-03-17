@@ -36,20 +36,6 @@ public class BitmapUtils {
 
     private static final String TAG = "BitmapUtils";
 
-    public static String saveBitmapFromGLSurface(GLDrawer2D drawer, MediaPickerOpts opts) {
-        int x = drawer.getStartX();
-        int y = drawer.getStartY();
-        int w = drawer.width();
-        int h = drawer.height();
-
-        return saveBitmapFromGLSurface(x, y, w, h, opts);
-    }
-
-    private static String saveBitmapFromGLSurface(int x, int y, int w, int h, MediaPickerOpts opts) {
-        Bitmap bitmap = createBitmapFromGLSurface(x, y, w, h);
-        return bitmap != null ? saveBitmap(bitmap, opts) : null;
-    }
-
     public static String saveBitmap(Bitmap bitmap, MediaPickerOpts opts) {
         File tempFile = FileHandler.getTempFile(opts);
 
@@ -72,18 +58,34 @@ public class BitmapUtils {
         return tempFile.exists() ? tempFile.getPath() : null;
     }
 
-    public static Bitmap createBitmapFromGLSurface(int x, int y, int w, int h) {
+    public static int[] readEGLBuffer(int x, int y, int w, int h) {
         EGL10 egl = (EGL10) EGLContext.getEGL();
         GL10 gl = (GL10) egl.eglGetCurrentContext().getGL();
 
         int bitmapBuffer[] = new int[w * h];
-        int bitmapSource[] = new int[w * h];
 
         IntBuffer intBuffer = IntBuffer.wrap(bitmapBuffer);
         intBuffer.position(0);
 
         try {
             gl.glReadPixels(x, y, w, h, GL10.GL_RGBA, GL10.GL_UNSIGNED_BYTE, intBuffer);
+        } catch (Exception ex) {
+            return null;
+        }
+
+        return bitmapBuffer;
+    }
+
+    public static Bitmap createBitmapFromGLSurface(int x, int y, int w, int h) {
+        int bitmapBuffer[] = readEGLBuffer(x, y, w, h);
+        return createBitmapFromGLBuffer(w, h, bitmapBuffer);
+    }
+
+    public static Bitmap createBitmapFromGLBuffer(int w, int h, int bitmapBuffer[]) {
+        int bitmapSource[] = new int[w * h];
+
+        try {
+
             int offset1, offset2;
             for (int i = 0; i < h; i++) {
                 offset1 = i * w;

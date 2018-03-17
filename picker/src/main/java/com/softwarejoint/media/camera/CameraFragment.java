@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.media.MediaActionSound;
 import android.media.MediaScannerConnection;
 import android.media.MediaScannerConnection.OnScanCompletedListener;
@@ -38,15 +39,22 @@ import com.softwarejoint.media.glutils.GLDrawer2D;
 import com.softwarejoint.media.image.ImageEffectFragment;
 import com.softwarejoint.media.picker.MediaPickerOpts;
 import com.softwarejoint.media.base.PickerFragment;
+import com.softwarejoint.media.tasks.LoadGLImageTask;
+import com.softwarejoint.media.tasks.LoadImageTask;
 import com.softwarejoint.media.utils.BitmapUtils;
 import com.softwarejoint.media.utils.CameraHelper;
 import com.softwarejoint.media.utils.TimeParseUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import javax.microedition.khronos.egl.EGL10;
+import javax.microedition.khronos.egl.EGLContext;
+import javax.microedition.khronos.opengles.GL10;
 
 import static android.app.Activity.RESULT_OK;
 
@@ -406,8 +414,24 @@ public class CameraFragment extends PickerFragment implements OnClickListener {
         mRecordButton.setOnClickListener(null);
         mCameraView.queueEvent(() -> {
             GLDrawer2D drawer = mCameraView.getDrawer();
-            final String imagePath = BitmapUtils.saveBitmapFromGLSurface(drawer, opts);
-            uiThreadHandler.post(() -> onPictureTaken(imagePath));
+            int x = drawer.getStartX();
+            int y = drawer.getStartY();
+            int w = drawer.width();
+            int h = drawer.height();
+
+            int bitmapBuffer[] = BitmapUtils.readEGLBuffer(x, y, w, h);
+
+            if (bitmapBuffer == null) return;
+
+            if (opts.mediaType == MediaType.IMAGE && opts.cropEnabled) {
+                ImageEffectFragment fragment = ImageEffectFragment.newInstance(opts);
+                uiThreadHandler.post(() -> showFragment(fragment));
+                new LoadGLImageTask(w, h, bitmapBuffer, fragment, opts).execute();
+            } else {
+                Bitmap bitmap = BitmapUtils.createBitmapFromGLBuffer(w, h, bitmapBuffer);
+                final String imagePath = BitmapUtils.saveBitmap(bitmap, opts);
+                uiThreadHandler.post(() -> onPictureTaken(imagePath));
+            }
         });
     }
 
@@ -691,8 +715,9 @@ public class CameraFragment extends PickerFragment implements OnClickListener {
         }
 
         if (opts.mediaType == MediaType.IMAGE && opts.cropEnabled) {
-            ImageEffectFragment fragment = ImageEffectFragment.newInstance(opts, items.get(0));
+            ImageEffectFragment fragment = ImageEffectFragment.newInstance(opts);
             showFragment(fragment);
+            new LoadImageTask(items.remove(0), fragment).execute();
             return;
         }
 

@@ -21,6 +21,7 @@ import com.softwarejoint.media.enums.ImageEffect;
 import com.softwarejoint.media.glutils.GLDrawer2D;
 import com.softwarejoint.media.multitouch.MultiTouchListener;
 import com.softwarejoint.media.picker.MediaPickerOpts;
+import com.softwarejoint.media.tasks.LoadImageTask;
 import com.softwarejoint.media.utils.BitmapUtils;
 
 import java.util.ArrayList;
@@ -211,8 +212,7 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
         Matrix.translateM(mMVPMatrix, 0, -factorX * translationFactor/widthPixels, factorY * translationFactor/heightPixels, 0);
     }
 
-    public void init(String imagePath, MediaPickerOpts opts) {
-        origImagePath = imagePath;
+    public void init(MediaPickerOpts opts) {
         filtersEnabled = opts.filtersEnabled;
 
         if (!filtersEnabled) {
@@ -228,6 +228,44 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
         if (mHasSurface && getWidth() > 0 && getHeight() > 0) {
             runOnDraw(this::loadImage);
         }
+    }
+
+    public void onImageLoaded(String imagePath, Bitmap bitmap) {
+        origImagePath = imagePath;
+        origBitmap = bitmap;
+        runOnDraw(this::loadImage);
+    }
+
+    private void loadImage() {
+        if (origImagePath == null || !mHasSurface) return;
+
+        final int width = getWidth();
+        final int height = getHeight();
+
+        if (origBitmap == null) {
+            new LoadImageTask(origImagePath, this).execute();
+            return;
+        }
+
+        Log.d(TAG, "loadImage: origImagePath: " + origImagePath + " mInitialised: " + mInitialised);
+
+        mImageWidth = origBitmap.getWidth();
+        mImageHeight = origBitmap.getHeight();
+
+        if (!mInitialised) {
+
+            float ratio = (float) width / height;
+
+            Matrix.frustumM(mProjectionMatrix, 0, -ratio, ratio, -1, 1, 3, 7);
+            Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
+            Matrix.setRotateM(mMVPMatrix, 0, rotation, 0, 0, -1.0f);
+
+            GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, origBitmap, 0);
+
+            createEffects();
+        }
+
+        mInitialised = true;
     }
 
     @Override
@@ -248,37 +286,6 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
         }
 
         return true;
-    }
-
-    private void loadImage() {
-        Log.d(TAG, "loadImage: mHasSurface: " + mHasSurface + " origImagePath: " + origImagePath + " mInitialised: " + mInitialised);
-        final int width = getWidth();
-        final int height = getHeight();
-
-        if (origBitmap == null) {
-            final int imgSize = Math.min(width, height);
-            origBitmap = BitmapUtils.decodeBitmapFromFile(origImagePath, imgSize);
-        }
-
-        if (origBitmap != null && mHasSurface) {
-            mImageWidth = origBitmap.getWidth();
-            mImageHeight = origBitmap.getHeight();
-
-            if (!mInitialised) {
-
-                float ratio = (float) width / height;
-
-                Matrix.frustumM(mProjectionMatrix, 0, -ratio, ratio, -1, 1, 3, 7);
-                Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
-                Matrix.setRotateM(mMVPMatrix, 0, rotation, 0, 0, -1.0f);
-
-                GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, origBitmap, 0);
-
-                createEffects();
-            }
-
-            mInitialised = true;
-        }
     }
 
     private void updateMainEffect() {
