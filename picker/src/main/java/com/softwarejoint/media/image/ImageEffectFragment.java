@@ -32,9 +32,9 @@ import android.widget.ImageView;
 
 import com.softwarejoint.media.R;
 import com.softwarejoint.media.anim.AnimationHelper;
+import com.softwarejoint.media.base.PickerFragment;
 import com.softwarejoint.media.enums.CropType;
 import com.softwarejoint.media.picker.MediaPickerOpts;
-import com.softwarejoint.media.base.PickerFragment;
 import com.softwarejoint.media.utils.BitmapUtils;
 
 import java.util.ArrayList;
@@ -205,7 +205,7 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
 
     private void animateOption(ImageView view, boolean animateIn) {
         final float scale = animateIn ? 1.2f : 1.0f;
-        @ColorRes int colorRes = animateIn ?  R.color.holo_purple : android.R.color.white;
+        @ColorRes int colorRes = animateIn ? R.color.holo_purple : android.R.color.white;
 
         if (view.getScaleX() == scale) return;
 

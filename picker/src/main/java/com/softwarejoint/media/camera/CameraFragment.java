@@ -27,6 +27,7 @@ import android.widget.TextView;
 import com.softwarejoint.media.R;
 import com.softwarejoint.media.adapter.GalleryAdapter;
 import com.softwarejoint.media.adapter.SelectedAdapter;
+import com.softwarejoint.media.anim.AnimFadeReveal;
 import com.softwarejoint.media.encoder.MediaAudioEncoder;
 import com.softwarejoint.media.encoder.MediaEncoder;
 import com.softwarejoint.media.encoder.MediaMuxerWrapper;
@@ -169,6 +170,8 @@ public class CameraFragment extends PickerFragment implements OnClickListener {
 
         handleIntent();
 
+        AnimFadeReveal.fadeIn(rootView);
+
         return rootView;
     }
 
@@ -231,10 +234,8 @@ public class CameraFragment extends PickerFragment implements OnClickListener {
     public boolean onBackPressed() {
         if (mCameraView.isFiltersPreviewVisible()) {
             mCameraView.toggleShowFilters();
-
             return true;
         }
-
         return false;
     }
 

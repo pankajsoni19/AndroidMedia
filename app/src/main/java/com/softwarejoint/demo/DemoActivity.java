@@ -83,7 +83,7 @@ public class DemoActivity extends BaseActivity implements View.OnClickListener {
                 .withFlash(Boolean.valueOf("true"))
                 .withMaxSelection(Integer.parseInt("5"))
                 .withFilters(Boolean.valueOf("true"))
-                //.withCropEnabled(Boolean.valueOf("true"))
+                .withCropEnabled(Boolean.valueOf("true"))
                 //.withImgSize(Integer.valueOf("96"))
                 .build()
                 .startActivity(this);

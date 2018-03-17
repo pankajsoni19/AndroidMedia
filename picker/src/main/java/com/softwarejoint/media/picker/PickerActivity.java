@@ -9,9 +9,11 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
 import android.support.v7.app.AppCompatDelegate;
 import android.view.Gravity;
+import android.view.View;
 import android.view.Window;
 
 import com.softwarejoint.media.R;
+import com.softwarejoint.media.anim.AnimationHelper;
 import com.softwarejoint.media.base.BaseActivity;
 import com.softwarejoint.media.base.PickerFragment;
 import com.softwarejoint.media.camera.CameraFragment;
@@ -30,6 +32,7 @@ public class PickerActivity extends BaseActivity implements PermissionCallBack, 
     private Handler uiThreadHandler;
     private MemoryCache memoryCache;
     private MediaPickerOpts opts;
+    private View container;
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -40,6 +43,8 @@ public class PickerActivity extends BaseActivity implements PermissionCallBack, 
         setTransition(Gravity.END, GravityCompat.END, GravityCompat.END, GravityCompat.END);
 
         setContentView(R.layout.activity_main);
+        container = findViewById(R.id.container);
+
         uiThreadHandler = new Handler();
 
         memoryCache = MemoryCache.getInstance();
@@ -121,6 +126,7 @@ public class PickerActivity extends BaseActivity implements PermissionCallBack, 
         super.onStop();
         if (isFinishing()) {
             memoryCache.clear();
+            uiThreadHandler.postDelayed(() -> container.setVisibility(View.GONE), AnimationHelper.getShortDuration());
         }
     }
 
