@@ -70,6 +70,7 @@ public class DemoActivity extends BaseActivity implements View.OnClickListener {
                 .withFlash(Boolean.valueOf("true"))
                 .withMaxSelection(Integer.parseInt("2"))
                 .withFilters(Boolean.valueOf("true"))
+                .build()
                 .startActivity(this);
     }
 
@@ -83,6 +84,7 @@ public class DemoActivity extends BaseActivity implements View.OnClickListener {
                 .withMaxSelection(Integer.parseInt("1"))
                 .withFilters(Boolean.valueOf("true"))
                 .withCropEnabled(Boolean.valueOf("true"))
+                .build()
                 .startActivity(this);
     }
 

@@ -12,8 +12,6 @@ import android.os.Handler;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -278,9 +276,7 @@ public class CameraFragment extends PickerFragment implements OnClickListener {
         Uri fileUri = data.getData();
         String filePath = FilePathUtil.getRealPath(getContext(), fileUri, opts);
 
-        if (filePath == null) {
-            return;
-        }
+        if (filePath == null) return;
 
         Log.d(TAG, "selectedPath: " + filePath);
 
@@ -290,7 +286,7 @@ public class CameraFragment extends PickerFragment implements OnClickListener {
             selectedAdapter.addSelected(filePath);
         }
 
-        onMediaSelectionUpdated();
+        checkIfMediaSelectionCompleted();
     }
 
     @Override
@@ -415,10 +411,7 @@ public class CameraFragment extends PickerFragment implements OnClickListener {
     }
 
     private void onPictureTaken(String imagePath) {
-        if (imagePath == null || !FileHandler.exists(imagePath)) {
-            onMediaSelectionUpdated();
-            return;
-        }
+        if (imagePath == null || !FileHandler.exists(imagePath)) return;
 
         if (galleryAdapter != null) {
             galleryAdapter.addSelected(imagePath);
@@ -428,9 +421,7 @@ public class CameraFragment extends PickerFragment implements OnClickListener {
 
         MediaScannerConnection.MediaScannerConnectionClient callBack = null;
 
-        if (onMediaSelectionUpdated()) {
-            onClickDone();
-        } else {
+        if (!checkIfMediaSelectionCompleted()) {
             mRecordButton.setVisibility(View.VISIBLE);
             mRecordButton.setOnClickListener(this);
             callBack = new MediaScannerConnection.MediaScannerConnectionClient() {
@@ -534,10 +525,7 @@ public class CameraFragment extends PickerFragment implements OnClickListener {
         String mediaPath = mMuxer.getOutputPath();
         mMuxer = null;
 
-        if (mediaPath == null || !FileHandler.exists(mediaPath)) {
-            onMediaSelectionUpdated();
-            return;
-        }
+        if (mediaPath == null || !FileHandler.exists(mediaPath)) return;
 
         Log.d(TAG, "recordedPath: " + mediaPath);
 
@@ -551,9 +539,7 @@ public class CameraFragment extends PickerFragment implements OnClickListener {
 
         MediaScannerConnection.MediaScannerConnectionClient callBack = null;
 
-        if (onMediaSelectionUpdated()) {
-            onClickDone();
-        } else {
+        if (!checkIfMediaSelectionCompleted()) {
             if (opts.showFilters()) {
                 iv_filter.setVisibility(View.VISIBLE);
             } else {
@@ -674,7 +660,7 @@ public class CameraFragment extends PickerFragment implements OnClickListener {
         recyclerView.setAdapter(selectedAdapter);
     }
 
-    public boolean onMediaSelectionUpdated() {
+    public boolean checkIfMediaSelectionCompleted() {
         int selectionCount = 0;
 
         if (galleryAdapter != null) {
@@ -714,13 +700,20 @@ public class CameraFragment extends PickerFragment implements OnClickListener {
         if (opts.mediaType == MediaType.IMAGE && opts.cropEnabled) {
             ImageEffectFragment fragment = ImageEffectFragment.newInstance(opts, items.get(0));
             showFragment(fragment);
-        } else {
-            Intent resultIntent = new Intent();
-            resultIntent.putStringArrayListExtra(MediaPickerOpts.INTENT_RES, items);
-            FragmentActivity activity = getActivity();
-            activity.setResult(RESULT_OK, resultIntent);
-            activity.supportFinishAfterTransition();
+            return;
         }
+
+        if (opts.mediaType == MediaType.IMAGE && opts.imgSize > 0) {
+            String imagePath = items.remove(0);
+            imagePath = BitmapUtils.createCroppedBitmap(imagePath, opts.imgSize);
+            items.add(0, imagePath);
+        }
+
+        Intent resultIntent = new Intent();
+        resultIntent.putStringArrayListExtra(MediaPickerOpts.INTENT_RES, items);
+        FragmentActivity activity = getActivity();
+        activity.setResult(RESULT_OK, resultIntent);
+        activity.supportFinishAfterTransition();
     }
 
     private void playSound(int soundId) {

@@ -8,6 +8,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 
 import com.softwarejoint.media.enums.MediaType;
 import com.softwarejoint.media.enums.ScaleType;
@@ -36,7 +37,7 @@ public class MediaPickerOpts implements Parcelable {
 
     public final int imgSize;
     public final int maxSelection;
-    public final String mediaDir;
+    public String mediaDir;
 
     public MediaPickerOpts(int mediaType, int scaleType, boolean galleryEnabled, boolean flashEnabled,
                            boolean filtersEnabled, boolean cropEnabled, int size,
@@ -106,6 +107,24 @@ public class MediaPickerOpts implements Parcelable {
         dest.writeString(mediaDir);
     }
 
+    public void startActivity(Fragment fragment) {
+        startActivity(fragment.getActivity());
+    }
+
+    public void startActivity(Activity activity) {
+        if (mediaDir == null) {
+            mediaDir = FileHandler.getApplicationName(activity);
+        }
+
+        Intent newIntent = new Intent(activity, PickerActivity.class);
+        newIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        newIntent.putExtra(INTENT_OPTS, this);
+
+        //noinspection unchecked
+        ActivityOptionsCompat options = ActivityOptionsCompat.makeSceneTransitionAnimation(activity);
+        ActivityCompat.startActivityForResult(activity, newIntent, REQUEST_CODE, options.toBundle());
+    }
+
     @SuppressWarnings("unused")
     public static final class Builder {
 
@@ -119,31 +138,28 @@ public class MediaPickerOpts implements Parcelable {
         private boolean filtersEnabled = true;
         private boolean scaleTypeChangeable = true;
         private boolean cropEnabled = false;
-        private int imgSize;
+        private int imgSize = 0;
 
         private int maxSelection = DEF_MAX_SELECTION;
         private String mediaDir;
 
-        public void startActivity(Activity activity) {
-            if (mediaDir == null) {
-                mediaDir = FileHandler.getApplicationName(activity);
+        public MediaPickerOpts build() {
+            if (mediaType == MediaType.VIDEO) {
+                imgSize = 0;
+                cropEnabled = false;
             }
 
-            MediaPickerOpts opts =
-                    new MediaPickerOpts(mediaType, scaleType, galleryEnabled, flashEnabled,
-                            filtersEnabled, cropEnabled, imgSize, scaleTypeChangeable, maxSelection, mediaDir);
+            if (imgSize > 0) {
+                cropEnabled = false;
+                maxSelection = DEF_MAX_SELECTION;
+            }
 
-            Intent newIntent = new Intent(activity, PickerActivity.class);
-            newIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            newIntent.putExtra(INTENT_OPTS, opts);
+            if (cropEnabled) {
+                maxSelection = DEF_MAX_SELECTION;
+            }
 
-            //noinspection unchecked
-            ActivityOptionsCompat options = ActivityOptionsCompat.makeSceneTransitionAnimation(activity);
-            ActivityCompat.startActivityForResult(activity, newIntent, REQUEST_CODE, options.toBundle());
-        }
-
-        public void startActivity(Fragment fragment) {
-            startActivity(fragment.getActivity());
+            return new MediaPickerOpts(mediaType, scaleType, galleryEnabled, flashEnabled,
+                    filtersEnabled, cropEnabled, imgSize, scaleTypeChangeable, maxSelection, mediaDir);
         }
 
         public Builder setMediaType(@MediaType int mediaType) {
@@ -183,11 +199,6 @@ public class MediaPickerOpts implements Parcelable {
 
         public Builder withCropEnabled(boolean enabled) {
             cropEnabled = enabled;
-
-            if (cropEnabled && mediaType == MediaType.IMAGE) {
-                maxSelection = DEF_MAX_SELECTION;
-            }
-
             return this;
         }
 
@@ -197,9 +208,7 @@ public class MediaPickerOpts implements Parcelable {
         }
 
         public Builder withMaxSelection(int count) {
-            if (mediaType != MediaType.IMAGE || !cropEnabled) {
-                maxSelection = count;
-            }
+            maxSelection = count;
             return this;
         }
     }

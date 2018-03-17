@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.opengl.GLException;
 import android.support.annotation.DrawableRes;
+import android.support.annotation.StringDef;
 import android.util.Log;
 
 import com.softwarejoint.media.fileio.FileHandler;
@@ -156,5 +157,11 @@ public class BitmapUtils {
         options.inJustDecodeBounds = false;
         Bitmap bitmap = BitmapFactory.decodeFile(imagePath, options);
         return bitmap != null ? ExifUtil.rotateBitmap(imagePath, bitmap) : null;
+    }
+
+    public static String createCroppedBitmap(String imagePath, int imgSize) {
+
+
+        return imagePath;
     }
 }

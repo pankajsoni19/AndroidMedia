@@ -94,7 +94,7 @@ public class SelectedAdapter extends RecyclerView.Adapter<ViewHolder> {
             selected.remove(mediaPath);
             notifyDataSetChanged();
 
-            cameraFragment.onMediaSelectionUpdated();
+            cameraFragment.checkIfMediaSelectionCompleted();
         }
     }
 }

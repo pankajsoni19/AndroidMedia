@@ -3,7 +3,6 @@ package com.softwarejoint.media.adapter;
 import android.database.Cursor;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -111,7 +110,7 @@ public class GalleryAdapter extends CursorRecyclerAdapter<ViewHolder> {
                 selected.add(mediaPath);
             }
 
-            cameraFragment.onMediaSelectionUpdated();
+            cameraFragment.checkIfMediaSelectionCompleted();
         }
     }
 }
