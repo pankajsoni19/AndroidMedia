@@ -40,11 +40,11 @@ public class MediaAudioEncoder extends MediaEncoder {
     private static final String TAG = "MediaAudioEncoder";
 
     private static final String MIME_TYPE = "audio/mp4a-latm";
-    private static final int SAMPLE_RATE = 44100;
+    private static final int SAMPLE_RATE = 8000;
     // 44.1[KHz] is only setting guaranteed to be available on all devices.
     private static final int BIT_RATE = 64000;
-    public static final int SAMPLES_PER_FRAME = 1024;  // AAC, bytes/frame/channel
-    public static final int FRAMES_PER_BUFFER = 25;  // AAC, frame/buffer/sec
+//    public static final int SAMPLES_PER_FRAME = 1024;  // AAC, bytes/frame/channel
+//    public static final int FRAMES_PER_BUFFER = 25;  // AAC, frame/buffer/sec
 
     private AudioThread mAudioThread = null;
 
@@ -69,8 +69,8 @@ public class MediaAudioEncoder extends MediaEncoder {
         Log.d(TAG, "selected codec: " + audioCodecInfo.getName());
 
         final MediaFormat audioFormat = MediaFormat.createAudioFormat(MIME_TYPE, SAMPLE_RATE, 1);
-        audioFormat.setInteger(MediaFormat.KEY_AAC_PROFILE,
-                MediaCodecInfo.CodecProfileLevel.AACObjectLC);
+
+        audioFormat.setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC);
         audioFormat.setInteger(MediaFormat.KEY_CHANNEL_MASK, AudioFormat.CHANNEL_IN_MONO);
         audioFormat.setInteger(MediaFormat.KEY_BIT_RATE, BIT_RATE);
         audioFormat.setInteger(MediaFormat.KEY_CHANNEL_COUNT, 1);
@@ -123,42 +123,41 @@ public class MediaAudioEncoder extends MediaEncoder {
     private class AudioThread extends Thread {
         @Override
         public void run() {
+            Log.d(TAG, "run: 3: " + SAMPLE_RATE + " bufferSize: ");
+
             android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
+
+            int min_buffer_size = AudioRecord.getMinBufferSize(SAMPLE_RATE,
+                    AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT);
             try {
-                final int min_buffer_size =
-                        AudioRecord.getMinBufferSize(SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO,
-                                AudioFormat.ENCODING_PCM_16BIT);
-
-                int buffer_size = SAMPLES_PER_FRAME * FRAMES_PER_BUFFER;
-                if (buffer_size < min_buffer_size) {
-                    buffer_size = ((min_buffer_size / SAMPLES_PER_FRAME) + 1) * SAMPLES_PER_FRAME * 2;
-                }
-
                 AudioRecord audioRecord = null;
                 for (final int source : AUDIO_SOURCES) {
                     try {
                         audioRecord = new AudioRecord(source, SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO,
-                                AudioFormat.ENCODING_PCM_16BIT, buffer_size);
+                                AudioFormat.ENCODING_PCM_16BIT, min_buffer_size);
                         if (audioRecord.getState() != AudioRecord.STATE_INITIALIZED)
                             audioRecord = null;
                     } catch (final Exception e) {
                         audioRecord = null;
                     }
-                    if (audioRecord != null) break;
+                    if (audioRecord != null) {
+                        Log.d(TAG, "initialized for: " + source);
+                        break;
+                    }
                 }
 
                 if (audioRecord != null) {
                     try {
                         if (mIsCapturing) {
                             Log.d(TAG, "AudioThread:start audio recording");
-                            final ByteBuffer buf = ByteBuffer.allocateDirect(SAMPLES_PER_FRAME);
+                            final ByteBuffer buf = ByteBuffer.allocateDirect(min_buffer_size);
                             int readBytes;
                             audioRecord.startRecording();
                             try {
                                 while (mIsCapturing && !mRequestStop && !mIsEOS) {
                                     // read audio data from internal mic
                                     buf.clear();
-                                    readBytes = audioRecord.read(buf, SAMPLES_PER_FRAME);
+                                    readBytes = audioRecord.read(buf, min_buffer_size);
                                     if (readBytes > 0) {
                                         // set audio data to encoder
                                         buf.position(readBytes);

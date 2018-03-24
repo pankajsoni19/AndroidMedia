@@ -4,13 +4,12 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.view.Window;
 
 /**
  * Created by Pankaj Soni <pankajsoni@softwarejoint.com> on 18/03/18.
  * Copyright (c) 2018 Software Joint. All rights reserved.
  */
-public class PermissionActivity extends Activity{
+public class PermissionActivity extends Activity {
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {

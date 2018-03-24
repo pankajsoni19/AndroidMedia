@@ -323,7 +323,7 @@ public class CameraFragment extends PickerFragment implements OnClickListener {
                 startRecording();
             } else {
                 stopRecording();
-                playSound(MediaActionSound.STOP_VIDEO_RECORDING);
+                uiThreadHandler.postDelayed(() -> playSound(MediaActionSound.STOP_VIDEO_RECORDING), 500L);
             }
         } else if (id == R.id.txt_done) {
             onClickDone();
@@ -506,7 +506,9 @@ public class CameraFragment extends PickerFragment implements OnClickListener {
             new MediaAudioEncoder(mMuxer, mMediaEncoderListener);
 
             mMuxer.prepare();
-            mMuxer.startRecording();
+            //delay is added as camera record sound gets recorded
+            uiThreadHandler.postDelayed(() -> mMuxer.startRecording(), 500L);
+
         } catch (final IOException e) {
             Log.e(TAG, "startCapture:", e);
             return;

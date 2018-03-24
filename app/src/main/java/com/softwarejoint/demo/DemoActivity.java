@@ -16,6 +16,7 @@ import com.softwarejoint.media.picker.MediaPickerOpts;
 import com.softwarejoint.media.picker.Result;
 
 import java.io.File;
+import java.io.IOException;
 
 import static android.view.WindowManager.LayoutParams.FLAG_FULLSCREEN;
 
@@ -43,6 +44,12 @@ public class DemoActivity extends BaseActivity implements View.OnClickListener {
         findViewById(R.id.video).setOnClickListener(this);
         findViewById(R.id.image).setOnClickListener(this);
     }
+
+//    @Override
+//    protected void onResume() {
+//        super.onResume();
+//        new EncoderTest().testAACEncoders();
+//    }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {

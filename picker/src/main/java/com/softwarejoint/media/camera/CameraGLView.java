@@ -338,7 +338,7 @@ public final class CameraGLView extends GLSurfaceView {
         private GLDrawer2D mDrawer;
         private MediaVideoEncoder mVideoEncoder;
         private volatile boolean requestUpdateTex = false;
-        private boolean flip = true;
+        //private boolean flip = true;
 
         private volatile boolean showFilters = false;
         private volatile boolean filterPreviewEnabled = true;
@@ -723,13 +723,10 @@ public final class CameraGLView extends GLSurfaceView {
                 // draw to preview screen
                 mDrawer.draw(mGLTextureId, mStMatrix);
 
-                flip = !flip;
-                if (flip) {  // ~15fps
-                    synchronized (this) {
-                        if (mVideoEncoder != null) {
-                            // notify to capturing thread that the camera frame is available.
-                            mVideoEncoder.frameAvailableSoon(mStMatrix);
-                        }
+                synchronized (this) {
+                    if (mVideoEncoder != null) {
+                        // notify to capturing thread that the camera frame is available.
+                        mVideoEncoder.frameAvailableSoon(mStMatrix);
                     }
                 }
             }
