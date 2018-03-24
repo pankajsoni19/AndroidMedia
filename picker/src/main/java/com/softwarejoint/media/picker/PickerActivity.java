@@ -1,6 +1,7 @@
 package com.softwarejoint.media.picker;
 
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
@@ -42,6 +43,7 @@ public class PickerActivity extends BaseActivity implements PermissionCallBack, 
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         getWindow().setFlags(FLAG_FULLSCREEN, FLAG_FULLSCREEN);
 
         setTransition(Gravity.END, GravityCompat.END, GravityCompat.END, GravityCompat.END);
@@ -57,7 +59,7 @@ public class PickerActivity extends BaseActivity implements PermissionCallBack, 
             uiThreadHandler.postDelayed(this::supportFinishAfterTransition, 500L);
             return;
         }
-
+        memoryCache = null;
         memoryCache = MemoryCache.getInstance();
 
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
@@ -85,7 +87,8 @@ public class PickerActivity extends BaseActivity implements PermissionCallBack, 
     protected void onStop() {
         super.onStop();
         if (isFinishing()) {
-            memoryCache.clear();
+            if (memoryCache != null) memoryCache.clear();
+
             uiThreadHandler.postDelayed(() -> {
                 container.setVisibility(View.GONE);
             }, AnimationHelper.getShortDuration());

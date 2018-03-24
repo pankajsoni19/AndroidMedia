@@ -1,6 +1,7 @@
 package com.softwarejoint.demo;
 
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.support.v4.view.GravityCompat;
 import android.util.Log;
@@ -34,6 +35,7 @@ public class DemoActivity extends BaseActivity implements View.OnClickListener {
     protected void onCreate(@org.jetbrains.annotations.Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         getWindow().setFlags(FLAG_FULLSCREEN, FLAG_FULLSCREEN);
 
         setTransition(Gravity.END, GravityCompat.END, GravityCompat.END, GravityCompat.END);
