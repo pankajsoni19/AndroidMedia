@@ -11,12 +11,15 @@ import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLUtils;
 import android.opengl.Matrix;
+import android.sax.RootElement;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
+import android.widget.LinearLayout;
 
+import com.softwarejoint.media.camera.CameraFragment;
 import com.softwarejoint.media.enums.ImageEffect;
 import com.softwarejoint.media.glutils.GLDrawer2D;
 import com.softwarejoint.media.multitouch.MultiTouchListener;
@@ -34,13 +37,13 @@ import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 import static com.softwarejoint.media.enums.ImageEffect.BLACKWHITE;
-import static com.softwarejoint.media.enums.ImageEffect.DOCUMENTARY;
-import static com.softwarejoint.media.enums.ImageEffect.GRAYSCALE;
+import static com.softwarejoint.media.enums.ImageEffect.CROSSPROCESS;
+import static com.softwarejoint.media.enums.ImageEffect.DUOTONEBW;
+import static com.softwarejoint.media.enums.ImageEffect.DUOTONEPY;
+import static com.softwarejoint.media.enums.ImageEffect.FILLIGHT;
 import static com.softwarejoint.media.enums.ImageEffect.LOMOISH;
 import static com.softwarejoint.media.enums.ImageEffect.NEGATIVE;
-import static com.softwarejoint.media.enums.ImageEffect.POSTERIZE;
 import static com.softwarejoint.media.enums.ImageEffect.SEPIA;
-import static com.softwarejoint.media.enums.ImageEffect.VIGNETTE;
 import static com.softwarejoint.media.enums.ImageEffect.NONE;
 
 @SuppressWarnings("WeakerAccess")
@@ -49,11 +52,10 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
     private static final String TAG = "EffectGLView";
 
     private static String[] EFFECTS = {
-            NONE, SEPIA,
-            GRAYSCALE,
-            POSTERIZE, NEGATIVE, BLACKWHITE, LOMOISH, DOCUMENTARY, VIGNETTE
+            NONE, SEPIA, CROSSPROCESS, DUOTONEBW, DUOTONEPY,
+            NEGATIVE, BLACKWHITE, LOMOISH, FILLIGHT
     };
-
+   // GRAYSCALE,POSTERIZE,  DOCUMENTARY, VIGNETTE
     private static final int FILTERED_PREVIEW_SIZE = 96;
     private static final int FILTER_PREVIEWS_PER_ROW = 3;
 
@@ -271,7 +273,6 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
     @Override
     public boolean dispatchTouchEvent(MotionEvent event) {
         if (!filtersPreviewEnabled) return super.dispatchTouchEvent(event);
-
         Log.d(TAG, "dispatchTouchEvent");
 
         switch (event.getActionMasked()) {
@@ -306,16 +307,29 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
         GLToolbox.checkGlError("glViewport");
     }
 
-    public boolean toggleEffectPreviews() {
+    public void toggleEffectPreviews() {
         runOnDraw(() -> {
             Log.d(TAG, "toggleEffectPreviews");
-            filtersPreviewEnabled = !filtersPreviewEnabled;
+            //filtersPreviewEnabled = !filtersPreviewEnabled;
             GLDrawer2D.deleteTex(mTextures[1]);
             GLES20.glGenTextures(1, mTextures, 1);
         });
 
-        return !filtersPreviewEnabled;
+       // return !filtersPreviewEnabled;
     }
+
+    public void touched1 (String name){
+        for (EffectRenderer renderer: effects) {
+        if (name.equals(renderer.name())) {
+
+            queueEvent(() -> {
+                mCurrentEffect = renderer.name();
+                mEffectRenderer = renderer;
+            });
+            toggleEffectPreviews();
+            break;
+        }
+    }}
 
     private void onTouched(int x, int y) {
         for (EffectRenderer renderer: effects) {
@@ -433,9 +447,9 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
 
         if (!mInitialised) return;
 
-        if (filtersPreviewEnabled) {
-            updateAllEffects();
+       /* if (filtersPreviewEnabled) {
 
+                 updateAllEffects();
             for (EffectRenderer renderer: effects) {
                 renderer.makeEffectCurrent(mTextures[0], renderer.mViewWidth, renderer.mViewHeight, mTextures[1]);
 
@@ -444,14 +458,14 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
 
                 renderer.renderTexture();
             }
-        } else {
-            updateMainEffect();
+       } else {
+       */      updateMainEffect();
             mEffectRenderer.renderTexture();
-        }
+      //  }
     }
 
     private void createEffects() {
-        if (filtersEnabled) {
+    //    if (filtersEnabled) {
             EffectFactory effectFactory = mEffectContext.getFactory();
 
             for (@ImageEffect String effectType: EFFECTS) {
@@ -464,9 +478,9 @@ public final class EffectGLView extends GLSurfaceView implements GLSurfaceView.R
 
                 effects.add(renderer);
             }
-        } else {
-            mEffectRenderer = new EffectRenderer(null, ImageEffect.NONE);
-        }
+       // } else {
+       //     mEffectRenderer = new EffectRenderer(null, ImageEffect.NONE);
+       // }
     }
 
     private void updateAllEffects() {

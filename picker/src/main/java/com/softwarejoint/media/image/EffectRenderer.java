@@ -1,5 +1,6 @@
 package com.softwarejoint.media.image;
 
+import android.graphics.Color;
 import android.media.effect.Effect;
 import android.media.effect.EffectFactory;
 import android.support.annotation.Nullable;
@@ -44,12 +45,13 @@ class EffectRenderer extends TextureRenderer {
         switch (effectType) {
             case ImageEffect.NONE:
                 return;
-            case ImageEffect.GRAYSCALE:
+          /*  case ImageEffect.GRAYSCALE:
                 mEffect = effectFactory.createEffect(EffectFactory.EFFECT_GRAYSCALE);
                 break;
             case ImageEffect.POSTERIZE:
                 mEffect = effectFactory.createEffect(EffectFactory.EFFECT_POSTERIZE);
                 break;
+                */
             case ImageEffect.SEPIA:
                 mEffect = effectFactory.createEffect(EffectFactory.EFFECT_SEPIA);
                 break;
@@ -57,18 +59,32 @@ class EffectRenderer extends TextureRenderer {
                 mEffect = effectFactory.createEffect(EffectFactory.EFFECT_NEGATIVE);
                 break;
             case ImageEffect.BLACKWHITE:
-                mEffect = effectFactory.createEffect(EffectFactory.EFFECT_BLACKWHITE);
-                mEffect.setParameter("black", .1f);
-                mEffect.setParameter("white", .7f);
+                mEffect = effectFactory.createEffect(EffectFactory.EFFECT_GRAYSCALE);
                 break;
-            case ImageEffect.DOCUMENTARY:
-                mEffect = effectFactory.createEffect(EffectFactory.EFFECT_DOCUMENTARY);
-                break;
+           // case ImageEffect.DOCUMENTARY:
+           //     mEffect = effectFactory.createEffect(EffectFactory.EFFECT_DOCUMENTARY);
+           //     break;
             case ImageEffect.LOMOISH:
                 mEffect = effectFactory.createEffect(EffectFactory.EFFECT_LOMOISH);
                 break;
-            case ImageEffect.VIGNETTE:
-                mEffect = effectFactory.createEffect(EffectFactory.EFFECT_VIGNETTE);
+            case ImageEffect.CROSSPROCESS:
+                mEffect = effectFactory.createEffect(EffectFactory.EFFECT_CROSSPROCESS);
+                break;
+            case ImageEffect.FILLIGHT:
+                mEffect = effectFactory.createEffect(EffectFactory.EFFECT_FILLLIGHT);
+                mEffect.setParameter("strength",0.5f);
+                break;
+           // case ImageEffect.VIGNETTE:
+           //     mEffect = effectFactory.createEffect(EffectFactory.EFFECT_VIGNETTE);
+            case ImageEffect.DUOTONEPY:
+                mEffect = effectFactory.createEffect(EffectFactory.EFFECT_DUOTONE);
+                mEffect.setParameter("first_color", Color.rgb(128, 0, 255));
+                mEffect.setParameter("second_color", Color.rgb(255, 207, 30));
+                break;
+            case ImageEffect.DUOTONEBW:
+                mEffect = effectFactory.createEffect(EffectFactory.EFFECT_DUOTONE);
+                mEffect.setParameter("first_color", Color.rgb(0, 114, 255));
+                mEffect.setParameter("second_color", Color.rgb(255, 255, 255));
                 break;
         }
     }

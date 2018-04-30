@@ -1,5 +1,6 @@
 <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/frag_blue_bg">
@@ -8,11 +9,12 @@
         android:id="@+id/effectView"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.32999998" />
 
     <android.support.v7.widget.AppCompatImageView
         android:id="@+id/iv_back"
@@ -34,84 +36,31 @@
         app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.32999998" />
 
     <com.softwarejoint.media.image.PathCropView
         android:id="@+id/pathCropView"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintDimensionRatio="1:1"
+        android:background="@color/path_bg"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        android:background="@color/path_bg"/>
-
-    <android.support.v7.widget.AppCompatImageView
-        android:id="@+id/iv_crop"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginTop="8dp"
-        android:padding="6dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/clear_white" />
-
-    <ImageView
-        android:id="@+id/iv_crop_circle"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginTop="8dp"
-        android:padding="10dp"
-        android:src="@drawable/ring_white_thick"
-        app:layout_constraintEnd_toStartOf="@id/iv_crop"
-        app:layout_constraintTop_toTopOf="parent"/>
-
-    <android.support.v7.widget.AppCompatImageView
-        android:id="@+id/iv_crop_star"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginTop="8dp"
-        android:padding="7dp"
-        app:layout_constraintEnd_toStartOf="@id/iv_crop_circle"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/star_white" />
-
-    <ImageView
-        android:id="@+id/iv_crop_flower"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginTop="8dp"
-        android:padding="10dp"
-        app:layout_constraintEnd_toStartOf="@id/iv_crop_star"
-        app:layout_constraintTop_toTopOf="parent"
-        android:src="@drawable/flower_outline_small" />
-
-    <android.support.v7.widget.AppCompatImageView
-        android:id="@+id/iv_crop_path"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginTop="8dp"
-        android:padding="7dp"
-        app:layout_constraintEnd_toStartOf="@id/iv_crop_flower"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/pencil_white" />
+        app:layout_constraintVertical_bias="0.32999998" />
 
     <android.support.v7.widget.AppCompatImageView
         android:id="@+id/iv_filter"
         android:layout_width="40dp"
         android:layout_height="40dp"
-        android:layout_marginBottom="12dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="56dp"
         android:padding="6dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/iv_crop"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/iv_back"
         app:srcCompat="@drawable/photo_filter" />
 
     <android.support.v7.widget.AppCompatImageView
@@ -123,5 +72,222 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
+
+    <HorizontalScrollView
+        android:id="@+id/hsv_effects"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:layout_marginTop="8dp"
+        app:layout_constraintBottom_toTopOf="@+id/iv_done"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:weightSum="6">
+
+            <android.support.v7.widget.AppCompatImageView
+                android:id="@+id/iv_none"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_marginEnd="4dp"
+                android:layout_marginLeft="4dp"
+                android:layout_marginRight="4dp"
+                android:layout_marginStart="4dp"
+                app:srcCompat="@drawable/beachh" />
+
+            <android.support.v7.widget.AppCompatImageView
+                android:id="@+id/iv_duotone_py"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_marginEnd="4dp"
+                android:layout_marginLeft="4dp"
+                android:layout_marginRight="4dp"
+                android:layout_marginStart="4dp"
+                app:srcCompat="@drawable/b1" />
+
+            <android.support.v7.widget.AppCompatImageView
+                android:id="@+id/iv_cross"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_marginEnd="4dp"
+                android:layout_marginLeft="4dp"
+                android:layout_marginRight="4dp"
+                android:layout_marginStart="4dp"
+                app:srcCompat="@drawable/b2" />
+
+            <android.support.v7.widget.AppCompatImageView
+                android:id="@+id/iv_negative"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_marginEnd="4dp"
+                android:layout_marginLeft="4dp"
+                android:layout_marginRight="4dp"
+                android:layout_marginStart="4dp"
+                app:srcCompat="@drawable/b3" />
+
+            <android.support.v7.widget.AppCompatImageView
+                android:id="@+id/iv_duotone_bw"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_marginEnd="4dp"
+                android:layout_marginLeft="4dp"
+                android:layout_marginRight="4dp"
+                android:layout_marginStart="4dp"
+                app:srcCompat="@drawable/b4" />
+
+            <android.support.v7.widget.AppCompatImageView
+                android:id="@+id/iv_lomo"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_marginEnd="4dp"
+                android:layout_marginLeft="4dp"
+                android:layout_marginRight="4dp"
+                android:layout_marginStart="4dp"
+                app:srcCompat="@drawable/b5" />
+
+            <android.support.v7.widget.AppCompatImageView
+                android:id="@+id/iv_fillight"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_marginEnd="4dp"
+                android:layout_marginLeft="4dp"
+                android:layout_marginRight="4dp"
+                android:layout_marginStart="4dp"
+                app:srcCompat="@drawable/b6" />
+
+            <android.support.v7.widget.AppCompatImageView
+                android:id="@+id/iv_bw"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_marginEnd="4dp"
+                android:layout_marginLeft="4dp"
+                android:layout_marginRight="4dp"
+                android:layout_marginStart="4dp"
+                app:srcCompat="@drawable/b7" />
+
+            <android.support.v7.widget.AppCompatImageView
+                android:id="@+id/iv_sepia"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_marginEnd="4dp"
+                android:layout_marginLeft="4dp"
+                android:layout_marginRight="4dp"
+                android:layout_marginStart="4dp"
+                app:srcCompat="@drawable/b8" />
+
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <LinearLayout
+        android:id="@+id/linearLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="104dp"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toTopOf="@+id/effectView"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <android.support.v7.widget.AppCompatImageView
+            android:id="@+id/iv_crop_path"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginLeft="8dp"
+            android:layout_marginRight="8dp"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:padding="7dp"
+            app:layout_constraintEnd_toStartOf="@id/iv_crop_flower"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/pencil_white" />
+
+        <ImageView
+            android:id="@+id/iv_crop_flower"
+            android:layout_width="42dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginRight="8dp"
+            android:layout_weight="1"
+            android:padding="10dp"
+            android:src="@drawable/flower_outline_small"
+            app:layout_constraintEnd_toStartOf="@id/iv_crop_star"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <android.support.v7.widget.AppCompatImageView
+            android:id="@+id/iv_crop_star"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginRight="8dp"
+            android:layout_weight="1"
+            android:padding="7dp"
+            app:layout_constraintEnd_toStartOf="@id/iv_crop_circle"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/star_white" />
+
+        <ImageView
+            android:id="@+id/iv_crop_circle"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginRight="8dp"
+            android:layout_weight="1"
+            android:padding="10dp"
+            android:src="@drawable/ring_white_thick"
+            app:layout_constraintEnd_toStartOf="@id/iv_crop"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <android.support.v7.widget.AppCompatImageView
+            android:id="@+id/iv_crop"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginRight="8dp"
+            android:layout_weight="1"
+            android:padding="6dp"
+            android:visibility="visible"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/clear_white" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="116dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:text="Effects"
+        android:textColor="@android:color/white"
+        android:textSize="18sp"
+        app:layout_constraintBottom_toTopOf="@+id/iv_done"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/tv_back_original"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="30dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:gravity="center"
+        android:text="@string/back_to_original"
+        android:textColor="@android:color/white"
+        android:textSize="18sp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/iv_done" />
 
 </android.support.constraint.ConstraintLayout>

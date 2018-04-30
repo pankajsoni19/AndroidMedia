@@ -24,6 +24,7 @@ package com.softwarejoint.media.camera;
 
 import android.content.Context;
 import android.content.res.Resources;
+import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.opengl.EGL14;
@@ -36,7 +37,9 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.View;
+import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 
 import com.softwarejoint.media.encoder.MediaVideoEncoder;
 import com.softwarejoint.media.enums.MediaType;
@@ -78,6 +81,7 @@ public final class CameraGLView extends GLSurfaceView {
     protected boolean isFlashAvailable = false;
     protected boolean isFrontCameraAvailable = false;
 
+    private Point start, finish;
     protected ImageView flashImageView, cameraSwitcher;
 
     protected @ScaleType
@@ -183,13 +187,21 @@ public final class CameraGLView extends GLSurfaceView {
         Log.d(TAG, "dispatchTouchEvent");
 
         switch (event.getActionMasked()) {
+
             case MotionEvent.ACTION_DOWN:
-                final int x = (int) event.getX();
-                final int y = (int) event.getY();
-                queueEvent(() -> mRenderer.onTouched(x, y));
+                start = new Point((int)event.getX(),(int) event.getY());
                 break;
-            case MotionEvent.ACTION_UP:
-                break;
+
+                    case MotionEvent.ACTION_UP:
+                        finish = new Point((int)event.getX(),(int) event.getY());
+                        if ((Math.abs((start.x - finish.x)) > 5)){
+                            break;
+                        }else {
+                            final int x = (int) event.getX();
+                            final int y = (int) event.getY();
+                            queueEvent(() -> mRenderer.onTouched(x, y));
+                            }
+                        break;
         }
 
         return true;
@@ -231,6 +243,10 @@ public final class CameraGLView extends GLSurfaceView {
     public void init(@ScaleType final int scaleType, @MediaType int mediaType) {
         mScaleType = scaleType;
         mMediaType = mediaType;
+    }
+
+    public void touched (String name){
+        mRenderer.touched(name);
     }
 
     public @ScaleType
@@ -365,7 +381,7 @@ public final class CameraGLView extends GLSurfaceView {
             margin = (screenWidth - (filterPreviewSize * FILTER_PREVIEWS_PER_ROW)) / (FILTER_PREVIEWS_PER_ROW + 1);
 
             filterStartX = margin;
-            filterStartY = (int) (0.50 * screenHeight);
+            filterStartY = (int) (0.20 * screenHeight);
         }
 
         private void setFilterPreviewEnabled(boolean enabled) {
@@ -377,6 +393,21 @@ public final class CameraGLView extends GLSurfaceView {
                 filterPreviews.clear();
             }
         }
+
+
+        public void touched(String name) {
+            if (name.equals("none")){
+                onFilterSelected(filterPreviews.get(0));
+            }
+            if (name.equals("bw")){
+                onFilterSelected(filterPreviews.get(2));
+            }else if(name.equals("invert")){
+                onFilterSelected(filterPreviews.get(5));
+            }
+
+
+        }
+
 
         public void onTouched(int x, int y) {
             Rect rect = new Rect();
@@ -607,7 +638,7 @@ public final class CameraGLView extends GLSurfaceView {
 
                     } else {
                         newPreviewSize = view_width;
-                        view_y = (view_height - newPreviewSize) / 2;
+                        view_y = ((view_height - newPreviewSize) * 2)/3;
                     }
 
                     final float video_aspect = (float) (video_width / video_height);
@@ -671,10 +702,11 @@ public final class CameraGLView extends GLSurfaceView {
 
                 startX = startX + filterPreviewSize + margin;
 
-                if (screenWidth < (startX + filterPreviewSize + margin)) {
+                 if (screenWidth < (startX + filterPreviewSize + margin)) {
                     startX = margin;
                     startY = startY - filterPreviewSize - margin;   //move down
                 }
+
             }
         }
 

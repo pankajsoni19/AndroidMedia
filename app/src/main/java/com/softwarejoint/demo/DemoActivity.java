@@ -73,12 +73,13 @@ public class DemoActivity extends BaseActivity implements View.OnClickListener {
     private void startVideoPicker() {
         new MediaPickerOpts.Builder()
                 .setMediaType(MediaType.VIDEO)
-                .canChangeScaleType(Boolean.valueOf("true"))
-                .withGallery(Boolean.valueOf("true"))
                 .withCameraType(ScaleType.SCALE_SQUARE)
+                .withGallery(Boolean.valueOf("true"))
                 .withFlash(Boolean.valueOf("true"))
-                .withMaxSelection(Integer.parseInt("2"))
                 .withFilters(Boolean.valueOf("true"))
+                .withCropEnabled(Boolean.valueOf("false"))
+                .canChangeScaleType(Boolean.valueOf("true"))
+                .withMaxSelection(Integer.parseInt("2"))
                 .build()
                 .startActivity(this);
     }
@@ -86,14 +87,14 @@ public class DemoActivity extends BaseActivity implements View.OnClickListener {
     private void startImagePicker() {
         new MediaPickerOpts.Builder()
                 .setMediaType(MediaType.IMAGE)
-                .canChangeScaleType(Boolean.valueOf("true"))
-                .withGallery(Boolean.valueOf("true"))
                 .withCameraType(ScaleType.SCALE_SQUARE)
+                .withGallery(Boolean.valueOf("true"))
                 .withFlash(Boolean.valueOf("true"))
-                .withMaxSelection(Integer.parseInt("5"))
                 .withFilters(Boolean.valueOf("true"))
                 .withCropEnabled(Boolean.valueOf("true"))
-                //.withImgSize(Integer.valueOf("96"))
+                .canChangeScaleType(Boolean.valueOf("true"))
+                .withImgSize(Integer.valueOf("96"))
+                .withMaxSelection(Integer.parseInt("2"))
                 .build()
                 .startActivity(this);
     }

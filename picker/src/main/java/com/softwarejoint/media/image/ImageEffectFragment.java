@@ -24,17 +24,21 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.ImageViewCompat;
+import android.support.v7.widget.AppCompatImageView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.softwarejoint.media.R;
 import com.softwarejoint.media.anim.AnimationHelper;
 import com.softwarejoint.media.base.PickerFragment;
 import com.softwarejoint.media.enums.CropType;
+import com.softwarejoint.media.enums.ImageEffect;
 import com.softwarejoint.media.picker.MediaPickerOpts;
+import com.softwarejoint.media.tasks.LoadImageTask;
 import com.softwarejoint.media.utils.BitmapUtils;
 
 import java.util.ArrayList;
@@ -62,13 +66,16 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
     }
 
     private MediaPickerOpts opts;
+    private TextView tv_reset_original;
 
     private EffectGLView effectView;
     private ImageView iv_crop, iv_crop_circle, iv_crop_star, iv_crop_flower, iv_crop_path;
+    private AppCompatImageView iv_none, iv_duo_py, iv_cross, iv_negative, iv_duo_bw, iv_lomo, iv_fillight, iv_bw, iv_sepia;
     private ImageView iv_crop_mask;
     private PathCropView pathCropView;
+    private Boolean isEffectApplied;
 
-    private View iv_filter;
+    private AppCompatImageView iv_filter;
 
     private View iv_done;
 
@@ -106,23 +113,47 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
         iv_crop_flower = rootView.findViewById(R.id.iv_crop_flower);
         iv_crop_path = rootView.findViewById(R.id.iv_crop_path);
 
+        isEffectApplied = false;
+
+        iv_none = rootView.findViewById(R.id.iv_none);
+        iv_duo_py = rootView.findViewById(R.id.iv_duotone_py);
+        iv_cross = rootView.findViewById(R.id.iv_cross);
+        iv_negative = rootView.findViewById(R.id.iv_negative);
+        iv_duo_bw = rootView.findViewById(R.id.iv_duotone_bw);
+        iv_lomo = rootView.findViewById(R.id.iv_lomo);
+        iv_fillight = rootView.findViewById(R.id.iv_fillight);
+        iv_bw = rootView.findViewById(R.id.iv_bw);
+        iv_sepia = rootView.findViewById(R.id.iv_sepia);
+        tv_reset_original = rootView.findViewById(R.id.tv_back_original);
+
         iv_crop_mask = rootView.findViewById(R.id.iv_crop_mask);
         pathCropView = rootView.findViewById(R.id.pathCropView);
 
         iv_filter = rootView.findViewById(R.id.iv_filter);
 
-        if (opts.cropEnabled) {
+        //if (opts.cropEnabled) {  control not working
+            tv_reset_original.setOnClickListener(this);
             iv_crop.setOnClickListener(this);
             iv_crop_circle.setOnClickListener(this);
             iv_crop_star.setOnClickListener(this);
             iv_crop_flower.setOnClickListener(this);
             iv_crop_path.setOnClickListener(this);
-        } else {
+       /* } else {
             iv_crop.setVisibility(View.GONE);
         }
-
+       */
         if (opts.filtersEnabled) {
             iv_filter.setOnClickListener(this);
+
+            iv_none.setOnClickListener(this);
+            iv_duo_py.setOnClickListener(this);
+            iv_cross.setOnClickListener(this);
+            iv_negative.setOnClickListener(this);
+            iv_duo_bw.setOnClickListener(this);
+            iv_lomo.setOnClickListener(this);
+            iv_fillight.setOnClickListener(this);
+            iv_bw.setOnClickListener(this);
+            iv_sepia.setOnClickListener(this);
         } else {
             iv_filter.setVisibility(View.GONE);
         }
@@ -160,28 +191,83 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
         effectView.queueEvent(this::applyEffects);
     }
 
+    private void shouldResetBeVisible(){
+        if(isEffectApplied || cropType != CropType.NONE){
+            tv_reset_original.setVisibility(View.VISIBLE);
+        }else {
+            tv_reset_original.setVisibility(View.GONE);
+        }
+    }
+
     @Override
     public void onClick(final View view) {
         final int id = view.getId();
         if (R.id.iv_back == id) {
             //noinspection ConstantConditions
             dismiss();
-        } else if (R.id.iv_crop == id) {
-            toggleCrop();
-        } else if (R.id.iv_crop_circle == id) {
+        }
+        else if (R.id.iv_crop == id) {
+            //toggleCrop();
+            animateOption(iv_crop_circle, false);
+            animateOption(iv_crop_star, false);
+            animateOption(iv_crop_flower, false);
+            onCropSelected(CropType.NONE);
+            shouldResetBeVisible();
+
+        }else if (R.id.iv_crop_circle == id) {
             onCropSelected(CropType.CIRCLE);
-        } else if (R.id.iv_crop_star == id) {
+            shouldResetBeVisible();
+        }else if (R.id.iv_crop_star == id) {
             onCropSelected(CropType.STAR);
-        } else if (R.id.iv_crop_flower == id) {
+            shouldResetBeVisible();
+        }else if (R.id.iv_crop_flower == id) {
             onCropSelected(CropType.FLOWER);
-        } else if (R.id.iv_crop_path == id) {
+            shouldResetBeVisible();
+        }else if (R.id.iv_crop_path == id) {
             onCropSelected(CropType.PATH);
-        } else if (R.id.iv_filter == id) {
-            if (effectView.toggleEffectPreviews() && cropType == CropType.PATH) {
-                onCropSelected(cropType);
-            }
-        } else if (R.id.iv_done == id) {
+            shouldResetBeVisible();
+        }else if (R.id.iv_done == id) {
             onClickDone();
+        }else if(R.id.tv_back_original == id){
+            iv_crop.callOnClick();
+            iv_none.callOnClick();
+            shouldResetBeVisible();
+        }else if (id == R.id.iv_none){
+            effectView.touched1(ImageEffect.NONE);
+            isEffectApplied = false;
+            shouldResetBeVisible();
+        }else if (id == R.id.iv_duotone_py){
+            effectView.touched1(ImageEffect.DUOTONEPY);
+            isEffectApplied = true;
+            shouldResetBeVisible();
+        }else if (id == R.id.iv_cross){
+            effectView.touched1(ImageEffect.CROSSPROCESS);
+            isEffectApplied = true;
+            shouldResetBeVisible();
+        }else if (id == R.id.iv_negative){
+            effectView.touched1(ImageEffect.NEGATIVE);
+            isEffectApplied = true;
+            shouldResetBeVisible();
+        }else if (id == R.id.iv_duotone_bw){
+            effectView.touched1(ImageEffect.DUOTONEBW);
+            isEffectApplied = true;
+            shouldResetBeVisible();
+        }else if (id == R.id.iv_lomo){
+            effectView.touched1(ImageEffect.LOMOISH);
+            isEffectApplied = true;
+            shouldResetBeVisible();
+        }else if (id == R.id.iv_fillight){
+            effectView.touched1(ImageEffect.FILLIGHT);
+            isEffectApplied = true;
+            shouldResetBeVisible();
+        }else if (id == R.id.iv_bw){
+            effectView.touched1(ImageEffect.BLACKWHITE);
+            isEffectApplied = true;
+            shouldResetBeVisible();
+        }else if (id == R.id.iv_sepia){
+            effectView.touched1(ImageEffect.SEPIA);
+            isEffectApplied = true;
+            shouldResetBeVisible();
         }
     }
 
@@ -337,6 +423,8 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
         }
     }
 
+
+
     @SuppressLint("SwitchIntDef")
     @SuppressWarnings("ConstantConditions")
     private void applyEffects() {
@@ -345,7 +433,7 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
 
         String mediaPath;
 
-        if (!isCropVisible() || cropType == CropType.NONE) {
+        if (cropType == CropType.NONE) {
             mediaPath = BitmapUtils.saveBitmap(original, opts, true);
             original.recycle();
         } else if (cropType != CropType.PATH) {

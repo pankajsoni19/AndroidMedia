@@ -14,6 +14,7 @@ import android.os.Handler;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentActivity;
+import android.support.v7.widget.AppCompatImageView;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -21,7 +22,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.softwarejoint.media.R;
@@ -82,11 +85,14 @@ public class CameraFragment extends PickerFragment implements OnClickListener {
     private CameraGLView mCameraView;
     private ImageView iv_flash;
     private ImageView mCameraSwitcher;
+    private TextView tv_gallery_effects;
+    private AppCompatImageView iv_none_c, iv_duo_py_c, iv_cross_c, iv_negative_c, iv_duo_bw_c, iv_lomo_c, iv_fillight_c, iv_bw_c, iv_sepia_c;
 
     private RecyclerView recyclerView;
     private GalleryAdapter galleryAdapter;
     private SelectedAdapter selectedAdapter;
 
+    private HorizontalScrollView hsv_effects;
     private ImageView iv_back;
     private ImageView iv_filter;
     private View txt_gallery;
@@ -149,12 +155,24 @@ public class CameraFragment extends PickerFragment implements OnClickListener {
         iv_flash = rootView.findViewById(R.id.iv_flash);
         mCameraSwitcher = rootView.findViewById(R.id.iv_switch_camera);
         recyclerView = rootView.findViewById(R.id.gallery_previews);
+        hsv_effects = rootView.findViewById(R.id.hsv_effects_capture);
 
         iv_filter = rootView.findViewById(R.id.iv_filter);
 
         iv_gallery = rootView.findViewById(R.id.iv_gallery);
         txt_gallery = rootView.findViewById(R.id.txt_gallery);
         iv_vid_crop = rootView.findViewById(R.id.iv_vid_crop);
+        tv_gallery_effects = rootView.findViewById(R.id.tv_gallery_effects);
+
+        iv_none_c = rootView.findViewById(R.id.iv_none_c);
+        iv_duo_py_c = rootView.findViewById(R.id.iv_duotone_py_c);
+        iv_cross_c = rootView.findViewById(R.id.iv_cross_c);
+        iv_negative_c = rootView.findViewById(R.id.iv_negative_c);
+        iv_duo_bw_c = rootView.findViewById(R.id.iv_duotone_bw_c);
+        iv_lomo_c = rootView.findViewById(R.id.iv_lomo_c);
+        iv_fillight_c = rootView.findViewById(R.id.iv_fillight_C);
+        iv_bw_c = rootView.findViewById(R.id.iv_bw_c);
+        iv_sepia_c = rootView.findViewById(R.id.iv_sepia_c);
 
         txtVideoDur = rootView.findViewById(R.id.video_dur);
         mRecordButton = rootView.findViewById(R.id.record_button);
@@ -162,11 +180,23 @@ public class CameraFragment extends PickerFragment implements OnClickListener {
         iv_back = rootView.findViewById(R.id.iv_back);
         txt_done = rootView.findViewById(R.id.txt_done);
 
+        iv_none_c.setOnClickListener(this);
+        iv_duo_py_c.setOnClickListener(this);
+        iv_cross_c.setOnClickListener(this);
+        iv_negative_c.setOnClickListener(this);
+        iv_duo_bw_c.setOnClickListener(this);
+        iv_lomo_c.setOnClickListener(this);
+        iv_fillight_c.setOnClickListener(this);
+        iv_bw_c.setOnClickListener(this);
+        iv_sepia_c.setOnClickListener(this);
+
         txt_done.setOnClickListener(this);
         iv_back.setOnClickListener(this);
 
         mRecordButton.setOnClickListener(this);
         mCameraSwitcher.setOnClickListener(this);
+
+        tv_gallery_effects.setText("Gallery");
 
         handleIntent();
 
@@ -331,27 +361,53 @@ public class CameraFragment extends PickerFragment implements OnClickListener {
             //noinspection ConstantConditions
             getActivity().setResult(Activity.RESULT_CANCELED);
             getActivity().supportFinishAfterTransition();
+        } else if (id == R.id.iv_none_c){
+            mCameraView.touched("none");
+        }else if (id == R.id.iv_duotone_py_c){
+        }else if (id == R.id.iv_cross_c){
+        }else if (id == R.id.iv_negative_c){
+            mCameraView.touched("invert");
+        }else if (id == R.id.iv_duotone_bw_c){
+        }else if (id == R.id.iv_lomo_c){
+        }else if (id == R.id.iv_fillight_C){
+        }else if (id == R.id.iv_bw_c){
+            mCameraView.touched("bw");
+        }else if (id == R.id.iv_sepia_c){
         }
     }
 
     public void toggleShowFilters() {
-        if (mCameraView.toggleShowFilters()) {
-            iv_gallery.setVisibility(View.GONE);
+      //  if (mCameraView.toggleShowFilters())
+        if (tv_gallery_effects.getText().equals("Gallery")){
+           // iv_gallery.setVisibility(View.GONE);
             txt_gallery.setVisibility(View.GONE);
-            recyclerView.setVisibility(View.GONE);
-            mRecordButton.setVisibility(View.INVISIBLE);
-            mRecordButton.setOnClickListener(null);
-        } else {
+            recyclerView.setVisibility(View.INVISIBLE);
+            hsv_effects.setVisibility(View.VISIBLE);
+            tv_gallery_effects.setText("Effects");
+           // mRecordButton.setVisibility(View.INVISIBLE);
+          //  mRecordButton.setOnClickListener(null);
+            if (opts.mediaType == MediaType.IMAGE){
+                iv_filter.setImageResource(R.drawable.photo_library_white);
+                } else {
+                iv_filter.setImageResource(R.drawable.video_library_white);
+                }
+            } else {
+            tv_gallery_effects.setText("Gallery");
             mRecordButton.setVisibility(View.VISIBLE);
             mRecordButton.setOnClickListener(this);
 
+            if (opts.mediaType == MediaType.IMAGE){
+                iv_filter.setImageResource(R.drawable.photo_filter);
+            } else {
+                iv_filter.setImageResource(R.drawable.movie_filter);
+            }
             if (opts.galleryEnabled) {
                 iv_gallery.setVisibility(View.VISIBLE);
                 if (getListItemCount() == 0) {
                     txt_gallery.setVisibility(View.VISIBLE);
                 }
             }
-
+            hsv_effects.setVisibility(View.GONE);
             recyclerView.setVisibility(View.VISIBLE);
         }
     }
@@ -390,9 +446,9 @@ public class CameraFragment extends PickerFragment implements OnClickListener {
 
     private void updateScaleUI() {
         if (mCameraView.getScaleType() == ScaleType.SCALE_SQUARE) {
-            iv_vid_crop.setImageResource(R.drawable.crop_square);
-        } else {
             iv_vid_crop.setImageResource(R.drawable.crop_portrait);
+        } else {
+            iv_vid_crop.setImageResource(R.drawable.crop_square);
         }
     }
 
@@ -721,11 +777,13 @@ public class CameraFragment extends PickerFragment implements OnClickListener {
             selectedAdapter.clearSelection();
         }
 
-        if (opts.mediaType == MediaType.IMAGE && opts.cropEnabled) {
+        //if (opts.mediaType == MediaType.IMAGE && opts.cropEnabled) { opts.cropEnabled not working
+            if (opts.mediaType == MediaType.IMAGE) {
             ImageEffectFragment fragment = ImageEffectFragment.newInstance(opts);
-            showFragment(fragment);
-            new LoadImageTask(items.remove(0), fragment).execute();
-            return;
+                showFragment(fragment);
+                new LoadImageTask(items.remove(0), fragment).execute();
+
+                return;
         }
 
         if (opts.mediaType == MediaType.IMAGE && opts.imgSize > 0) {

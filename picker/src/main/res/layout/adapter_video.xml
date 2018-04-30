@@ -8,10 +8,10 @@
 
     <ImageView
         android:id="@+id/iv_video"
-        android:layout_width="72dp"
-        android:layout_height="72dp"
-        android:scaleType="centerCrop"
-        android:layout_centerInParent="true"/>
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_centerInParent="true"
+        android:scaleType="centerCrop" />
 
     <android.support.v7.widget.AppCompatImageView
         android:id="@+id/iv_select"

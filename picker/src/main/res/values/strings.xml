@@ -2,7 +2,7 @@
 <resources>
 
     <string name="action_settings">Settings</string>
-
+    <string name="back_to_original">Back to\noriginal</string>
     <string name="action_posterize">Posterize</string>
     <string name="action_grayscale">Grayscale</string>
     <string name="action_art">Art</string>
