@@ -11,6 +11,8 @@
 * [Design ScreenShot](https://github.com/hyperoslo/ImagePicker/blob/master/Resources/ImagePickerPresentation.png)
 * Uses openGl, no ffmpeg.
 
+![Snapshot](image/snapshot.png)
+
 ## About
 
 This fork is a collection of forks from the original creator. 

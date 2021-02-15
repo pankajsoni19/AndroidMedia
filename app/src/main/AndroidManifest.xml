@@ -31,7 +31,7 @@
         android:theme="@style/AppTheme">
 
         <activity
-            android:name="com.pankajsoni19.demo.DemoActivity"
+            android:name=".DemoActivity"
             android:windowSoftInputMode="stateAlwaysHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

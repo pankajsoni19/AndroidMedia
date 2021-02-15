@@ -1,4 +1,4 @@
-package com.pankajsoni19.demo;
+package com.pankajsoni19.media.demo;
 
 import android.app.Activity;
 import android.app.Application;
