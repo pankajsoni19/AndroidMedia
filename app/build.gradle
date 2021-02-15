@@ -1,15 +1,14 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 27
-    buildToolsVersion '27.0.3'
+    compileSdkVersion 30
 
     defaultConfig {
-        applicationId "com.softwarejoint.demo"
+        applicationId "com.pankajsoni19.media.demo"
         minSdkVersion 19
-        targetSdkVersion 27
+        targetSdkVersion 30
         versionCode 1
-        versionName '1.0.0'
+        versionName '1.1.0'
     }
 
     buildTypes {
@@ -36,9 +35,23 @@ android {
     }
 }
 
+repositories {
+    mavenCentral()
+    google()
+    jcenter()
+    maven { url "https://jitpack.io" }
+}
+
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation 'com.android.support:appcompat-v7:27.1.0'
+    implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation project(':picker')
-    compile 'org.jetbrains:annotations:15.0'
+    implementation 'org.jetbrains:annotations:15.0'
+
+    // Core library
+    androidTestImplementation 'androidx.test:core:1.3.0'
+    // Assertions
+    androidTestImplementation 'androidx.test.ext:junit:1.1.2'
+    androidTestImplementation 'androidx.test.ext:truth:1.3.0'
+    androidTestImplementation 'com.google.truth:truth:1.0'
 }

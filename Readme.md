@@ -3,6 +3,7 @@
 [![Android](https://img.shields.io/badge/Android-19-brightgreen.svg)](https://www.android.com/)
 [![Release](https://jitpack.io/v/softwarejoint/AndroidMedia.svg)](https://jitpack.io/#softwarejoint/AndroidMedia)
 
+* AndroidX support
 * Supports picking multiple media files from gallery and camera
 * Support square, rectangle camera
 * Supports media/video effect filters
@@ -37,7 +38,7 @@ The intention is to sort out the edge cases and make it available as a library p
 
 ```
     dependencies {
-        implementation 'com.github.softwarejoint:AndroidMedia:1.0.2'
+        implementation 'com.github.pankajsoni19:AndroidMedia:1.1.0'
     }
 
 ```
