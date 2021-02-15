@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="com.pankajsoni19.media" >
+    package="com.pankajsoni19.media">
 
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
@@ -23,10 +23,7 @@
         android:name="android.hardware.camera.front"
         android:required="false" />
 
-    <uses-sdk android:minSdkVersion="19" tools:ignore="GradleOverrides" />
-
-    <application
-        android:theme="@style/AppTheme">
+    <application android:theme="@style/AppTheme">
 
         <activity
             android:name=".picker.PickerActivity"
@@ -38,9 +35,9 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".permission.PermissionActivity"
-            android:windowSoftInputMode="stateAlwaysHidden"
-            android:theme="@style/Theme.Transparent"/>
+        <activity
+            android:name=".permission.PermissionActivity"
+            android:theme="@style/Theme.Transparent"
+            android:windowSoftInputMode="stateAlwaysHidden" />
     </application>
-
 </manifest>

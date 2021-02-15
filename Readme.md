@@ -1,15 +1,13 @@
 # Android Media Picker
 
 [![Android](https://img.shields.io/badge/Android-19-brightgreen.svg)](https://www.android.com/)
-[![Release](https://jitpack.io/v/softwarejoint/AndroidMedia.svg)](https://jitpack.io/#softwarejoint/AndroidMedia)
+[![Release](https://jitpack.io/v/pankajdoni19/AndroidMedia.svg)](https://jitpack.io/#pankajsoni19/AndroidMedia)
 
 * AndroidX support
 * Supports picking multiple media files from gallery and camera
 * Support square, rectangle camera
 * Supports media/video effect filters
-* UI Design is similar to [Swift ImagePicker](https://github.com/hyperoslo/ImagePicker)
-* [Design ScreenShot](https://github.com/hyperoslo/ImagePicker/blob/master/Resources/ImagePickerPresentation.png)
-* Uses openGl, no ffmpeg.
+* No ffmpeg
 
 ![Snapshot](image/snapshot.png)
 
