@@ -38,7 +38,7 @@ The intention is to sort out the edge cases and make it available as a library p
 
 ```
     dependencies {
-        implementation 'com.github.pankajsoni19:AndroidMedia:1.1.0'
+        implementation 'com.github.pankajsoni19:AndroidMedia:1.1.1'
     }
 
 ```
@@ -109,7 +109,7 @@ The intention is to sort out the edge cases and make it available as a library p
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        Result result = MediaPicker.onActivityResult(requestCode, resultCode, data);
+        Result result = MediaPickerOpts.onActivityResult(requestCode, resultCode, data);
         if (result != null) {
             for (String file: result.files) {
                 Log.d(TAG, "file: picked: " + file);
