@@ -14,6 +14,8 @@ import com.pankajsoni19.media.enums.MediaType;
 import com.pankajsoni19.media.enums.ScaleType;
 import com.pankajsoni19.media.fileio.FileHandler;
 
+import java.util.MissingResourceException;
+
 /**
  * Created by Pankaj Soni <pankajsoni19@live.com> on 03/03/18.
  * Copyright (c) 2018 Software Joint. All rights reserved.
@@ -113,7 +115,7 @@ public class MediaPickerOpts implements Parcelable {
 
     public void startActivity(Activity activity) {
         if (mediaDir == null) {
-            mediaDir = FileHandler.getApplicationName(activity);
+            throw new RuntimeException("mediaDir is required");
         }
 
         Intent newIntent = new Intent(activity, PickerActivity.class);

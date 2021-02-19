@@ -23,12 +23,6 @@ public class FileHandler {
 
     private static final String TAG = "FileHandler";
 
-    public static String getApplicationName(Context context) {
-        ApplicationInfo applicationInfo = context.getApplicationInfo();
-        @StringRes int stringId = applicationInfo.labelRes;
-        return stringId == 0 ? applicationInfo.nonLocalizedLabel.toString() : context.getString(stringId);
-    }
-
     public static File getTempFile(MediaPickerOpts opts) {
         File dir = getPublicAlbumStorageDir(opts.mediaDir, opts.mediaType);
         if (opts.mediaType == MediaType.VIDEO) {
@@ -40,16 +34,26 @@ public class FileHandler {
         }
     }
 
-    private static File getPublicAlbumStorageDir(String albumName, @MediaType int mediaType) {
-        String type = mediaType == MediaType.VIDEO ? Environment.DIRECTORY_MOVIES : Environment.DIRECTORY_PICTURES;
-
-        File file = new File(Environment.getExternalStoragePublicDirectory(type), albumName);
+    private static File getPublicAlbumStorageDir(String mediaDir, @MediaType int mediaType) {
+        String type = (mediaType == MediaType.VIDEO) ? Environment.DIRECTORY_MOVIES : Environment.DIRECTORY_PICTURES;
+        File file = new File(mediaDir, type);
         //noinspection ResultOfMethodCallIgnored
         if (!file.exists() && !file.mkdirs()) {
             Log.e(TAG, "Directory not created");
         }
         return file;
     }
+
+//    //TODO: find some solution for this on long term
+//    private static File getPublicAlbumStorageDir(String albumName, @MediaType int mediaType) {
+//        String type = mediaType == MediaType.VIDEO ? Environment.DIRECTORY_MOVIES : Environment.DIRECTORY_PICTURES;
+//        File file = new File(Environment.getExternalStoragePublicDirectory(type), albumName);
+//        //noinspection ResultOfMethodCallIgnored
+//        if (!file.exists() && !file.mkdirs()) {
+//            Log.e(TAG, "Directory not created");
+//        }
+//        return file;
+//    }
 
     private static String getDateTimeString() {
         final SimpleDateFormat mDateTimeFormat =

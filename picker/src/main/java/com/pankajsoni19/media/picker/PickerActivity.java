@@ -56,6 +56,7 @@ public class PickerActivity extends BaseActivity implements PermissionCallBack, 
             uiThreadHandler.postDelayed(this::supportFinishAfterTransition, 500L);
             return;
         }
+
         memoryCache = null;
         memoryCache = MemoryCache.getInstance();
 
