@@ -130,17 +130,17 @@ public class ImageEffectFragment extends PickerFragment implements View.OnClickL
 
         iv_filter = rootView.findViewById(R.id.iv_filter);
 
-        //if (opts.cropEnabled) {  control not working
+        if (opts.cropEnabled) {
             tv_reset_original.setOnClickListener(this);
             iv_crop.setOnClickListener(this);
             iv_crop_circle.setOnClickListener(this);
             iv_crop_star.setOnClickListener(this);
             iv_crop_flower.setOnClickListener(this);
             iv_crop_path.setOnClickListener(this);
-       /* } else {
+        } else {
             iv_crop.setVisibility(View.GONE);
         }
-       */
+
         if (opts.filtersEnabled) {
             iv_filter.setOnClickListener(this);
 

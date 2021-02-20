@@ -352,8 +352,8 @@ public class CameraFragment extends PickerFragment implements OnClickListener {
             onClickDone();
         } else if (id == R.id.iv_back) {
             //noinspection ConstantConditions
-            getActivity().setResult(Activity.RESULT_CANCELED);
-            getActivity().supportFinishAfterTransition();
+            requireActivity().setResult(Activity.RESULT_CANCELED);
+            requireActivity().supportFinishAfterTransition();
         } else if (id == R.id.iv_none_c){
             mCameraView.touched("none");
         }else if (id == R.id.iv_duotone_py_c){
@@ -770,13 +770,12 @@ public class CameraFragment extends PickerFragment implements OnClickListener {
             selectedAdapter.clearSelection();
         }
 
-        //if (opts.mediaType == MediaType.IMAGE && opts.cropEnabled) { opts.cropEnabled not working
-            if (opts.mediaType == MediaType.IMAGE) {
+        if (opts.mediaType == MediaType.IMAGE && opts.cropEnabled) {
             ImageEffectFragment fragment = ImageEffectFragment.newInstance(opts);
-                showFragment(fragment);
-                new LoadImageTask(items.remove(0), fragment).execute();
+            showFragment(fragment);
+            new LoadImageTask(items.remove(0), fragment).execute();
 
-                return;
+            return;
         }
 
         if (opts.mediaType == MediaType.IMAGE && opts.imgSize > 0) {
