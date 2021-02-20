@@ -103,4 +103,9 @@ public class PermissionManager {
 
         return permissionsNeeded.toArray(new String[permissionsNeeded.size()]);
     }
+
+    public static boolean isPermissionRequestCode(int requestCode) {
+        return requestCode == PermissionRequest.REQUEST_CODE_PHOTO ||
+                requestCode == PermissionRequest.REQUEST_CODE_VIDEO;
+    }
 }

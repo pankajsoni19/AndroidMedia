@@ -4,14 +4,15 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.os.Handler;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentTransaction;
-import androidx.core.view.GravityCompat;
-import androidx.appcompat.app.AppCompatDelegate;
 import android.view.Gravity;
 import android.view.View;
 import android.view.Window;
+
+import androidx.appcompat.app.AppCompatDelegate;
+import androidx.core.view.GravityCompat;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 
 import com.pankajsoni19.media.R;
 import com.pankajsoni19.media.anim.AnimationHelper;
@@ -109,10 +110,12 @@ public class PickerActivity extends BaseActivity implements PermissionCallBack, 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (resultCode == RESULT_OK) {
-            uiThreadHandler.postDelayed(this::launchCameraFragment, 500L);
-        } else {
-            uiThreadHandler.postDelayed(this::supportFinishAfterTransition, 500L);
+        if (PermissionManager.isPermissionRequestCode(requestCode)) {
+            if (resultCode == RESULT_OK) {
+                uiThreadHandler.postDelayed(this::launchCameraFragment, 500L);
+            } else {
+                uiThreadHandler.postDelayed(this::supportFinishAfterTransition, 500L);
+            }
         }
     }
 

@@ -4,6 +4,7 @@ import android.annotation.TargetApi;
 import android.os.Build;
 import android.os.Bundle;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentActivity;
 import android.transition.Fade;
 import android.transition.TransitionSet;
@@ -15,7 +16,7 @@ import com.pankajsoni19.media.anim.AnimationHelper;
  * Created by Pankaj Soni <pankajsoni19@live.com> on 03/03/18.
  * Copyright (c) 2018 Software Joint. All rights reserved.
  */
-public class BaseActivity extends FragmentActivity {
+public class BaseActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
