@@ -783,7 +783,10 @@ public class CameraFragment extends PickerFragment implements OnClickListener {
             String newPath = BitmapUtils.createCroppedBitmap(imagePath, opts);
             if (!imagePath.equals(newPath)) {
                 scanFile(newPath, "image/jpg", null);
+                //noinspection ResultOfMethodCallIgnored
+                new File(imagePath).delete();
             }
+
             items.add(0, newPath);
         }
 
